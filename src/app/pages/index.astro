@@ -1,0 +1,171 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import ShareLink from "../components/ShareLink";
+import "../styles.css";
+
+const title = "Shoal — Make a GitHub Star explainable";
+const description =
+  "A public review network where GitHub Stars carry a policy, a repository version, and a reason you can verify.";
+const steps = [
+  {
+    number: "01",
+    title: "Publish your policy",
+    body: "Fork the station and write down what earns your endorsement in its README.",
+  },
+  {
+    number: "02",
+    title: "Review with evidence",
+    body: "Receive a request, review the repository against your policy, and record the result.",
+  },
+  {
+    number: "03",
+    title: "Make the Star count",
+    body: "A passing review becomes a Star backed by a public decision and a specific version.",
+  },
+];
+---
+
+<BaseLayout title={title} description={description}>
+  <header class="site-header wrap">
+    <a class="wordmark" href={import.meta.env.BASE_URL} aria-label="Shoal home">
+      <span class="mark" aria-hidden="true">
+        ✳
+      </span>{" "}
+      shoal<span class="wordmark-dot">.</span>
+    </a>
+    <nav aria-label="Main navigation">
+      <a href="#how-it-works">How it works</a>
+      <a href="https://github.com/taco3064/shoal-station">
+        The station <span aria-hidden="true">↗</span>
+      </a>
+    </nav>
+  </header>
+  <main>
+    <section class="hero wrap" aria-labelledby="hero-title">
+      <div class="hero-copy">
+        <p class="eyebrow">
+          <span class="pulse"></span> AN OPEN REVIEW NETWORK
+        </p>
+        <h1 id="hero-title">
+          Make a GitHub Star <em>explainable.</em>
+        </h1>
+        <p class="lede">
+          A Star can say more than “I like this.” Shoal connects it to a public
+          review policy, a repository version, and the judgment behind it.
+        </p>
+        <div class="actions">
+          <a
+            class="button primary"
+            href="https://github.com/taco3064/shoal-station/fork"
+          >
+            Explore the station <span aria-hidden="true">↗</span>
+          </a>
+          <a class="button secondary" href="#how-it-works">
+            See how it works <span aria-hidden="true">↓</span>
+          </a>
+        </div>
+        <p class="hero-note">
+          A review request is an invitation to evaluate, never a promise of a
+          Star.
+        </p>
+      </div>
+      <div class="hero-art" aria-hidden="true">
+        <div class="orbit orbit-one"></div>
+        <div class="orbit orbit-two"></div>
+        <div class="orbit orbit-three"></div>
+        <div class="core-symbol">✳</div>
+        <span class="art-label label-one">POLICY</span>
+        <span class="art-label label-two">EVIDENCE</span>
+        <span class="art-label label-three">VERSION</span>
+      </div>
+    </section>
+    <section class="principle" aria-labelledby="principle-title">
+      <div class="wrap principle-inner">
+        <p class="section-kicker">THE IDEA</p>
+        <h2 id="principle-title">
+          From a popularity signal to a <span>reasoned endorsement.</span>
+        </h2>
+        <p>
+          Each reviewer chooses their own standard. When a repository passes,
+          the reviewer stars it and records the decision publicly. When the
+          repository or policy changes, the endorsement can be reviewed again.
+        </p>
+      </div>
+    </section>
+    <section
+      class="process wrap"
+      id="how-it-works"
+      aria-labelledby="process-title"
+    >
+      <div class="section-heading">
+        <div>
+          <p class="section-kicker">HOW IT WORKS</p>
+          <h2 id="process-title">
+            A visible path from
+            <br />
+            request to recognition.
+          </h2>
+        </div>
+        <p>
+          No universal score. No automatic background judgment. Each reviewer
+          owns their policy and starts their own review.
+        </p>
+      </div>
+      <div class="steps">
+        {steps.map((step) => (
+          <article class="step">
+            <span class="step-number">{step.number} / 03</span>
+            <h3>{step.title}</h3>
+            <p>{step.body}</p>
+          </article>
+        ))}
+      </div>
+    </section>
+    <section class="directory wrap" aria-labelledby="directory-title">
+      <div class="directory-icon" aria-hidden="true">
+        ↗
+      </div>
+      <div>
+        <p class="section-kicker">COMING LATER</p>
+        <h2 id="directory-title">Reviewer Directory</h2>
+        <p>
+          The public directory is not available yet. Reviewer lookup and network
+          data will arrive in a later milestone; there is no live search here
+          today.
+        </p>
+      </div>
+    </section>
+    <section class="join wrap" aria-labelledby="join-title">
+      <p class="section-kicker">START A STATION</p>
+      <h2 id="join-title">
+        Your standards.
+        <br />
+        <em>Your signature.</em>
+      </h2>
+      <p>
+        Directly fork the Network Root, open your fork’s GitHub Actions page and
+        complete its manual enable step. Then clone the fork, install the gh
+        extension, run <code>gh shoal init</code>, and write your review policy
+        in the README.
+      </p>
+      <a
+        class="button primary"
+        href="https://github.com/taco3064/shoal-station"
+      >
+        Visit the Network Root <span aria-hidden="true">↗</span>
+      </a>
+    </section>
+  </main>
+  <footer class="footer">
+    <div class="wrap footer-inner">
+      <a class="wordmark" href={import.meta.env.BASE_URL}>
+        shoal<span class="wordmark-dot">.</span>
+      </a>
+      <p>Review the work. Explain the Star.</p>
+      <div class="footer-links">
+        <a href="https://github.com/taco3064/shoal-app">Source ↗</a>
+        <ShareLink client:load />
+      </div>
+    </div>
+  </footer>
+</BaseLayout>
