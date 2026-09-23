@@ -1,4 +1,6 @@
 ---
+import ShareLink from "~app/guide/components/ShareLink";
+
 interface Props {
   title: string;
   description: string;
@@ -31,6 +33,36 @@ const ogImage = new URL(`${import.meta.env.BASE_URL}${image}`, Astro.site);
     />
   </head>
   <body>
+    <header class="site-header wrap">
+      <a
+        class="wordmark"
+        href={import.meta.env.BASE_URL}
+        aria-label="Shoal home"
+      >
+        <span class="mark" aria-hidden="true">
+          ✳
+        </span>{" "}
+        shoal<span class="wordmark-dot">.</span>
+      </a>
+      <nav aria-label="Main navigation">
+        <a href={`${import.meta.env.BASE_URL}#how-it-works`}>How it works</a>
+        <a href="https://github.com/taco3064/shoal-station">
+          The station <span aria-hidden="true">↗</span>
+        </a>
+      </nav>
+    </header>
     <slot />
+    <footer class="footer">
+      <div class="wrap footer-inner">
+        <a class="wordmark" href={import.meta.env.BASE_URL}>
+          shoal<span class="wordmark-dot">.</span>
+        </a>
+        <p>Review the work. Explain the Star.</p>
+        <div class="footer-links">
+          <a href="https://github.com/taco3064/shoal-app">Source ↗</a>
+          <ShareLink client:load />
+        </div>
+      </div>
+    </footer>
   </body>
 </html>

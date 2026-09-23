@@ -9,11 +9,15 @@ Code flows one way: each layer may import only from the layers below it. Upstrea
 ```mermaid
 flowchart TD
   m0["app · router composition"]
-  subgraph runway["every future module · none declared yet"]
-  components -.-> hooks
-  hooks -->|Context only · selfOnly| contexts
-  hooks --> services
-  contexts --> services
+  subgraph m1["guide"]
+    m1_l0["components"]
+    m1_l1["hooks"]
+    m1_l2["contexts"]
+    m1_l3["services"]
+    m1_l0 -.-> m1_l1
+    m1_l1 -->|Context only · selfOnly| m1_l2
+    m1_l1 --> m1_l3
+    m1_l2 --> m1_l3
   end
 ```
 
@@ -21,13 +25,10 @@ flowchart TD
 
 ### Modules
 
-`architecture.modules` declares no domain module yet — a module-first runway: the topology is declared, the inner layers, rules, principles, and playbook already apply, and no domain module exists because no product requirement has evidenced one. The absence is intended, not incomplete adoption.
-
-Every module declared through the module growth protocol below reuses the shared layer contract; its root files take the container position. An absent module is runway.
-
 | Module | Responsibility | Direct dependencies |
 | --- | --- | --- |
-| `app` | Compose the public Shoal website and its interactive UI. | — |
+| `app` | Compose Astro routes, layouts, and page metadata. | `guide` |
+| `guide` | Explain Shoal endorsements and guide reviewers through joining the network. | — |
 
 The optional reserved `app` module owns router composition recursively and uses the container position; it does not repeat the shared layers below.
 
@@ -44,7 +45,7 @@ Every other module reuses the shared layer contract below. Module dependencies a
 
 ## Module growth protocol
 
-`architecture.modules` declares no domain module yet — a module-first runway: the topology is declared, the inner layers, rules, principles, and playbook already apply, and no domain module exists because no product requirement has evidenced one. The absence is intended, not incomplete adoption.
+The declared modules are the current domain authority; new domain boundaries come only from this protocol.
 
 When owner-requested product work adds behavior, or materially reshapes behavior, that no declared module owns:
 

@@ -7,7 +7,6 @@
 > architecture. Never soften or bypass; disagreements go to the maintainer.
 
 - Framework: `react`. Canonical source-root alias: `~app`.
-- Module runway: `architecture.modules` declares no domain module yet — a module-first runway: the topology is declared, the inner layers, rules, principles, and playbook already apply, and no domain module exists because no product requirement has evidenced one. The absence is intended, not incomplete adoption.
 - Module flow: each module may import itself and modules transitively reachable through `dependsOn`; declaration order grants no permission. The layer flow must also pass, and cross-module imports use the canonical source-root alias.
 - Layer flow: `components` → `hooks` → `contexts` → `services` — transitive: a layer may import **any** layer after it, unless the target narrows its importers.
 - **Before adding, moving, or renaming any file** — placement, module boundaries, unit shapes, ownership, naming, component-shape axes, behavioral principles, the working playbook: read [docs/architecture-handbook.md](docs/architecture-handbook.md) (generated from the same blueprint — always current).

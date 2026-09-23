@@ -18,7 +18,7 @@ npm run build
 npm run blueprint:validate
 ```
 
-Astro owns static routing, layouts, metadata, and HTML composition under `src/app/`. React is used only for interactive islands. Blueprint's Module First topology governs supported TS/TSX source; `.astro` files are framework composition and checked with Astro-aware tooling, not claimed as Blueprint-governed source. Domain and protocol logic belongs in governed modules, not in `.astro` files. The current module is `app`, which owns site composition.
+Astro owns static routing, layouts, metadata, and HTML composition under `src/app/`. The `guide` Blueprint module owns the product explanation and joining guidance rendered as static React HTML; only the share button is an interactive island. Blueprint's Module First topology governs supported TS/TSX source; `.astro` files are framework composition and checked with Astro-aware tooling, not claimed as Blueprint-governed source. Domain and protocol logic belongs in governed modules, not in `.astro` files. A future directory module will be added when a shaped issue introduces real Network Projection behavior.
 
 Husky installs with `npm ci`. Pre-commit formats and lints staged source and checks types; pre-push builds the site. Pull request CI runs lint, type checking, build, and Blueprint checks on Ubuntu and Windows. A successful `main` verification triggers the GitHub Pages deployment workflow. GitHub Pages must be configured with **GitHub Actions** as its build and deployment source in repository settings.
 
