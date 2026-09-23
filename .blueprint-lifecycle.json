@@ -1,0 +1,38 @@
+{
+  "schema": 1,
+  "blueprint": "4.1.0",
+  "provenance": "complete",
+  "operations": [],
+  "pending": null,
+  "applications": {
+    ".": {
+      "provenance": [
+        {
+          "kind": "created",
+          "path": "blueprint.config.mjs",
+          "sha256": "c63e15a18ec140fe77c759f92ed69ca70f4ea8bace47276236c2ebe5242595b2"
+        },
+        {
+          "kind": "generated",
+          "path": "docs/architecture-handbook.md"
+        },
+        {
+          "kind": "section",
+          "path": "AGENTS.md",
+          "created": true
+        },
+        {
+          "kind": "generated",
+          "path": "eslint.config.mjs"
+        },
+        {
+          "kind": "script",
+          "path": "package.json",
+          "name": "lint",
+          "before": null,
+          "after": "eslint src --no-error-on-unmatched-pattern"
+        }
+      ]
+    }
+  }
+}

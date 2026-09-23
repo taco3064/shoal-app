@@ -1,0 +1,68 @@
+---
+import ShareLink from "~app/guide/components/ShareLink";
+
+interface Props {
+  title: string;
+  description: string;
+  image?: string;
+}
+const { title, description, image = "og.svg" } = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+const ogImage = new URL(`${import.meta.env.BASE_URL}${image}`, Astro.site);
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#091b25" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link
+      rel="icon"
+      href={`${import.meta.env.BASE_URL}favicon.svg`}
+      type="image/svg+xml"
+    />
+  </head>
+  <body>
+    <header class="site-header wrap">
+      <a
+        class="wordmark"
+        href={import.meta.env.BASE_URL}
+        aria-label="Shoal home"
+      >
+        <span class="mark" aria-hidden="true">
+          ✳
+        </span>{" "}
+        shoal<span class="wordmark-dot">.</span>
+      </a>
+      <nav aria-label="Main navigation">
+        <a href={`${import.meta.env.BASE_URL}#how-it-works`}>How it works</a>
+        <a href="https://github.com/taco3064/shoal-station">
+          The station <span aria-hidden="true">↗</span>
+        </a>
+      </nav>
+    </header>
+    <slot />
+    <footer class="footer">
+      <div class="wrap footer-inner">
+        <a class="wordmark" href={import.meta.env.BASE_URL}>
+          shoal<span class="wordmark-dot">.</span>
+        </a>
+        <p>Review the work. Explain the Star.</p>
+        <div class="footer-links">
+          <a href="https://github.com/taco3064/shoal-app">Source ↗</a>
+          <ShareLink client:load />
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

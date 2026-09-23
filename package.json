@@ -1,0 +1,48 @@
+{
+  "name": "shoal-app",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "The platform application and protocol source for the Shoal review network.",
+  "repository": "https://github.com/taco3064/shoal-app",
+  "homepage": "https://taco3064.github.io/shoal-app/",
+  "engines": { "node": ">=24 <25" },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "lint": "eslint src --no-error-on-unmatched-pattern",
+    "format:check": "prettier --check \"src/**/*.astro\" --plugin prettier-plugin-astro",
+    "typecheck": "astro check && tsc --noEmit",
+    "blueprint:validate": "blueprint doctor && blueprint inspect --baseline",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,mjs}": "eslint --fix",
+    "*.astro": "prettier --write --plugin prettier-plugin-astro"
+  },
+  "dependencies": {
+    "@astrojs/react": "^7.0.0",
+    "@astrojs/sitemap": "^3.7.4",
+    "@kekkai/blueprint": "^4.1.0",
+    "astro": "^7.3.4",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "@eslint-community/eslint-plugin-eslint-comments": "^4.0.0",
+    "@stylistic/eslint-plugin": "^5.0.0",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "eslint": "^10.11.0",
+    "eslint-plugin-astro": "^3.2.1",
+    "eslint-plugin-import-x": "^4.0.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.5.1",
+    "prettier": "^3.9.9",
+    "prettier-plugin-astro": "^1.0.1",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.0.0"
+  }
+}

@@ -1,0 +1,13 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Guide from "~app/guide";
+import "../styles.css";
+
+const title = "Shoal — Make a GitHub Star explainable";
+const description =
+  "A public review network where GitHub Stars carry a policy, a repository version, and a reason you can verify.";
+---
+
+<BaseLayout title={title} description={description}>
+  <Guide />
+</BaseLayout>
