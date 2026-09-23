@@ -11,7 +11,7 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "lint": "eslint src",
+    "lint": "eslint src --no-error-on-unmatched-pattern",
     "format:check": "prettier --check 'src/**/*.astro' --plugin prettier-plugin-astro",
     "typecheck": "astro check && tsc --noEmit",
     "blueprint:validate": "blueprint doctor && blueprint inspect --baseline",
