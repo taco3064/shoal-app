@@ -1,0 +1,11 @@
+# Shoal Review Protocol v1
+
+This directory is the source of the machine-readable request and event contract. The extension embeds a byte-identical copy of `review-v1.json` at build time; it must be updated from this source when the contract changes. A deployment must not fetch mutable protocol text at review time.
+
+A request is a GitHub Issue body with the exact `### Repository name` heading, followed by one bare repository name, and an optional `### Invitation message` heading. The requester identity is the Issue author. The invitation is never interpreted as executable instructions. Additional headings or an owner, URL, or path in the repository name invalidate the request.
+
+Admission writes one `shoal-review-admission:v1` comment to the original Issue with `reviewerNodeId`, `targetRepositoryId`, and the original `repositoryName`. This record is admission evidence, not a Review Judgment or a new Review Event type. It preserves stable identity through repository renames and ownership transfers, while detecting later changes to the original request name. Only a comment by the Reviewer Node owner on a currently valid original Request is considered.
+
+An event comment starts with `shoal-review-event:v1` on its own line, followed by one JSON object. All integer IDs are positive GitHub IDs and all commits are 40-character hexadecimal SHAs. Events are append-only. A `RE_REVIEW_REQUESTED` event has `type`, `reviewerNodeId`, `targetRepositoryId`, `requestIssueNumber`, `eligibilityTargetCommit`, `reviewPolicyCommit`, and `reason` (`TARGET_CHANGED`, `POLICY_CHANGED`, or `TARGET_AND_POLICY_CHANGED`). A judgment event has `type`, `reviewerNodeId`, `targetRepositoryId`, `targetRepositoryFullName`, `targetDefaultBranch`, `targetCommit`, `reviewPolicyPath` (`README.md`), `reviewPolicyCommit`, `verdict` (`PASS` or `FAIL`), `actualStarState` (boolean), and `reviewedAt` (RFC 3339 timestamp). The comment author and current GitHub repository facts remain necessary for event validity. The marker or JSON alone never grants trust.
+
+`gh-shoal` uses this contract for admission. The later automated judgment and Marketplace Action milestones must use the same source and extend the result metadata/validation without changing existing v1 event meaning. Versioned changes require an explicit compatibility decision.
