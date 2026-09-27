@@ -82,13 +82,20 @@ export function parseProtocolComment(body: string): ParsedProtocolComment {
     const parsed = parseMarkerJson(trimmed);
     const admission = parsed ? parseAdmissionRecord(parsed) : null;
 
-    return admission
-      ? { kind: 'admission', value: admission }
+    if (admission) {
+      return { kind: 'admission', value: admission };
+    }
+
+    return isFormalResultCandidate(
+      stripMarker(trimmed, reviewProtocol.admission.marker),
+      parsed,
+    )
+      ? { kind: 'invalid-formal-result' }
       : { kind: 'none' };
   }
 
   if (!trimmed.startsWith(reviewProtocol.event.marker)) {
-    return looksLikeFormalResult(trimmed)
+    return isFormalResultCandidate(trimmed)
       ? { kind: 'invalid-formal-result' }
       : { kind: 'none' };
   }
@@ -96,7 +103,9 @@ export function parseProtocolComment(body: string): ParsedProtocolComment {
   const parsed = parseMarkerJson(trimmed);
 
   if (!parsed) {
-    return looksLikeFormalResult(trimmed)
+    return isFormalResultCandidate(
+      stripMarker(trimmed, reviewProtocol.event.marker),
+    )
       ? { kind: 'invalid-formal-result' }
       : { kind: 'none' };
   }
@@ -113,7 +122,7 @@ export function parseProtocolComment(body: string): ParsedProtocolComment {
     return { kind: 'judgment', value: judgment };
   }
 
-  return looksLikeFormalResult(JSON.stringify(parsed))
+  return isJudgmentCandidateValue(parsed)
     ? { kind: 'invalid-formal-result' }
     : { kind: 'none' };
 }
@@ -372,9 +381,63 @@ function isReReviewReason(value: unknown): value is ReReviewReason {
   );
 }
 
-function looksLikeFormalResult(value: string): boolean {
-  return /REVIEWED|RE_REVIEWED|STAR_REVOKED|REVOKED_EXTERNALLY|"verdict"|Review Result:/u.test(
-    value,
+function stripMarker(body: string, marker: string): string {
+  return body.slice(marker.length).trim();
+}
+
+function isFormalResultCandidate(body: string, parsed?: unknown): boolean {
+  if (isJudgmentCandidateValue(parsed ?? parseLooseJson(body))) {
+    return true;
+  }
+
+  return looksLikeStructuredFormalResultText(body);
+}
+
+function parseLooseJson(body: string): unknown | null {
+  try {
+    return JSON.parse(body);
+  } catch {
+    return null;
+  }
+}
+
+function isJudgmentCandidateValue(value: unknown): boolean {
+  return Boolean(
+    isRecord(value)
+    && (
+      isJudgmentType(value.type)
+      || 'verdict' in value
+      || 'actualStarState' in value
+    ),
+  );
+}
+
+function looksLikeStructuredFormalResultText(value: string): boolean {
+  const normalized = value.trim();
+
+  const firstLine = normalized
+    .split('\n')
+    .map((line) => line.trim())
+    .find(Boolean);
+
+  if (!firstLine) {
+    return false;
+  }
+
+  if (/^Review Result:\s*(PASS|FAIL)\b/u.test(firstLine)) {
+    return true;
+  }
+
+  if (
+    (reviewProtocol.event.judgmentTypes as readonly string[]).includes(
+      firstLine,
+    )
+  ) {
+    return true;
+  }
+
+  return /(?:^|[\n{,])\s*"(type|verdict|actualStarState)"\s*:/u.test(
+    normalized,
   );
 }
 

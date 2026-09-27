@@ -111,11 +111,15 @@ export class GitHubClient {
           return false;
         }
 
-        const workflowRun = await this.getWorkflowRunAttempt(
+        const workflowRun = await this.getWorkflowRunAttemptOrNull(
           reviewerNode.fullName,
           provenance.workflowRunId,
           provenance.workflowRunAttempt,
         );
+
+        if (!workflowRun) {
+          return false;
+        }
 
         return isWorkflowRunProvenance({
           comment,
@@ -253,14 +257,26 @@ export class GitHubClient {
     return first.sha;
   }
 
-  async getWorkflowRunAttempt(
+  async getWorkflowRunAttemptOrNull(
     fullName: string,
     runId: number,
     attemptNumber: number,
-  ): Promise<WorkflowRunResponse> {
-    const value = await this.get(
-      `/repos/${fullName}/actions/runs/${runId}/attempts/${attemptNumber}`,
-    );
+  ): Promise<WorkflowRunResponse | null> {
+    const path
+      = `/repos/${fullName}/actions/runs/${runId}`
+        + `/attempts/${attemptNumber}`;
+
+    let value: unknown;
+
+    try {
+      value = await this.get(path);
+    } catch (error) {
+      if (error instanceof GitHubReadError && error.message.includes('404')) {
+        return null;
+      }
+
+      throw error;
+    }
 
     if (!isWorkflowRunResponse(value)) {
       throw new GitHubReadError(
