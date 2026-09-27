@@ -241,7 +241,9 @@ function findAdmissionEvidence(
     records.some(
       (record) =>
         record.reviewerNodeId !== first.reviewerNodeId
-        || record.targetRepositoryId !== first.targetRepositoryId,
+        || record.targetRepositoryId !== first.targetRepositoryId
+        || record.repositoryName.toLowerCase()
+        !== first.repositoryName.toLowerCase(),
     )
   ) {
     return { kind: 'blocked' };

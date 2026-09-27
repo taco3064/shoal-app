@@ -2,8 +2,8 @@ export { reviewProtocol } from './contract';
 export {
   getProtocolVersion,
   parseProtocolComment,
-  parseRequestPayload,
 } from './review_protocol';
+export { parseRequestPayload } from './request_payload';
 export type {
   AdmissionRecord,
   AutomationProvenance,
