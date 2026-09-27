@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "allowImportingTsExtensions": false,
+    "declaration": true,
+    "emitDeclarationOnly": false,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "outDir": "dist/action",
+    "rootDir": "src",
+    "noEmit": false
+  },
+  "include": ["src/action/**/*", "src/protocol/**/*"]
+}
