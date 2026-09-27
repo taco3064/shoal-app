@@ -10,8 +10,11 @@ import {
   type ReviewerSummary,
 } from '~app/protocol/services/reviewer_summary_schema';
 import {
+  countInvalidFormalResults,
+  getCurrentAdmittedRequest,
   getInvalidFormalResultIncrement,
   isJudgmentLifecycleValid,
+  isPriorFormalJudgmentEvidence,
 } from './review_lifecycle';
 import type {
   CanonicalThread,
@@ -115,14 +118,10 @@ async function collectCanonicalThreads(
       continue;
     }
 
-    const currentRequest = validByIssueNumber.get(issue.number) ?? null;
-
-    if (
-      currentRequest
-      && currentRequest.target.id !== admission.value.targetRepositoryId
-    ) {
-      continue;
-    }
+    const currentRequest = getCurrentAdmittedRequest(
+      validByIssueNumber.get(issue.number),
+      admission.value,
+    );
 
     const target = currentRequest?.target
       ?? await resolveAdmittedTarget(input, issue, admission.value);
@@ -254,13 +253,6 @@ function countReviewBackedStars(
   }).length;
 }
 
-function countInvalidFormalResults(threads: CanonicalThread[]): number {
-  return threads.reduce(
-    (count, thread) => count + thread.invalidFormalResultCount,
-    0,
-  );
-}
-
 type AdmissionEvidence
   = | { kind: 'none' }
     | { kind: 'valid'; value: AdmissionRecord }
@@ -304,16 +296,6 @@ function findAdmissionEvidence(
     return { kind: 'blocked' };
   }
 
-  const parsedRequest = parseRequestPayload(issue.body);
-
-  if (
-    parsedRequest
-    && parsedRequest.repositoryName.toLowerCase()
-    !== first.repositoryName.toLowerCase()
-  ) {
-    return { kind: 'blocked' };
-  }
-
   if (first.reviewerNodeId === input.reviewerNode.id) {
     return { kind: 'valid', value: first };
   }
@@ -342,19 +324,18 @@ async function collectLifecycleEvents(
   targetRepositoryId: number,
 ): Promise<LifecycleEvent[]> {
   const events: LifecycleEvent[] = [];
-  let hasUsableJudgment = false;
+  let hasPriorFormalJudgmentEvidence = false;
 
   for (const comment of issue.comments) {
     const parsed = parseProtocolComment(comment.body);
 
-    if (
-      parsed.kind === 'judgment'
-      && comment.author.id === input.reviewerNode.owner.id
-      && parsed.value.reviewerNodeId === input.reviewerNode.id
-      && parsed.value.targetRepositoryId === targetRepositoryId
-      && isJudgmentLifecycleValid(parsed.value, hasUsableJudgment)
-    ) {
-      hasUsableJudgment = true;
+    if (isPriorFormalJudgmentEvidence(
+      parsed,
+      comment,
+      input.reviewerNode,
+      targetRepositoryId,
+    )) {
+      hasPriorFormalJudgmentEvidence = true;
 
       continue;
     }
@@ -370,7 +351,7 @@ async function collectLifecycleEvents(
       continue;
     }
 
-    if (!hasUsableJudgment) {
+    if (!hasPriorFormalJudgmentEvidence) {
       continue;
     }
 
@@ -400,7 +381,7 @@ function analyzeReviewThread(
   targetRepositoryId: number,
 ): { validJudgments: JudgmentEvent[]; invalidFormalResultCount: number } {
   const validJudgments: JudgmentEvent[] = [];
-  let hasUsableJudgment = false;
+  let hasPriorFormalJudgmentEvidence = false;
   let invalidFormalResultCount = 0;
 
   for (const comment of issue.comments) {
@@ -409,6 +390,13 @@ function analyzeReviewThread(
     if (parsed.kind === 'invalid-formal-result') {
       invalidFormalResultCount += getInvalidFormalResultIncrement(issue);
 
+      hasPriorFormalJudgmentEvidence ||= isPriorFormalJudgmentEvidence(
+        parsed,
+        comment,
+        reviewerNode,
+        targetRepositoryId,
+      );
+
       continue;
     }
 
@@ -416,11 +404,23 @@ function analyzeReviewThread(
       continue;
     }
 
+    const lifecycleValid = isJudgmentLifecycleValid(
+      parsed.value,
+      hasPriorFormalJudgmentEvidence,
+    );
+
+    hasPriorFormalJudgmentEvidence ||= isPriorFormalJudgmentEvidence(
+      parsed,
+      comment,
+      reviewerNode,
+      targetRepositoryId,
+    );
+
     if (
       comment.author.id !== reviewerNode.owner.id
       || parsed.value.reviewerNodeId !== reviewerNode.id
       || parsed.value.targetRepositoryId !== targetRepositoryId
-      || !isJudgmentLifecycleValid(parsed.value, hasUsableJudgment)
+      || !lifecycleValid
     ) {
       invalidFormalResultCount += getInvalidFormalResultIncrement(issue);
 
@@ -428,7 +428,6 @@ function analyzeReviewThread(
     }
 
     validJudgments.push(parsed.value);
-    hasUsableJudgment = true;
   }
 
   return { invalidFormalResultCount, validJudgments };
