@@ -8,16 +8,36 @@ Code flows one way: each layer may import only from the layers below it. Upstrea
 
 ```mermaid
 flowchart TD
-  m0["app · router composition"]
-  subgraph m1["guide"]
-    m1_l0["components"]
-    m1_l1["hooks"]
-    m1_l2["contexts"]
-    m1_l3["services"]
-    m1_l0 -.-> m1_l1
-    m1_l1 -->|Context only · selfOnly| m1_l2
-    m1_l1 --> m1_l3
-    m1_l2 --> m1_l3
+  subgraph m0["action"]
+    m0_l0["components"]
+    m0_l1["hooks"]
+    m0_l2["contexts"]
+    m0_l3["services"]
+    m0_l0 -.-> m0_l1
+    m0_l1 -->|Context only · selfOnly| m0_l2
+    m0_l1 --> m0_l3
+    m0_l2 --> m0_l3
+  end
+  m1["app · router composition"]
+  subgraph m2["guide"]
+    m2_l0["components"]
+    m2_l1["hooks"]
+    m2_l2["contexts"]
+    m2_l3["services"]
+    m2_l0 -.-> m2_l1
+    m2_l1 -->|Context only · selfOnly| m2_l2
+    m2_l1 --> m2_l3
+    m2_l2 --> m2_l3
+  end
+  subgraph m3["protocol"]
+    m3_l0["components"]
+    m3_l1["hooks"]
+    m3_l2["contexts"]
+    m3_l3["services"]
+    m3_l0 -.-> m3_l1
+    m3_l1 -->|Context only · selfOnly| m3_l2
+    m3_l1 --> m3_l3
+    m3_l2 --> m3_l3
   end
 ```
 
@@ -27,8 +47,10 @@ flowchart TD
 
 | Module | Responsibility | Direct dependencies |
 | --- | --- | --- |
+| `action` | Compute and package the Reviewer Summary Marketplace Action source. | `protocol` |
 | `app` | Compose Astro routes, layouts, and page metadata. | `guide` |
 | `guide` | Explain Shoal endorsements and guide reviewers through joining the network. | — |
+| `protocol` | Own Shoal protocol parsing, validation, schemas, and versioned contracts. | — |
 
 The optional reserved `app` module owns router composition recursively and uses the container position; it does not repeat the shared layers below.
 
