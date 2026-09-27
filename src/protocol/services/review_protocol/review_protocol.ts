@@ -8,7 +8,6 @@ import type {
   LifecycleType,
   ParsedProtocolComment,
   ReReviewReason,
-  RequestPayload,
   ReviewVerdict,
 } from './types';
 
@@ -18,61 +17,6 @@ const rfc3339Pattern = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$/;
 
 export function getProtocolVersion(): number {
   return Number(reviewProtocol.protocolVersion);
-}
-
-export function parseRequestPayload(body: string): RequestPayload | null {
-  const normalized = body.replace(/\r\n/g, '\n').trim();
-  const repositoryHeading = `### ${reviewProtocol.request.repositoryHeading}`;
-  const invitationHeading = `### ${reviewProtocol.request.invitationHeading}`;
-
-  if (!normalized.startsWith(repositoryHeading)) {
-    return null;
-  }
-
-  const rest = normalized.slice(repositoryHeading.length).trim();
-  const invitationIndex = rest.indexOf(`\n${invitationHeading}`);
-
-  const repositoryBlock
-    = invitationIndex === -1 ? rest : rest.slice(0, invitationIndex).trim();
-
-  const invitationBlock
-    = invitationIndex === -1
-      ? ''
-      : rest.slice(invitationIndex + invitationHeading.length + 1).trim();
-
-  const repositoryLines = repositoryBlock
-    .split('\n')
-    .map((line) => line.trim())
-    .filter(Boolean);
-
-  if (
-    repositoryLines.length !== 1
-    || !repositoryNamePattern.test(repositoryLines[0])
-  ) {
-    return null;
-  }
-
-  if (
-    repositoryLines[0].includes('/')
-    || repositoryLines[0].startsWith('http')
-  ) {
-    return null;
-  }
-
-  if (invitationBlock.includes('\n### ')) {
-    return null;
-  }
-
-  const invitationMessage
-    = invitationBlock
-      && invitationBlock !== reviewProtocol.request.emptyInvitation
-      ? invitationBlock
-      : null;
-
-  return {
-    invitationMessage,
-    repositoryName: repositoryLines[0],
-  };
 }
 
 export function parseProtocolComment(body: string): ParsedProtocolComment {
@@ -436,8 +380,11 @@ function looksLikeStructuredFormalResultText(value: string): boolean {
     return true;
   }
 
-  return /(?:^|[\n{,])\s*"(type|verdict|actualStarState)"\s*:/u.test(
-    normalized,
+  return (
+    normalized.startsWith('{')
+    && /(?:^|[\n{,])\s*"(type|verdict|actualStarState)"\s*:/u.test(
+      normalized,
+    )
   );
 }
 
@@ -448,6 +395,10 @@ function isJudgmentStarStateConsistent(
 ): boolean {
   if (actualStarState !== (verdict === 'PASS')) {
     return false;
+  }
+
+  if (type === 'RE_REVIEWED') {
+    return verdict === 'PASS' && actualStarState;
   }
 
   if (type === 'STAR_REVOKED' || type === 'REVOKED_EXTERNALLY') {

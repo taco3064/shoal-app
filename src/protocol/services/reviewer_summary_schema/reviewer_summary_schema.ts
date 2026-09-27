@@ -83,7 +83,7 @@ function parseMetrics(value: unknown): ReviewerSummaryMetrics {
 function assertPrimitiveMetrics(
   metrics: Record<keyof ReviewerSummaryMetrics, unknown>,
 ): ReviewerSummaryMetrics {
-  return {
+  const primitiveMetrics = {
     invalidReviewCommentCount: assertNonNegativeInteger(
       metrics.invalidReviewCommentCount,
       'metrics.invalidReviewCommentCount',
@@ -101,6 +101,34 @@ function assertPrimitiveMetrics(
       'metrics.validReviewRequestIssueCount',
     ),
   };
+
+  assertPrimitiveMetricInvariants(primitiveMetrics);
+
+  return primitiveMetrics;
+}
+
+function assertPrimitiveMetricInvariants(
+  metrics: ReviewerSummaryMetrics,
+): void {
+  if (
+    metrics.reReviewRequestIssueCount
+    > metrics.validReviewRequestIssueCount
+  ) {
+    throw new Error(
+      'metrics.reReviewRequestIssueCount must not exceed '
+      + 'metrics.validReviewRequestIssueCount.',
+    );
+  }
+
+  const initialReviewRequestCount
+    = metrics.validReviewRequestIssueCount
+      - metrics.reReviewRequestIssueCount;
+
+  if (metrics.reviewBackedStarCount > initialReviewRequestCount) {
+    throw new Error(
+      'metrics.reviewBackedStarCount must not exceed initial review requests.',
+    );
+  }
 }
 
 function assertPositiveInteger(value: unknown, field: string): number {
