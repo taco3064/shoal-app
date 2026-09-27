@@ -9,6 +9,10 @@ import {
   createReviewerSummary,
   type ReviewerSummary,
 } from '~app/protocol/services/reviewer_summary_schema';
+import {
+  getInvalidFormalResultIncrement,
+  isJudgmentLifecycleValid,
+} from './review_lifecycle';
 import type {
   CanonicalThread,
   GitHubIssue,
@@ -28,6 +32,10 @@ export async function computeReviewerSummary(
   const validRequests = await collectValidRequests(input);
   const canonicalThreads = await collectCanonicalThreads(input, validRequests);
 
+  const currentInitialReviewThreads = canonicalThreads.filter(
+    hasCurrentRequest,
+  );
+
   const acceptedReReviewIssues = collectAcceptedReReviewIssues(
     validRequests,
     canonicalThreads,
@@ -37,11 +45,11 @@ export async function computeReviewerSummary(
     invalidReviewCommentCount: countInvalidFormalResults(canonicalThreads),
     reReviewRequestIssueCount: acceptedReReviewIssues.length,
     reviewBackedStarCount: countReviewBackedStars(
-      canonicalThreads,
+      currentInitialReviewThreads,
       currentPolicyCommit,
     ),
     validReviewRequestIssueCount:
-      canonicalThreads.length + acceptedReReviewIssues.length,
+      currentInitialReviewThreads.length + acceptedReReviewIssues.length,
   });
 }
 
@@ -96,47 +104,92 @@ async function collectCanonicalThreads(
 ): Promise<CanonicalThread[]> {
   const byTargetId = new Map<number, CanonicalThread>();
 
-  for (const request of validRequests) {
-    const admission = findAdmissionEvidence(input, request);
+  const validByIssueNumber = new Map(
+    validRequests.map((request) => [request.issue.number, request]),
+  );
 
-    const validJudgments = collectValidJudgments(
+  for (const issue of input.issues) {
+    const admission = findAdmissionEvidence(input, issue);
+
+    if (admission.kind !== 'valid') {
+      continue;
+    }
+
+    const currentRequest = validByIssueNumber.get(issue.number) ?? null;
+
+    if (
+      currentRequest
+      && currentRequest.target.id !== admission.value.targetRepositoryId
+    ) {
+      continue;
+    }
+
+    const target = currentRequest?.target
+      ?? await resolveAdmittedTarget(input, issue, admission.value);
+
+    const targetRepositoryId = admission.value.targetRepositoryId;
+
+    const reviewEvents = analyzeReviewThread(
+      issue,
+      input.reviewerNode,
+      targetRepositoryId,
+    );
+
+    upsertCanonicalThread(byTargetId, {
+      currentRequest,
+      evidence: 'admission',
+      invalidFormalResultCount: reviewEvents.invalidFormalResultCount,
+      issue,
+      lifecycleEvents: await collectLifecycleEvents(
+        input,
+        issue,
+        targetRepositoryId,
+      ),
+      target,
+      targetRepositoryId,
+      validJudgments: reviewEvents.validJudgments,
+    });
+  }
+
+  for (const request of validRequests) {
+    if (byTargetId.has(request.target.id)) {
+      continue;
+    }
+
+    const admission = findAdmissionEvidence(input, request.issue);
+
+    if (admission.kind !== 'none') {
+      continue;
+    }
+
+    const reviewEvents = analyzeReviewThread(
       request.issue,
       input.reviewerNode,
       request.target.id,
     );
 
-    if (admission.kind === 'blocked') {
-      continue;
-    }
-
-    const evidence = admission.kind === 'valid'
-      ? 'admission'
-      : findManualJudgmentEvidence(request, validJudgments);
+    const evidence = findManualJudgmentEvidence(
+      request,
+      reviewEvents.validJudgments,
+    );
 
     if (!evidence) {
       continue;
     }
 
-    const existing = byTargetId.get(request.target.id);
-
-    if (existing && existing.issue.number < request.issue.number) {
-      continue;
-    }
-
-    byTargetId.set(request.target.id, {
-      ...request,
+    upsertCanonicalThread(byTargetId, {
+      currentRequest: request,
       evidence,
-      invalidFormalResultCount: countInvalidFormalResultComments(
-        request.issue,
-        input.reviewerNode,
-        request.target.id,
-      ),
+      invalidFormalResultCount: reviewEvents.invalidFormalResultCount,
+      issue: request.issue,
       lifecycleEvents: await collectLifecycleEvents(
         input,
         request.issue,
         request.target.id,
       ),
-      validJudgments,
+      target: request.target,
+      targetRepositoryId: request.target.id,
+      validJudgments: reviewEvents.validJudgments,
     });
   }
 
@@ -165,7 +218,7 @@ function collectAcceptedReReviewIssues(
         event.requestIssueNumber,
       );
 
-      if (referencedRequest?.target.id === thread.target.id) {
+      if (referencedRequest?.target.id === thread.targetRepositoryId) {
         acceptedIssueNumbers.add(event.requestIssueNumber);
       }
     }
@@ -191,8 +244,10 @@ function countReviewBackedStars(
 
     return Boolean(
       latestJudgment
+      && thread.target
       && latestJudgment.verdict === 'PASS'
-      && latestJudgment.targetCommit === thread.target.currentDefaultBranchHead
+      && latestJudgment.targetCommit
+      === thread.target.currentDefaultBranchHead
       && latestJudgment.reviewPolicyCommit === currentPolicyCommit
       && thread.target.isStarredByReviewer,
     );
@@ -213,11 +268,11 @@ type AdmissionEvidence
 
 function findAdmissionEvidence(
   input: SummaryInput,
-  request: ValidRequest,
+  issue: GitHubIssue,
 ): AdmissionEvidence {
   const records: AdmissionRecord[] = [];
 
-  for (const comment of request.issue.comments) {
+  for (const comment of issue.comments) {
     if (comment.author.id !== input.reviewerNode.owner.id) {
       continue;
     }
@@ -249,20 +304,17 @@ function findAdmissionEvidence(
     return { kind: 'blocked' };
   }
 
-  const parsedRequest = parseRequestPayload(request.issue.body);
+  const parsedRequest = parseRequestPayload(issue.body);
 
   if (
-    !parsedRequest
-    || parsedRequest.repositoryName.toLowerCase()
+    parsedRequest
+    && parsedRequest.repositoryName.toLowerCase()
     !== first.repositoryName.toLowerCase()
   ) {
     return { kind: 'blocked' };
   }
 
-  if (
-    first.reviewerNodeId === input.reviewerNode.id
-    && first.targetRepositoryId === request.target.id
-  ) {
+  if (first.reviewerNodeId === input.reviewerNode.id) {
     return { kind: 'valid', value: first };
   }
 
@@ -290,9 +342,22 @@ async function collectLifecycleEvents(
   targetRepositoryId: number,
 ): Promise<LifecycleEvent[]> {
   const events: LifecycleEvent[] = [];
+  let hasUsableJudgment = false;
 
   for (const comment of issue.comments) {
     const parsed = parseProtocolComment(comment.body);
+
+    if (
+      parsed.kind === 'judgment'
+      && comment.author.id === input.reviewerNode.owner.id
+      && parsed.value.reviewerNodeId === input.reviewerNode.id
+      && parsed.value.targetRepositoryId === targetRepositoryId
+      && isJudgmentLifecycleValid(parsed.value, hasUsableJudgment)
+    ) {
+      hasUsableJudgment = true;
+
+      continue;
+    }
 
     if (parsed.kind !== 'lifecycle') {
       continue;
@@ -302,6 +367,10 @@ async function collectLifecycleEvents(
       parsed.value.reviewerNodeId !== input.reviewerNode.id
       || parsed.value.targetRepositoryId !== targetRepositoryId
     ) {
+      continue;
+    }
+
+    if (!hasUsableJudgment) {
       continue;
     }
 
@@ -325,62 +394,80 @@ async function collectLifecycleEvents(
   return events;
 }
 
-function collectValidJudgments(
+function analyzeReviewThread(
   issue: GitHubIssue,
   reviewerNode: ReviewerNode,
   targetRepositoryId: number,
-): JudgmentEvent[] {
-  return issue.comments.flatMap((comment) => {
-    const parsed = parseProtocolComment(comment.body);
+): { validJudgments: JudgmentEvent[]; invalidFormalResultCount: number } {
+  const validJudgments: JudgmentEvent[] = [];
+  let hasUsableJudgment = false;
+  let invalidFormalResultCount = 0;
 
-    if (
-      parsed.kind !== 'judgment'
-      || comment.author.id !== reviewerNode.owner.id
-    ) {
-      return [];
-    }
-
-    if (
-      parsed.value.reviewerNodeId !== reviewerNode.id
-      || parsed.value.targetRepositoryId !== targetRepositoryId
-    ) {
-      return [];
-    }
-
-    return [parsed.value];
-  });
-}
-
-function countInvalidFormalResultComments(
-  issue: GitHubIssue,
-  reviewerNode: ReviewerNode,
-  targetRepositoryId: number,
-): number {
-  if (issue.state !== 'closed') {
-    return 0;
-  }
-
-  return issue.comments.filter((comment) => {
+  for (const comment of issue.comments) {
     const parsed = parseProtocolComment(comment.body);
 
     if (parsed.kind === 'invalid-formal-result') {
-      return true;
+      invalidFormalResultCount += getInvalidFormalResultIncrement(issue);
+
+      continue;
     }
 
     if (parsed.kind !== 'judgment') {
-      return false;
+      continue;
     }
 
-    return (
+    if (
       comment.author.id !== reviewerNode.owner.id
       || parsed.value.reviewerNodeId !== reviewerNode.id
       || parsed.value.targetRepositoryId !== targetRepositoryId
-    );
-  }).length;
+      || !isJudgmentLifecycleValid(parsed.value, hasUsableJudgment)
+    ) {
+      invalidFormalResultCount += getInvalidFormalResultIncrement(issue);
+
+      continue;
+    }
+
+    validJudgments.push(parsed.value);
+    hasUsableJudgment = true;
+  }
+
+  return { invalidFormalResultCount, validJudgments };
 }
 
 function getLatestJudgment(judgments: JudgmentEvent[]): JudgmentEvent | null {
   return judgments.at(-1) ?? null;
+}
+
+async function resolveAdmittedTarget(
+  input: SummaryInput,
+  issue: GitHubIssue,
+  admission: AdmissionRecord,
+) {
+  const target = await input.resolvers.resolveTargetRepository(
+    issue.author.login,
+    admission.repositoryName,
+  );
+
+  return target?.id === admission.targetRepositoryId ? target : null;
+}
+
+function upsertCanonicalThread(
+  byTargetId: Map<number, CanonicalThread>,
+  thread: CanonicalThread,
+): void {
+  const existing = byTargetId.get(thread.targetRepositoryId);
+
+  if (existing && existing.issue.number < thread.issue.number) {
+    return;
+  }
+
+  byTargetId.set(thread.targetRepositoryId, thread);
+}
+
+function hasCurrentRequest(
+  thread: CanonicalThread,
+): thread is CanonicalThread & { currentRequest: ValidRequest } {
+  return Boolean(thread.currentRequest);
 }
 
 function isValidRequesterNode(
