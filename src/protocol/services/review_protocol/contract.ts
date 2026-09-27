@@ -1,0 +1,40 @@
+export const reviewProtocol = {
+  admission: {
+    marker: 'shoal-review-admission:v1',
+    requiredFields: ['reviewerNodeId', 'targetRepositoryId', 'repositoryName'],
+  },
+  event: {
+    judgmentTypes: ['REVIEWED', 'RE_REVIEWED', 'STAR_REVOKED', 'REVOKED_EXTERNALLY'],
+    lifecycleType: 'RE_REVIEW_REQUESTED',
+    marker: 'shoal-review-event:v1',
+    policyPath: 'README.md',
+    requiredJudgmentFields: [
+      'type',
+      'reviewerNodeId',
+      'targetRepositoryId',
+      'targetRepositoryFullName',
+      'targetDefaultBranch',
+      'targetCommit',
+      'reviewPolicyPath',
+      'reviewPolicyCommit',
+      'verdict',
+      'actualStarState',
+      'reviewedAt',
+    ],
+    requiredLifecycleFields: [
+      'type',
+      'reviewerNodeId',
+      'targetRepositoryId',
+      'requestIssueNumber',
+      'eligibilityTargetCommit',
+      'reviewPolicyCommit',
+      'reason',
+    ],
+  },
+  protocolVersion: '1',
+  request: {
+    emptyInvitation: '_No response_',
+    invitationHeading: 'Invitation message',
+    repositoryHeading: 'Repository name',
+  },
+} as const;
