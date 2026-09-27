@@ -28,6 +28,10 @@ export type GitHubUserResponse = {
   type: string;
 };
 
+export type GitHubAppResponse = {
+  slug: string;
+};
+
 export type GitHubClientOptions = {
   baseUrl?: string;
   fetch?: FetchLike;
@@ -47,4 +51,5 @@ export type CommentResponse = {
   body?: string | null;
   created_at: string;
   user: GitHubUserResponse;
+  performed_via_github_app?: GitHubAppResponse | null;
 };

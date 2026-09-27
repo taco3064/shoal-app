@@ -1,9 +1,11 @@
 import { reviewProtocol } from './contract';
 import type {
   AdmissionRecord,
+  AutomationProvenance,
   JudgmentEvent,
   JudgmentType,
   LifecycleEvent,
+  LifecycleType,
   ParsedProtocolComment,
   ReReviewReason,
   RequestPayload,
@@ -152,13 +154,15 @@ function parseAdmissionRecord(value: unknown): AdmissionRecord | null {
 }
 
 function parseLifecycleEvent(value: unknown): LifecycleEvent | null {
-  if (!isRecord(value) || value.type !== reviewProtocol.event.lifecycleType) {
+  if (!isRecord(value) || !isLifecycleType(value.type)) {
     return null;
   }
 
   if (!hasRequiredFields(value, reviewProtocol.event.requiredLifecycleFields)) {
     return null;
   }
+
+  const type = value.type;
 
   const {
     reviewerNodeId,
@@ -185,14 +189,19 @@ function parseLifecycleEvent(value: unknown): LifecycleEvent | null {
     return null;
   }
 
+  const automationProvenance = parseAutomationProvenance(
+    value.automationProvenance,
+  );
+
   return {
+    automationProvenance,
     eligibilityTargetCommit,
     reason,
     requestIssueNumber,
     reviewPolicyCommit,
     reviewerNodeId,
     targetRepositoryId,
-    type: reviewProtocol.event.lifecycleType,
+    type,
   };
 }
 
@@ -243,7 +252,11 @@ function parseJudgmentEvent(value: unknown): JudgmentEvent | null {
     return null;
   }
 
-  if (!isVerdict(verdict) || !rfc3339Pattern.test(String(reviewedAt))) {
+  if (
+    !isVerdict(verdict)
+    || !rfc3339Pattern.test(String(reviewedAt))
+    || !isJudgmentStarStateConsistent(type, verdict, actualStarState)
+  ) {
     return null;
   }
 
@@ -260,6 +273,31 @@ function parseJudgmentEvent(value: unknown): JudgmentEvent | null {
     type,
     verdict,
   };
+}
+
+function parseAutomationProvenance(
+  value: unknown,
+): AutomationProvenance | null {
+  if (value === undefined || value === null) {
+    return null;
+  }
+
+  if (!isRecord(value)) {
+    return null;
+  }
+
+  const { actorLogin, repositoryId, workflowPath, workflowCommit } = value;
+
+  if (
+    typeof actorLogin !== 'string'
+    || !isPositiveInteger(repositoryId)
+    || typeof workflowPath !== 'string'
+    || !isCommit(workflowCommit)
+  ) {
+    return null;
+  }
+
+  return { actorLogin, repositoryId, workflowCommit, workflowPath };
 }
 
 function hasRequiredFields(
@@ -291,6 +329,14 @@ function isJudgmentType(value: unknown): value is JudgmentType {
   );
 }
 
+function isLifecycleType(value: unknown): value is LifecycleType {
+  return (
+    value === reviewProtocol.event.lifecycleType
+    || value === 'STALE_DETECTED'
+    || value === 'ENDORSEMENT_DRIFT'
+  );
+}
+
 function isReReviewReason(value: unknown): value is ReReviewReason {
   return (
     value === 'TARGET_CHANGED'
@@ -303,4 +349,20 @@ function looksLikeFormalResult(value: string): boolean {
   return /REVIEWED|RE_REVIEWED|STAR_REVOKED|REVOKED_EXTERNALLY|"verdict"|Review Result:/u.test(
     value,
   );
+}
+
+function isJudgmentStarStateConsistent(
+  type: JudgmentType,
+  verdict: ReviewVerdict,
+  actualStarState: boolean,
+): boolean {
+  if (actualStarState !== (verdict === 'PASS')) {
+    return false;
+  }
+
+  if (type === 'STAR_REVOKED' || type === 'REVOKED_EXTERNALLY') {
+    return verdict === 'FAIL' && !actualStarState;
+  }
+
+  return true;
 }
