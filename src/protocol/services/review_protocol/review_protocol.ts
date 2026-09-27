@@ -1,4 +1,5 @@
 import { reviewProtocol } from './contract';
+import { isRfc3339DateTime } from './rfc3339';
 import type {
   AdmissionRecord,
   AutomationProvenance,
@@ -14,76 +15,86 @@ import type {
 const commitPattern = /^[0-9a-f]{40}$/;
 const repositoryNamePattern = /^[A-Za-z0-9_.-]+$/;
 const repositoryFullNamePattern = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
-const rfc3339Pattern = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$/;
 
 export function getProtocolVersion(): number {
   return Number(reviewProtocol.protocolVersion);
 }
 
 export function parseProtocolComment(body: string): ParsedProtocolComment {
-  const trimmed = body.trim();
+  const admissionEnvelope = parseMarkerJson(
+    body,
+    reviewProtocol.admission.marker,
+  );
 
-  if (trimmed.startsWith(reviewProtocol.admission.marker)) {
-    const parsed = parseMarkerJson(trimmed);
-    const admission = parsed ? parseAdmissionRecord(parsed) : null;
+  if (admissionEnvelope.kind === 'present') {
+    const admission = admissionEnvelope.parsed
+      ? parseAdmissionRecord(admissionEnvelope.parsed)
+      : null;
 
     if (admission) {
       return { kind: 'admission', value: admission };
     }
 
     return isFormalResultCandidate(
-      stripMarker(trimmed, reviewProtocol.admission.marker),
-      parsed,
+      admissionEnvelope.payloadText,
+      admissionEnvelope.parsed,
     )
       ? { kind: 'invalid-formal-result' }
       : { kind: 'none' };
   }
 
-  if (!trimmed.startsWith(reviewProtocol.event.marker)) {
-    return isFormalResultCandidate(trimmed)
+  const eventEnvelope = parseMarkerJson(body, reviewProtocol.event.marker);
+
+  if (eventEnvelope.kind !== 'present') {
+    return isFormalResultCandidate(getFormalResultCandidateBody(body))
       ? { kind: 'invalid-formal-result' }
       : { kind: 'none' };
   }
 
-  const parsed = parseMarkerJson(trimmed);
-
-  if (!parsed) {
-    return isFormalResultCandidate(
-      stripMarker(trimmed, reviewProtocol.event.marker),
-    )
+  if (!eventEnvelope.parsed) {
+    return isFormalResultCandidate(eventEnvelope.payloadText)
       ? { kind: 'invalid-formal-result' }
       : { kind: 'none' };
   }
 
-  const lifecycle = parseLifecycleEvent(parsed);
+  const lifecycle = parseLifecycleEvent(eventEnvelope.parsed);
 
   if (lifecycle) {
     return { kind: 'lifecycle', value: lifecycle };
   }
 
-  const judgment = parseJudgmentEvent(parsed);
+  const judgment = parseJudgmentEvent(eventEnvelope.parsed);
 
   if (judgment) {
     return { kind: 'judgment', value: judgment };
   }
 
-  return isJudgmentCandidateValue(parsed)
+  return isJudgmentCandidateValue(eventEnvelope.parsed)
     ? { kind: 'invalid-formal-result' }
     : { kind: 'none' };
 }
 
-function parseMarkerJson(body: string): unknown | null {
-  const [, ...rest] = body.split('\n');
-  const jsonText = rest.join('\n').trim();
+type MarkerJsonParse
+  = | { kind: 'absent' }
+    | { kind: 'present'; payloadText: string; parsed: unknown | null };
 
-  if (!jsonText) {
-    return null;
+function parseMarkerJson(body: string, marker: string): MarkerJsonParse {
+  const prefix = `${marker}\n`;
+
+  if (!body.startsWith(prefix)) {
+    return { kind: 'absent' };
+  }
+
+  const payloadText = body.slice(prefix.length).trim();
+
+  if (!payloadText) {
+    return { kind: 'present', payloadText, parsed: null };
   }
 
   try {
-    return JSON.parse(jsonText);
+    return { kind: 'present', payloadText, parsed: JSON.parse(payloadText) };
   } catch {
-    return null;
+    return { kind: 'present', payloadText, parsed: null };
   }
 }
 
@@ -308,14 +319,6 @@ function isRepositoryFullName(value: unknown): value is string {
   );
 }
 
-function isRfc3339DateTime(value: unknown): value is string {
-  return (
-    typeof value === 'string'
-    && rfc3339Pattern.test(value)
-    && !Number.isNaN(Date.parse(value))
-  );
-}
-
 function isVerdict(value: unknown): value is ReviewVerdict {
   return value === 'PASS' || value === 'FAIL';
 }
@@ -340,10 +343,6 @@ function isReReviewReason(value: unknown): value is ReReviewReason {
     || value === 'POLICY_CHANGED'
     || value === 'TARGET_AND_POLICY_CHANGED'
   );
-}
-
-function stripMarker(body: string, marker: string): string {
-  return body.slice(marker.length).trim();
 }
 
 function isFormalResultCandidate(body: string, parsed?: unknown): boolean {
@@ -403,6 +402,31 @@ function looksLikeStructuredFormalResultText(value: string): boolean {
       normalized,
     )
   );
+}
+
+function getFormalResultCandidateBody(body: string): string {
+  const trimmed = body.trim();
+
+  const markers = [
+    reviewProtocol.event.marker,
+    reviewProtocol.admission.marker,
+  ];
+
+  for (const marker of markers) {
+    if (trimmed.startsWith(marker)) {
+      return stripFirstLine(trimmed);
+    }
+  }
+
+  return trimmed;
+}
+
+function stripFirstLine(value: string): string {
+  const newlineIndex = value.indexOf('\n');
+
+  return newlineIndex === -1
+    ? ''
+    : value.slice(newlineIndex + 1).trim();
 }
 
 function isJudgmentStarStateConsistent(
