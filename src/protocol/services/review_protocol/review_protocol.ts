@@ -13,6 +13,7 @@ import type {
 
 const commitPattern = /^[0-9a-f]{40}$/;
 const repositoryNamePattern = /^[A-Za-z0-9_.-]+$/;
+const repositoryFullNamePattern = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
 const rfc3339Pattern = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$/;
 
 export function getProtocolVersion(): number {
@@ -201,15 +202,16 @@ function parseJudgmentEvent(value: unknown): JudgmentEvent | null {
   }
 
   if (
-    typeof targetRepositoryFullName !== 'string'
+    !isRepositoryFullName(targetRepositoryFullName)
     || typeof targetDefaultBranch !== 'string'
+    || targetDefaultBranch.trim() === ''
   ) {
     return null;
   }
 
   if (
     !isVerdict(verdict)
-    || !rfc3339Pattern.test(String(reviewedAt))
+    || !isRfc3339DateTime(reviewedAt)
     || !isJudgmentStarStateConsistent(type, verdict, actualStarState)
   ) {
     return null;
@@ -297,6 +299,21 @@ function isPositiveInteger(value: unknown): value is number {
 
 function isCommit(value: unknown): value is string {
   return typeof value === 'string' && commitPattern.test(value);
+}
+
+function isRepositoryFullName(value: unknown): value is string {
+  return (
+    typeof value === 'string'
+    && repositoryFullNamePattern.test(value)
+  );
+}
+
+function isRfc3339DateTime(value: unknown): value is string {
+  return (
+    typeof value === 'string'
+    && rfc3339Pattern.test(value)
+    && !Number.isNaN(Date.parse(value))
+  );
 }
 
 function isVerdict(value: unknown): value is ReviewVerdict {

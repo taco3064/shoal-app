@@ -249,6 +249,16 @@ function findAdmissionEvidence(
     return { kind: 'blocked' };
   }
 
+  const parsedRequest = parseRequestPayload(request.issue.body);
+
+  if (
+    !parsedRequest
+    || parsedRequest.repositoryName.toLowerCase()
+    !== first.repositoryName.toLowerCase()
+  ) {
+    return { kind: 'blocked' };
+  }
+
   if (
     first.reviewerNodeId === input.reviewerNode.id
     && first.targetRepositoryId === request.target.id
