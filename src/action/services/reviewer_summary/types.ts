@@ -77,9 +77,13 @@ export type ValidRequest = {
   target: TargetRepository;
 };
 
-export type CanonicalThread = ValidRequest & {
+export type CanonicalThread = {
   evidence: 'admission' | 'manual-judgment';
+  issue: GitHubIssue;
   lifecycleEvents: LifecycleEvent[];
+  target: TargetRepository | null;
+  targetRepositoryId: number;
+  currentRequest: ValidRequest | null;
   validJudgments: JudgmentEvent[];
   invalidFormalResultCount: number;
 };
