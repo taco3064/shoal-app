@@ -1,6 +1,7 @@
 import {
   parseProtocolComment,
   parseRequestPayload,
+  type AdmissionRecord,
   type JudgmentEvent,
   type LifecycleEvent,
 } from '~app/protocol/services/review_protocol';
@@ -96,7 +97,7 @@ async function collectCanonicalThreads(
   const byTargetId = new Map<number, CanonicalThread>();
 
   for (const request of validRequests) {
-    const admission = findValidAdmission(input, request);
+    const admission = findAdmissionEvidence(input, request);
 
     const validJudgments = collectValidJudgments(
       request.issue,
@@ -104,7 +105,11 @@ async function collectCanonicalThreads(
       request.target.id,
     );
 
-    const evidence = admission
+    if (admission.kind === 'blocked') {
+      continue;
+    }
+
+    const evidence = admission.kind === 'valid'
       ? 'admission'
       : findManualJudgmentEvidence(request, validJudgments);
 
@@ -156,7 +161,11 @@ function collectAcceptedReReviewIssues(
         continue;
       }
 
-      if (validByIssueNumber.has(event.requestIssueNumber)) {
+      const referencedRequest = validByIssueNumber.get(
+        event.requestIssueNumber,
+      );
+
+      if (referencedRequest?.target.id === thread.target.id) {
         acceptedIssueNumbers.add(event.requestIssueNumber);
       }
     }
@@ -197,7 +206,17 @@ function countInvalidFormalResults(threads: CanonicalThread[]): number {
   );
 }
 
-function findValidAdmission(input: SummaryInput, request: ValidRequest) {
+type AdmissionEvidence
+  = | { kind: 'none' }
+    | { kind: 'valid'; value: AdmissionRecord }
+    | { kind: 'blocked' };
+
+function findAdmissionEvidence(
+  input: SummaryInput,
+  request: ValidRequest,
+): AdmissionEvidence {
+  const records: AdmissionRecord[] = [];
+
   for (const comment of request.issue.comments) {
     if (comment.author.id !== input.reviewerNode.owner.id) {
       continue;
@@ -209,36 +228,41 @@ function findValidAdmission(input: SummaryInput, request: ValidRequest) {
       continue;
     }
 
-    if (
-      parsed.value.reviewerNodeId === input.reviewerNode.id
-      && parsed.value.targetRepositoryId === request.target.id
-      && parseRequestPayload(request.issue.body)?.repositoryName
-      === parsed.value.repositoryName
-    ) {
-      return parsed.value;
-    }
+    records.push(parsed.value);
   }
 
-  return null;
+  if (records.length === 0) {
+    return { kind: 'none' };
+  }
+
+  const [first] = records;
+
+  if (
+    records.some(
+      (record) =>
+        record.reviewerNodeId !== first.reviewerNodeId
+        || record.targetRepositoryId !== first.targetRepositoryId,
+    )
+  ) {
+    return { kind: 'blocked' };
+  }
+
+  if (
+    first.reviewerNodeId === input.reviewerNode.id
+    && first.targetRepositoryId === request.target.id
+  ) {
+    return { kind: 'valid', value: first };
+  }
+
+  return { kind: 'blocked' };
 }
 
 function findManualJudgmentEvidence(
   request: ValidRequest,
   judgments: JudgmentEvent[],
 ): 'manual-judgment' | null {
-  const parsedRequest = parseRequestPayload(request.issue.body);
-
-  if (!parsedRequest) {
-    return null;
-  }
-
-  const expectedFullName = `${request.issue.author.login}/${parsedRequest.repositoryName}`;
-
   return judgments.some(
-    (judgment) =>
-      judgment.targetRepositoryId === request.target.id
-      && judgment.targetRepositoryFullName.toLowerCase()
-      === expectedFullName.toLowerCase(),
+    (judgment) => judgment.targetRepositoryId === request.target.id,
   )
     ? 'manual-judgment'
     : null;
