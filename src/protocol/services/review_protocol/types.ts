@@ -87,4 +87,10 @@ export type ParsedProtocolComment
     | { kind: 'admission'; value: AdmissionRecord }
     | { kind: 'lifecycle'; value: LifecycleEvent }
     | { kind: 'judgment'; value: JudgmentEvent }
-    | { kind: 'invalid-formal-result' };
+    | {
+      kind: 'invalid-formal-result';
+      initialReviewEvidence: {
+        reviewerNodeId?: unknown;
+        targetRepositoryId?: unknown;
+      } | null;
+    };
