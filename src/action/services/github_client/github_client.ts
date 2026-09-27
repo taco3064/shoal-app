@@ -16,7 +16,9 @@ import type {
 } from './types';
 import {
   isCommentResponse,
+  isCommitResponse,
   isDirectFork,
+  isIssueListResponse,
   isIssueResponse,
   isRecord,
   isRepositoryResponse,
@@ -60,6 +62,7 @@ export class GitHubClient {
   ): Promise<GitHubIssue[]> {
     const issues = await this.paginate(
       `/repos/${repositoryFullName}/issues?state=all&per_page=100`,
+      isIssueListResponse,
     );
 
     const issueItems = issues.filter(isIssueResponse);
@@ -68,12 +71,13 @@ export class GitHubClient {
     for (const issue of issueItems) {
       const comments = await this.paginate(
         `/repos/${repositoryFullName}/issues/${issue.number}/comments?per_page=100`,
+        isCommentResponse,
       );
 
       result.push({
         author: toUser(issue.user),
         body: issue.body ?? '',
-        comments: comments.filter(isCommentResponse).map(toComment),
+        comments: comments.map(toComment),
         number: issue.number,
         state: issue.state === 'closed' ? 'closed' : 'open',
       });
@@ -149,7 +153,7 @@ export class GitHubClient {
         );
 
         const isStarredByReviewer = await this.isRepositoryStarredBy(
-          target.full_name,
+          target.id,
           options.reviewerLogin,
         );
 
@@ -180,9 +184,10 @@ export class GitHubClient {
 
     const repositories = await this.paginate(
       `/users/${author.login}/repos?type=owner&per_page=100`,
+      isRepositoryResponse,
     );
 
-    for (const item of repositories.filter(isRepositoryResponse)) {
+    for (const item of repositories) {
       if (!item.fork) {
         continue;
       }
@@ -246,11 +251,12 @@ export class GitHubClient {
 
     const commits = await this.paginate(
       `/repos/${fullName}/commits?path=${encodedPath}&per_page=1`,
+      isCommitResponse,
     );
 
     const first = commits[0];
 
-    if (!isRecord(first) || typeof first.sha !== 'string') {
+    if (!first) {
       throw new GitHubReadError(`No commit found for ${fullName}:${path}.`);
     }
 
@@ -289,23 +295,25 @@ export class GitHubClient {
   }
 
   async isRepositoryStarredBy(
-    fullName: string,
+    repositoryId: number,
     login: string,
   ): Promise<boolean> {
-    const stargazers = await this.paginate(
-      `/repos/${fullName}/stargazers?per_page=100`,
+    const starredRepositories = await this.paginate(
+      `/users/${encodeURIComponent(login)}/starred?per_page=100`,
+      isRepositoryResponse,
     );
 
-    return stargazers.some(
-      (stargazer) => isRecord(stargazer) && stargazer.login === login,
-    );
+    return starredRepositories.some((repository) => repository.id === repositoryId);
   }
 
-  async paginate(path: string): Promise<unknown[]> {
+  async paginate<T>(
+    path: string,
+    isItem: (value: unknown) => value is T,
+  ): Promise<T[]> {
     const firstUrl = new URL(`${this.baseUrl}${path}`);
 
     firstUrl.searchParams.set('per_page', '100');
-    const items: unknown[] = [];
+    const items: T[] = [];
     let nextUrl: string | null = firstUrl.toString();
 
     while (nextUrl) {
@@ -315,6 +323,14 @@ export class GitHubClient {
         throw new GitHubReadError(
           `GitHub paginated response for ${nextUrl} was not an array.`,
         );
+      }
+
+      for (const item of response.body) {
+        if (!isItem(item)) {
+          throw new GitHubReadError(
+            `GitHub paginated response for ${nextUrl} contained a malformed item.`,
+          );
+        }
       }
 
       items.push(...response.body);
