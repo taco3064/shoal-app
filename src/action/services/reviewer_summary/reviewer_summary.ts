@@ -152,6 +152,10 @@ function collectAcceptedReReviewIssues(
 
   for (const thread of canonicalThreads) {
     for (const event of thread.lifecycleEvents) {
+      if (event.type !== 'RE_REVIEW_REQUESTED') {
+        continue;
+      }
+
       if (validByIssueNumber.has(event.requestIssueNumber)) {
         acceptedIssueNumbers.add(event.requestIssueNumber);
       }
