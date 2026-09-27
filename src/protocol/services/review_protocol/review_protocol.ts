@@ -1,4 +1,5 @@
 import { reviewProtocol } from './contract';
+import { getRecognizableInitialReviewEvidence } from './initial_review_evidence';
 import { isRfc3339DateTime } from './rfc3339';
 import type {
   AdmissionRecord,
@@ -39,21 +40,26 @@ export function parseProtocolComment(body: string): ParsedProtocolComment {
       admissionEnvelope.payloadText,
       admissionEnvelope.parsed,
     )
-      ? { kind: 'invalid-formal-result' }
+      ? invalidFormalResult(
+          admissionEnvelope.payloadText,
+          admissionEnvelope.parsed,
+        )
       : { kind: 'none' };
   }
 
   const eventEnvelope = parseMarkerJson(body, reviewProtocol.event.marker);
 
   if (eventEnvelope.kind !== 'present') {
-    return isFormalResultCandidate(getFormalResultCandidateBody(body))
-      ? { kind: 'invalid-formal-result' }
+    const candidateBody = getFormalResultCandidateBody(body);
+
+    return isFormalResultCandidate(candidateBody)
+      ? invalidFormalResult(candidateBody)
       : { kind: 'none' };
   }
 
   if (!eventEnvelope.parsed) {
     return isFormalResultCandidate(eventEnvelope.payloadText)
-      ? { kind: 'invalid-formal-result' }
+      ? invalidFormalResult(eventEnvelope.payloadText)
       : { kind: 'none' };
   }
 
@@ -70,8 +76,21 @@ export function parseProtocolComment(body: string): ParsedProtocolComment {
   }
 
   return isJudgmentCandidateValue(eventEnvelope.parsed)
-    ? { kind: 'invalid-formal-result' }
+    ? invalidFormalResult(eventEnvelope.payloadText, eventEnvelope.parsed)
     : { kind: 'none' };
+}
+
+function invalidFormalResult(
+  payloadText: string,
+  parsed?: unknown,
+): ParsedProtocolComment {
+  return {
+    initialReviewEvidence: getRecognizableInitialReviewEvidence(
+      payloadText,
+      parsed,
+    ),
+    kind: 'invalid-formal-result',
+  };
 }
 
 type MarkerJsonParse

@@ -39,14 +39,14 @@ export function getInvalidFormalResultIncrement(issue: GitHubIssue): number {
 
 export function isJudgmentLifecycleValid(
   judgment: JudgmentEvent,
-  hasPriorFormalJudgmentEvidence: boolean,
+  hasPriorInitialReviewEvidence: boolean,
 ): boolean {
-  return hasPriorFormalJudgmentEvidence
+  return hasPriorInitialReviewEvidence
     ? judgment.type !== 'REVIEWED'
     : judgment.type === 'REVIEWED';
 }
 
-export function isPriorFormalJudgmentEvidence(
+export function isPriorInitialReviewEvidence(
   parsed: ParsedProtocolComment,
   comment: GitHubComment,
   reviewerNode: ReviewerNode,
@@ -57,10 +57,19 @@ export function isPriorFormalJudgmentEvidence(
   }
 
   if (parsed.kind === 'invalid-formal-result') {
-    return true;
+    const evidence = parsed.initialReviewEvidence;
+
+    return Boolean(
+      evidence
+      && (evidence.reviewerNodeId === undefined
+        || evidence.reviewerNodeId === reviewerNode.id)
+      && (evidence.targetRepositoryId === undefined
+        || evidence.targetRepositoryId === targetRepositoryId),
+    );
   }
 
   return parsed.kind === 'judgment'
+    && parsed.value.type === 'REVIEWED'
     && parsed.value.reviewerNodeId === reviewerNode.id
     && parsed.value.targetRepositoryId === targetRepositoryId;
 }

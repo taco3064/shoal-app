@@ -14,7 +14,7 @@ import {
   getCurrentAdmittedRequest,
   getInvalidFormalResultIncrement,
   isJudgmentLifecycleValid,
-  isPriorFormalJudgmentEvidence,
+  isPriorInitialReviewEvidence,
 } from './review_lifecycle';
 import type {
   CanonicalThread,
@@ -87,7 +87,7 @@ async function collectValidRequests(
       request.repositoryName,
     );
 
-    if (!target) {
+    if (!target || target.owner.id !== issue.author.id) {
       continue;
     }
 
@@ -324,18 +324,18 @@ async function collectLifecycleEvents(
   targetRepositoryId: number,
 ): Promise<LifecycleEvent[]> {
   const events: LifecycleEvent[] = [];
-  let hasPriorFormalJudgmentEvidence = false;
+  let hasPriorInitialReviewEvidence = false;
 
   for (const comment of issue.comments) {
     const parsed = parseProtocolComment(comment.body);
 
-    if (isPriorFormalJudgmentEvidence(
+    if (isPriorInitialReviewEvidence(
       parsed,
       comment,
       input.reviewerNode,
       targetRepositoryId,
     )) {
-      hasPriorFormalJudgmentEvidence = true;
+      hasPriorInitialReviewEvidence = true;
 
       continue;
     }
@@ -351,7 +351,7 @@ async function collectLifecycleEvents(
       continue;
     }
 
-    if (!hasPriorFormalJudgmentEvidence) {
+    if (!hasPriorInitialReviewEvidence) {
       continue;
     }
 
@@ -381,7 +381,7 @@ function analyzeReviewThread(
   targetRepositoryId: number,
 ): { validJudgments: JudgmentEvent[]; invalidFormalResultCount: number } {
   const validJudgments: JudgmentEvent[] = [];
-  let hasPriorFormalJudgmentEvidence = false;
+  let hasPriorInitialReviewEvidence = false;
   let invalidFormalResultCount = 0;
 
   for (const comment of issue.comments) {
@@ -390,7 +390,7 @@ function analyzeReviewThread(
     if (parsed.kind === 'invalid-formal-result') {
       invalidFormalResultCount += getInvalidFormalResultIncrement(issue);
 
-      hasPriorFormalJudgmentEvidence ||= isPriorFormalJudgmentEvidence(
+      hasPriorInitialReviewEvidence ||= isPriorInitialReviewEvidence(
         parsed,
         comment,
         reviewerNode,
@@ -406,10 +406,10 @@ function analyzeReviewThread(
 
     const lifecycleValid = isJudgmentLifecycleValid(
       parsed.value,
-      hasPriorFormalJudgmentEvidence,
+      hasPriorInitialReviewEvidence,
     );
 
-    hasPriorFormalJudgmentEvidence ||= isPriorFormalJudgmentEvidence(
+    hasPriorInitialReviewEvidence ||= isPriorInitialReviewEvidence(
       parsed,
       comment,
       reviewerNode,
