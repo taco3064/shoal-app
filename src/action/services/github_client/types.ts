@@ -22,6 +22,22 @@ export type RepositoryResponse = {
   default_branch: string;
 };
 
+export type WorkflowRunResponse = {
+  id: number;
+  run_attempt: number;
+  path: string;
+  head_sha: string;
+  created_at: string;
+  run_started_at?: string | null;
+  updated_at: string;
+  repository: {
+    id: number;
+  };
+  head_repository?: {
+    id: number;
+  } | null;
+};
+
 export type GitHubUserResponse = {
   id: number;
   login: string;

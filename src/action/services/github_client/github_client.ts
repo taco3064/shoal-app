@@ -6,15 +6,26 @@ import type {
   ReviewerNode,
   SummaryResolvers,
 } from '../reviewer_summary';
+import { reviewProtocol } from '~app/protocol/services/review_protocol';
+import type { AutomationProvenance } from '~app/protocol/services/review_protocol';
 import type {
-  CommentResponse,
   FetchLike,
   GitHubClientOptions,
-  GitHubAppResponse,
-  GitHubUserResponse,
-  IssueResponse,
   RepositoryResponse,
+  WorkflowRunResponse,
 } from './types';
+import {
+  isCommentResponse,
+  isDirectFork,
+  isIssueResponse,
+  isRecord,
+  isRepositoryResponse,
+  isWorkflowRunResponse,
+  parseNextLink,
+  toComment,
+  toRequesterNode,
+  toUser,
+} from './github_api_response';
 
 export class GitHubReadError extends Error {
   constructor(message: string) {
@@ -81,28 +92,36 @@ export class GitHubClient {
       resolveCurrentReviewPolicyCommit: () =>
         this.getLatestPathCommit(options.reviewerNodeFullName, 'README.md'),
       isAllowedLifecycleAutomation: async (comment, event, reviewerNode) => {
+        const provenance = event.automationProvenance;
+
         if (
-          comment.author.login !== 'github-actions[bot]'
-          || comment.author.type !== 'Bot'
-          || comment.performedViaGitHubApp?.slug !== 'github-actions'
-          || !event.automationProvenance
+          !provenance
+          || !isAllowedAutomationActor(comment)
+          || !reviewProtocol.event.automation.allowedWorkflowPaths.includes(
+            provenance.workflowPath,
+          )
         ) {
           return false;
         }
 
         if (
-          event.automationProvenance.actorLogin !== comment.author.login
-          || event.automationProvenance.repositoryId !== reviewerNode.id
-          || event.automationProvenance.workflowPath
-          !== '.github/workflows/reviewer-summary.yml'
+          provenance.actorLogin !== comment.author.login
+          || provenance.repositoryId !== reviewerNode.id
         ) {
           return false;
         }
 
-        return this.commitExists(
+        const workflowRun = await this.getWorkflowRun(
           reviewerNode.fullName,
-          event.automationProvenance.workflowCommit,
+          provenance.workflowRunId,
         );
+
+        return isWorkflowRunProvenance({
+          comment,
+          provenance,
+          reviewerNode,
+          workflowRun,
+        });
       },
       resolveRequesterNode: (author) =>
         this.resolveRequesterNode(
@@ -233,18 +252,19 @@ export class GitHubClient {
     return first.sha;
   }
 
-  async commitExists(fullName: string, sha: string): Promise<boolean> {
-    try {
-      await this.get(`/repos/${fullName}/commits/${sha}`);
+  async getWorkflowRun(
+    fullName: string,
+    runId: number,
+  ): Promise<WorkflowRunResponse> {
+    const value = await this.get(`/repos/${fullName}/actions/runs/${runId}`);
 
-      return true;
-    } catch (error) {
-      if (error instanceof GitHubReadError && error.message.includes('404')) {
-        return false;
-      }
-
-      throw error;
+    if (!isWorkflowRunResponse(value)) {
+      throw new GitHubReadError(
+        `GitHub workflow run response for ${fullName}#${runId} was malformed.`,
+      );
     }
+
+    return value;
   }
 
   async isRepositoryStarredBy(
@@ -318,120 +338,56 @@ export class GitHubClient {
   }
 }
 
-function parseNextLink(linkHeader: string | null): string | null {
-  if (!linkHeader) {
-    return null;
-  }
-
-  for (const part of linkHeader.split(',')) {
-    const match = part.match(/<([^>]+)>;\s*rel="next"/u);
-
-    if (match) {
-      return match[1];
-    }
-  }
-
-  return null;
+function isAllowedAutomationActor(comment: GitHubComment): boolean {
+  return reviewProtocol.event.automation.allowedActors.some(
+    (actor) =>
+      comment.author.login === actor.login
+      && comment.author.type === actor.type
+      && comment.performedViaGitHubApp?.slug === actor.appSlug,
+  );
 }
 
-function toComment(comment: CommentResponse): GitHubComment {
-  return {
-    author: toUser(comment.user),
-    body: comment.body ?? '',
-    createdAt: comment.created_at,
-    id: comment.id,
-    performedViaGitHubApp: toApp(comment.performed_via_github_app),
-  };
-}
+function isWorkflowRunProvenance(options: {
+  comment: GitHubComment;
+  provenance: AutomationProvenance;
+  reviewerNode: ReviewerNode;
+  workflowRun: WorkflowRunResponse;
+}): boolean {
+  const { comment, provenance, reviewerNode, workflowRun } = options;
 
-function toRequesterNode(repository: RepositoryResponse): RequesterNode {
-  return {
-    id: repository.id,
-    isFork: repository.fork,
-    owner: toUser(repository.owner),
-    parentRepositoryId: repository.parent?.id ?? 0,
-  };
-}
-
-function toUser(user: GitHubUserResponse): GitHubUser {
-  return {
-    id: user.id,
-    login: user.login,
-    type: user.type,
-  };
-}
-
-function toApp(app: GitHubAppResponse | null | undefined) {
-  if (!app) {
-    return null;
-  }
-
-  return { slug: app.slug };
-}
-
-function isDirectFork(
-  repository: RepositoryResponse | null,
-  ownerId: number,
-  networkRootRepositoryId: number,
-): repository is RepositoryResponse {
   return Boolean(
-    repository
-    && repository.fork
-    && repository.owner.type === 'User'
-    && repository.owner.id === ownerId
-    && repository.parent?.id === networkRootRepositoryId,
-  );
-}
-
-function isIssueResponse(value: unknown): value is IssueResponse {
-  return (
-    isRecord(value)
-    && !('pull_request' in value)
-    && typeof value.number === 'number'
-    && typeof value.state === 'string'
-    && isUserResponse(value.user)
-  );
-}
-
-function isCommentResponse(value: unknown): value is CommentResponse {
-  return (
-    isRecord(value)
-    && typeof value.id === 'number'
-    && typeof value.created_at === 'string'
-    && isUserResponse(value.user)
+    workflowRun.id === provenance.workflowRunId
+    && workflowRun.run_attempt === provenance.workflowRunAttempt
+    && workflowRun.path === provenance.workflowPath
+    && workflowRun.head_sha === provenance.workflowCommit
+    && workflowRun.repository.id === reviewerNode.id
     && (
-      value.performed_via_github_app === undefined
-      || value.performed_via_github_app === null
-      || isGitHubAppResponse(value.performed_via_github_app)
+      !workflowRun.head_repository
+      || workflowRun.head_repository.id === reviewerNode.id
     )
+    && isCommentWithinWorkflowRun(comment.createdAt, workflowRun),
   );
 }
 
-function isRepositoryResponse(value: unknown): value is RepositoryResponse {
-  return (
-    isRecord(value)
-    && typeof value.id === 'number'
-    && typeof value.full_name === 'string'
-    && typeof value.name === 'string'
-    && typeof value.fork === 'boolean'
-    && typeof value.default_branch === 'string'
-    && isUserResponse(value.owner)
+function isCommentWithinWorkflowRun(
+  commentCreatedAt: string,
+  workflowRun: WorkflowRunResponse,
+): boolean {
+  const commentTime = Date.parse(commentCreatedAt);
+
+  const startedAt = Date.parse(
+    workflowRun.run_started_at ?? workflowRun.created_at,
   );
-}
 
-function isUserResponse(value: unknown): value is GitHubUserResponse {
-  return (
-    isRecord(value)
-    && typeof value.id === 'number'
-    && typeof value.login === 'string'
-    && typeof value.type === 'string'
-  );
-}
+  const updatedAt = Date.parse(workflowRun.updated_at);
 
-function isGitHubAppResponse(value: unknown): value is GitHubAppResponse {
-  return isRecord(value) && typeof value.slug === 'string';
-}
+  if (
+    Number.isNaN(commentTime)
+    || Number.isNaN(startedAt)
+    || Number.isNaN(updatedAt)
+  ) {
+    return false;
+  }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
+  return commentTime >= startedAt && commentTime <= updatedAt;
 }
