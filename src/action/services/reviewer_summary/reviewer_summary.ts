@@ -79,6 +79,10 @@ async function collectValidRequests(
       continue;
     }
 
+    if (target.owner.id === input.reviewerNode.owner.id) {
+      continue;
+    }
+
     validRequests.push({ issue, target });
   }
 
@@ -120,6 +124,7 @@ async function collectCanonicalThreads(
       invalidFormalResultCount: countInvalidFormalResultComments(
         request.issue,
         input.reviewerNode,
+        request.target.id,
       ),
       lifecycleEvents: await collectLifecycleEvents(
         input,
@@ -305,6 +310,7 @@ function collectValidJudgments(
 function countInvalidFormalResultComments(
   issue: GitHubIssue,
   reviewerNode: ReviewerNode,
+  targetRepositoryId: number,
 ): number {
   if (issue.state !== 'closed') {
     return 0;
@@ -313,9 +319,18 @@ function countInvalidFormalResultComments(
   return issue.comments.filter((comment) => {
     const parsed = parseProtocolComment(comment.body);
 
+    if (parsed.kind === 'invalid-formal-result') {
+      return true;
+    }
+
+    if (parsed.kind !== 'judgment') {
+      return false;
+    }
+
     return (
-      parsed.kind === 'invalid-formal-result'
-      && comment.author.id === reviewerNode.owner.id
+      comment.author.id !== reviewerNode.owner.id
+      || parsed.value.reviewerNodeId !== reviewerNode.id
+      || parsed.value.targetRepositoryId !== targetRepositoryId
     );
   }).length;
 }

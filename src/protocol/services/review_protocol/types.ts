@@ -6,6 +6,15 @@ export type ReviewProtocolContract = {
     emptyInvitation: string;
   };
   event: {
+    automation: {
+      allowedActors: Array<{
+        login: string;
+        type: string;
+        appSlug: string;
+      }>;
+      allowedWorkflowPaths: string[];
+      requiredProvenanceFields: string[];
+    };
     marker: string;
     policyPath: string;
     lifecycleType: string;
@@ -44,6 +53,8 @@ export type AutomationProvenance = {
   repositoryId: number;
   workflowPath: string;
   workflowCommit: string;
+  workflowRunId: number;
+  workflowRunAttempt: number;
 };
 
 export type LifecycleEvent = {

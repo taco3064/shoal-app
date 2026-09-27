@@ -1,3 +1,4 @@
+export { reviewProtocol } from './contract';
 export {
   getProtocolVersion,
   parseProtocolComment,
@@ -5,6 +6,7 @@ export {
 } from './review_protocol';
 export type {
   AdmissionRecord,
+  AutomationProvenance,
   JudgmentEvent,
   JudgmentType,
   LifecycleEvent,

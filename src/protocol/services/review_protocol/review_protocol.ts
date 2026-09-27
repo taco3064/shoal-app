@@ -88,7 +88,9 @@ export function parseProtocolComment(body: string): ParsedProtocolComment {
   }
 
   if (!trimmed.startsWith(reviewProtocol.event.marker)) {
-    return { kind: 'none' };
+    return looksLikeFormalResult(trimmed)
+      ? { kind: 'invalid-formal-result' }
+      : { kind: 'none' };
   }
 
   const parsed = parseMarkerJson(trimmed);
@@ -286,18 +288,43 @@ function parseAutomationProvenance(
     return null;
   }
 
-  const { actorLogin, repositoryId, workflowPath, workflowCommit } = value;
+  if (
+    !hasRequiredFields(
+      value,
+      reviewProtocol.event.automation.requiredProvenanceFields,
+    )
+  ) {
+    return null;
+  }
+
+  const {
+    actorLogin,
+    repositoryId,
+    workflowPath,
+    workflowCommit,
+    workflowRunAttempt,
+    workflowRunId,
+  } = value;
 
   if (
     typeof actorLogin !== 'string'
     || !isPositiveInteger(repositoryId)
     || typeof workflowPath !== 'string'
     || !isCommit(workflowCommit)
+    || !isPositiveInteger(workflowRunId)
+    || !isPositiveInteger(workflowRunAttempt)
   ) {
     return null;
   }
 
-  return { actorLogin, repositoryId, workflowCommit, workflowPath };
+  return {
+    actorLogin,
+    repositoryId,
+    workflowCommit,
+    workflowPath,
+    workflowRunAttempt,
+    workflowRunId,
+  };
 }
 
 function hasRequiredFields(
