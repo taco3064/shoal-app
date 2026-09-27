@@ -73,10 +73,19 @@ export function isDirectFork(
 
 export function isIssueResponse(value: unknown): value is IssueResponse {
   return (
-    isRecord(value)
+    isIssueListResponse(value)
     && !('pull_request' in value)
-    && typeof value.number === 'number'
-    && typeof value.state === 'string'
+  );
+}
+
+export function isIssueListResponse(value: unknown): value is IssueResponse {
+  return (
+    isRecord(value)
+    && Number.isSafeInteger(value.number)
+    && (value.number as number) > 0
+    && (value.state === 'open' || value.state === 'closed')
+    && (value.body === undefined || value.body === null || typeof value.body === 'string')
+    && (!('pull_request' in value) || isRecord(value.pull_request))
     && isUserResponse(value.user)
   );
 }
@@ -84,7 +93,9 @@ export function isIssueResponse(value: unknown): value is IssueResponse {
 export function isCommentResponse(value: unknown): value is CommentResponse {
   return (
     isRecord(value)
-    && typeof value.id === 'number'
+    && Number.isSafeInteger(value.id)
+    && (value.id as number) > 0
+    && (value.body === undefined || value.body === null || typeof value.body === 'string')
     && typeof value.created_at === 'string'
     && isUserResponse(value.user)
     && isOptionalGitHubApp(value.performed_via_github_app)
@@ -96,13 +107,20 @@ export function isRepositoryResponse(
 ): value is RepositoryResponse {
   return (
     isRecord(value)
-    && typeof value.id === 'number'
+    && Number.isSafeInteger(value.id)
+    && (value.id as number) > 0
     && typeof value.full_name === 'string'
+    && value.full_name.length > 0
     && typeof value.name === 'string'
+    && value.name.length > 0
     && typeof value.fork === 'boolean'
     && typeof value.default_branch === 'string'
     && isUserResponse(value.owner)
   );
+}
+
+export function isCommitResponse(value: unknown): value is { sha: string } {
+  return isRecord(value) && typeof value.sha === 'string' && value.sha.length > 0;
 }
 
 export function isWorkflowRunResponse(
