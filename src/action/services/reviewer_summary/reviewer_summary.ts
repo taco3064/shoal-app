@@ -273,6 +273,10 @@ function findManualJudgmentEvidence(
   request: ValidRequest,
   judgments: JudgmentEvent[],
 ): 'manual-judgment' | null {
+  if (request.target.owner.id !== request.issue.author.id) {
+    return null;
+  }
+
   return judgments.some(
     (judgment) => judgment.targetRepositoryId === request.target.id,
   )
