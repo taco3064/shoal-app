@@ -111,9 +111,10 @@ export class GitHubClient {
           return false;
         }
 
-        const workflowRun = await this.getWorkflowRun(
+        const workflowRun = await this.getWorkflowRunAttempt(
           reviewerNode.fullName,
           provenance.workflowRunId,
+          provenance.workflowRunAttempt,
         );
 
         return isWorkflowRunProvenance({
@@ -252,15 +253,19 @@ export class GitHubClient {
     return first.sha;
   }
 
-  async getWorkflowRun(
+  async getWorkflowRunAttempt(
     fullName: string,
     runId: number,
+    attemptNumber: number,
   ): Promise<WorkflowRunResponse> {
-    const value = await this.get(`/repos/${fullName}/actions/runs/${runId}`);
+    const value = await this.get(
+      `/repos/${fullName}/actions/runs/${runId}/attempts/${attemptNumber}`,
+    );
 
     if (!isWorkflowRunResponse(value)) {
       throw new GitHubReadError(
-        `GitHub workflow run response for ${fullName}#${runId} was malformed.`,
+        `GitHub workflow run attempt response for ${fullName}#${runId}.`
+        + `${attemptNumber} was malformed.`,
       );
     }
 
