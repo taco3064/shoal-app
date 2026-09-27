@@ -7,8 +7,8 @@
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "outDir": "dist/action",
-    "rootDir": "src",
+    "rootDir": ".",
     "noEmit": false
   },
-  "include": ["src/action/**/*", "src/protocol/**/*"]
+  "include": ["protocol/review-v1.json", "src/action/**/*", "src/protocol/**/*"]
 }

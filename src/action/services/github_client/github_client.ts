@@ -10,6 +10,7 @@ import type {
   CommentResponse,
   FetchLike,
   GitHubClientOptions,
+  GitHubAppResponse,
   GitHubUserResponse,
   IssueResponse,
   RepositoryResponse,
@@ -79,6 +80,30 @@ export class GitHubClient {
     return {
       resolveCurrentReviewPolicyCommit: () =>
         this.getLatestPathCommit(options.reviewerNodeFullName, 'README.md'),
+      isAllowedLifecycleAutomation: async (comment, event, reviewerNode) => {
+        if (
+          comment.author.login !== 'github-actions[bot]'
+          || comment.author.type !== 'Bot'
+          || comment.performedViaGitHubApp?.slug !== 'github-actions'
+          || !event.automationProvenance
+        ) {
+          return false;
+        }
+
+        if (
+          event.automationProvenance.actorLogin !== comment.author.login
+          || event.automationProvenance.repositoryId !== reviewerNode.id
+          || event.automationProvenance.workflowPath
+          !== '.github/workflows/reviewer-summary.yml'
+        ) {
+          return false;
+        }
+
+        return this.commitExists(
+          reviewerNode.fullName,
+          event.automationProvenance.workflowCommit,
+        );
+      },
       resolveRequesterNode: (author) =>
         this.resolveRequesterNode(
           author,
@@ -208,6 +233,20 @@ export class GitHubClient {
     return first.sha;
   }
 
+  async commitExists(fullName: string, sha: string): Promise<boolean> {
+    try {
+      await this.get(`/repos/${fullName}/commits/${sha}`);
+
+      return true;
+    } catch (error) {
+      if (error instanceof GitHubReadError && error.message.includes('404')) {
+        return false;
+      }
+
+      throw error;
+    }
+  }
+
   async isRepositoryStarredBy(
     fullName: string,
     login: string,
@@ -301,6 +340,7 @@ function toComment(comment: CommentResponse): GitHubComment {
     body: comment.body ?? '',
     createdAt: comment.created_at,
     id: comment.id,
+    performedViaGitHubApp: toApp(comment.performed_via_github_app),
   };
 }
 
@@ -319,6 +359,14 @@ function toUser(user: GitHubUserResponse): GitHubUser {
     login: user.login,
     type: user.type,
   };
+}
+
+function toApp(app: GitHubAppResponse | null | undefined) {
+  if (!app) {
+    return null;
+  }
+
+  return { slug: app.slug };
 }
 
 function isDirectFork(
@@ -351,6 +399,11 @@ function isCommentResponse(value: unknown): value is CommentResponse {
     && typeof value.id === 'number'
     && typeof value.created_at === 'string'
     && isUserResponse(value.user)
+    && (
+      value.performed_via_github_app === undefined
+      || value.performed_via_github_app === null
+      || isGitHubAppResponse(value.performed_via_github_app)
+    )
   );
 }
 
@@ -373,6 +426,10 @@ function isUserResponse(value: unknown): value is GitHubUserResponse {
     && typeof value.login === 'string'
     && typeof value.type === 'string'
   );
+}
+
+function isGitHubAppResponse(value: unknown): value is GitHubAppResponse {
+  return isRecord(value) && typeof value.slug === 'string';
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

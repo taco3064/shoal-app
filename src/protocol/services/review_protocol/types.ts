@@ -1,4 +1,23 @@
-type ReviewProtocol = typeof import('./contract').reviewProtocol;
+export type ReviewProtocolContract = {
+  protocolVersion: string;
+  request: {
+    repositoryHeading: string;
+    invitationHeading: string;
+    emptyInvitation: string;
+  };
+  event: {
+    marker: string;
+    policyPath: string;
+    lifecycleType: string;
+    judgmentTypes: JudgmentType[];
+    requiredLifecycleFields: string[];
+    requiredJudgmentFields: string[];
+  };
+  admission: {
+    marker: string;
+    requiredFields: string[];
+  };
+};
 
 export type RequestPayload = {
   repositoryName: string;
@@ -17,14 +36,25 @@ export type ReviewVerdict = 'PASS' | 'FAIL';
 export type JudgmentType
   = 'REVIEWED' | 'RE_REVIEWED' | 'STAR_REVOKED' | 'REVOKED_EXTERNALLY';
 
+export type LifecycleType
+  = 'RE_REVIEW_REQUESTED' | 'STALE_DETECTED' | 'ENDORSEMENT_DRIFT';
+
+export type AutomationProvenance = {
+  actorLogin: string;
+  repositoryId: number;
+  workflowPath: string;
+  workflowCommit: string;
+};
+
 export type LifecycleEvent = {
-  type: ReviewProtocol['event']['lifecycleType'];
+  type: LifecycleType;
   reviewerNodeId: number;
   targetRepositoryId: number;
   requestIssueNumber: number;
   eligibilityTargetCommit: string;
   reviewPolicyCommit: string;
   reason: ReReviewReason;
+  automationProvenance: AutomationProvenance | null;
 };
 
 export type JudgmentEvent = {
@@ -34,7 +64,7 @@ export type JudgmentEvent = {
   targetRepositoryFullName: string;
   targetDefaultBranch: string;
   targetCommit: string;
-  reviewPolicyPath: ReviewProtocol['event']['policyPath'];
+  reviewPolicyPath: string;
   reviewPolicyCommit: string;
   verdict: ReviewVerdict;
   actualStarState: boolean;

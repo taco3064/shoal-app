@@ -9,11 +9,16 @@ export type GitHubUser = {
   type: string;
 };
 
+export type GitHubApp = {
+  slug: string;
+};
+
 export type GitHubComment = {
   id: number;
   body: string;
   createdAt: string;
   author: GitHubUser;
+  performedViaGitHubApp: GitHubApp | null;
 };
 
 export type GitHubIssue = {
@@ -53,6 +58,11 @@ export type SummaryResolvers = {
     repositoryName: string,
   ) => Promise<TargetRepository | null>;
   resolveCurrentReviewPolicyCommit: () => Promise<string>;
+  isAllowedLifecycleAutomation: (
+    comment: GitHubComment,
+    event: LifecycleEvent,
+    reviewerNode: ReviewerNode,
+  ) => Promise<boolean>;
 };
 
 export type SummaryInput = {
@@ -68,7 +78,7 @@ export type ValidRequest = {
 };
 
 export type CanonicalThread = ValidRequest & {
-  admissionTargetRepositoryId: number;
+  evidence: 'admission' | 'manual-judgment';
   lifecycleEvents: LifecycleEvent[];
   validJudgments: JudgmentEvent[];
   invalidFormalResultCount: number;

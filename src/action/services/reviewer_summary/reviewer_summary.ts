@@ -25,7 +25,7 @@ export async function computeReviewerSummary(
     = await input.resolvers.resolveCurrentReviewPolicyCommit();
 
   const validRequests = await collectValidRequests(input);
-  const canonicalThreads = collectCanonicalThreads(input, validRequests);
+  const canonicalThreads = await collectCanonicalThreads(input, validRequests);
 
   const acceptedReReviewIssues = collectAcceptedReReviewIssues(
     validRequests,
@@ -85,16 +85,26 @@ async function collectValidRequests(
   return validRequests;
 }
 
-function collectCanonicalThreads(
+async function collectCanonicalThreads(
   input: SummaryInput,
   validRequests: ValidRequest[],
-): CanonicalThread[] {
+): Promise<CanonicalThread[]> {
   const byTargetId = new Map<number, CanonicalThread>();
 
   for (const request of validRequests) {
     const admission = findValidAdmission(input, request);
 
-    if (!admission) {
+    const validJudgments = collectValidJudgments(
+      request.issue,
+      input.reviewerNode,
+      request.target.id,
+    );
+
+    const evidence = admission
+      ? 'admission'
+      : findManualJudgmentEvidence(request, validJudgments);
+
+    if (!evidence) {
       continue;
     }
 
@@ -106,21 +116,17 @@ function collectCanonicalThreads(
 
     byTargetId.set(request.target.id, {
       ...request,
-      admissionTargetRepositoryId: admission.targetRepositoryId,
+      evidence,
       invalidFormalResultCount: countInvalidFormalResultComments(
         request.issue,
         input.reviewerNode,
       ),
-      lifecycleEvents: collectLifecycleEvents(
+      lifecycleEvents: await collectLifecycleEvents(
+        input,
         request.issue,
-        input.reviewerNode,
         request.target.id,
       ),
-      validJudgments: collectValidJudgments(
-        request.issue,
-        input.reviewerNode,
-        request.target.id,
-      ),
+      validJudgments,
     });
   }
 
@@ -207,30 +213,67 @@ function findValidAdmission(input: SummaryInput, request: ValidRequest) {
   return null;
 }
 
-function collectLifecycleEvents(
+function findManualJudgmentEvidence(
+  request: ValidRequest,
+  judgments: JudgmentEvent[],
+): 'manual-judgment' | null {
+  const parsedRequest = parseRequestPayload(request.issue.body);
+
+  if (!parsedRequest) {
+    return null;
+  }
+
+  const expectedFullName = `${request.issue.author.login}/${parsedRequest.repositoryName}`;
+
+  return judgments.some(
+    (judgment) =>
+      judgment.targetRepositoryId === request.target.id
+      && judgment.targetRepositoryFullName.toLowerCase()
+      === expectedFullName.toLowerCase(),
+  )
+    ? 'manual-judgment'
+    : null;
+}
+
+async function collectLifecycleEvents(
+  input: SummaryInput,
   issue: GitHubIssue,
-  reviewerNode: ReviewerNode,
   targetRepositoryId: number,
-): LifecycleEvent[] {
-  return issue.comments.flatMap((comment) => {
+): Promise<LifecycleEvent[]> {
+  const events: LifecycleEvent[] = [];
+
+  for (const comment of issue.comments) {
     const parsed = parseProtocolComment(comment.body);
 
-    if (
-      parsed.kind !== 'lifecycle'
-      || comment.author.id !== reviewerNode.owner.id
-    ) {
-      return [];
+    if (parsed.kind !== 'lifecycle') {
+      continue;
     }
 
     if (
-      parsed.value.reviewerNodeId !== reviewerNode.id
+      parsed.value.reviewerNodeId !== input.reviewerNode.id
       || parsed.value.targetRepositoryId !== targetRepositoryId
     ) {
-      return [];
+      continue;
     }
 
-    return [parsed.value];
-  });
+    if (comment.author.id === input.reviewerNode.owner.id) {
+      events.push(parsed.value);
+
+      continue;
+    }
+
+    if (
+      await input.resolvers.isAllowedLifecycleAutomation(
+        comment,
+        parsed.value,
+        input.reviewerNode,
+      )
+    ) {
+      events.push(parsed.value);
+    }
+  }
+
+  return events;
 }
 
 function collectValidJudgments(
