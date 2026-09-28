@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { cp, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
-import { dirname, extname, join, relative, resolve, sep } from 'node:path';
+import { dirname, join, relative, resolve, sep } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
@@ -9,54 +9,7 @@ const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const buildRoot = join(repositoryRoot, 'dist', 'action');
 const packageRoot = join(repositoryRoot, 'dist', 'action-package');
 
-const loaderSource = `import { existsSync } from 'node:fs';
-import { dirname, extname, resolve as resolvePath } from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
-
-const packageRoot = dirname(fileURLToPath(import.meta.url));
-
-export async function resolve(specifier, context, nextResolve) {
-  if (specifier.startsWith('~app/')) {
-    const resolved = resolvePackageFile(
-      resolvePath(packageRoot, 'src', specifier.slice('~app/'.length)),
-    );
-    if (resolved) return { shortCircuit: true, url: resolved };
-  }
-
-  if (specifier.startsWith('~protocol/')) {
-    const resolved = resolvePackageFile(
-      resolvePath(packageRoot, 'protocol', specifier.slice('~protocol/'.length)),
-    );
-    if (resolved) return { shortCircuit: true, url: resolved };
-  }
-
-  if (
-    (specifier.startsWith('./') || specifier.startsWith('../'))
-    && context.parentURL?.startsWith('file:')
-  ) {
-    const resolved = resolvePackageFile(
-      fileURLToPath(new URL(specifier, context.parentURL)),
-    );
-    if (resolved) return { shortCircuit: true, url: resolved };
-  }
-
-  return nextResolve(specifier, context);
-}
-
-function resolvePackageFile(basePath) {
-  const candidates = extname(basePath)
-    ? [basePath]
-    : [\`${basePath}.js\`, resolvePath(basePath, 'index.js')];
-
-  for (const candidate of candidates) {
-    if (existsSync(candidate)) return pathToFileURL(candidate).href;
-  }
-
-  return null;
-}
-`;
-
-const mainSource = `import { register } from 'node:module';
+const loaderSource = await readFile(\n  join(repositoryRoot, 'scripts', 'action-runtime', 'loader.mjs'),\n  'utf8',\n);\n\nconst mainSource = `import { register } from 'node:module';
 import { resolve } from 'node:path';
 import { writeFile } from 'node:fs/promises';
 
