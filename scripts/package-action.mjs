@@ -46,7 +46,7 @@ export async function resolve(specifier, context, nextResolve) {
 function resolvePackageFile(basePath) {
   const candidates = extname(basePath)
     ? [basePath]
-    : [`${basePath}.js`, resolvePath(basePath, 'index.js')];
+    : [\`${basePath}.js\`, resolvePath(basePath, 'index.js')];
 
   for (const candidate of candidates) {
     if (existsSync(candidate)) return pathToFileURL(candidate).href;
@@ -91,34 +91,35 @@ try {
   const workspace = process.env.GITHUB_WORKSPACE || process.cwd();
   const outputPath = resolve(workspace, result.filename);
   await writeFile(outputPath, result.text, 'utf8');
-  console.log(`Reviewer Summary written to ${outputPath}.`);
+  console.log(\`Reviewer Summary written to ${outputPath}.\`);
 } catch (error) {
   const message = error instanceof Error ? error.message : String(error);
-  console.error(`Shoal Reviewer Summary failed: ${message}`);
+  console.error(\`Shoal Reviewer Summary failed: ${message}\`);
   process.exitCode = 1;
 }
 
 function input(name) {
-  return (process.env[`INPUT_${name.toUpperCase()}`] || '').trim();
+  return (process.env[\`INPUT_${name.toUpperCase()}\`] || '').trim();
 }
 
 function requiredInput(name) {
   const value = input(name);
-  if (!value) throw new Error(`Missing required Action input: ${name}.`);
+  if (!value) throw new Error(\`Missing required Action input: ${name}.\`);
   return value;
 }
 
 function parsePositiveInteger(value, name) {
   if (!/^[1-9]\\d*$/u.test(value)) {
-    throw new Error(`Action input ${name} must be a positive integer.`);
+    throw new Error(\`Action input ${name} must be a positive integer.\`);
   }
   const parsed = Number(value);
   if (!Number.isSafeInteger(parsed)) {
-    throw new Error(`Action input ${name} exceeds the safe integer range.`);
+    throw new Error(\`Action input ${name} exceeds the safe integer range.\`);
   }
   return parsed;
 }
 `;
+
 
 await rm(buildRoot, { force: true, recursive: true });
 await rm(packageRoot, { force: true, recursive: true });
