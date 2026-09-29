@@ -28,9 +28,9 @@ const skipPublicContent = process.env.SHOAL_PUBLIC_CONTENT_FETCH === "skip";
 const [policyMarkdown, profile] = skipPublicContent
   ? [null, null]
   : await Promise.all([
-      policyContent(reviewer.repository, reviewer.policyUrl),
-      publicProfile(reviewer.username),
-    ]);
+    policyContent(reviewer.repository, reviewer.policyUrl),
+    publicProfile(reviewer.username),
+  ]);
 const metrics =
   selected.status === "unavailable" ? null : selected.summary.metrics;
 const derived = metrics ? derivedMetrics(metrics) : null;

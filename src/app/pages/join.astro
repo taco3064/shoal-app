@@ -318,42 +318,52 @@ const description =
 </BaseLayout>
 
 <script>
-  const page = document.querySelector<HTMLElement>(".join-page");
+  const page = document.querySelector<HTMLElement>('.join-page');
+
   const paths = Array.from(
-    document.querySelectorAll<HTMLElement>("[data-path]"),
+    document.querySelectorAll<HTMLElement>('[data-path]'),
   );
+
   const pathLinks = Array.from(
-    document.querySelectorAll<HTMLAnchorElement>("[data-path-to]"),
+    document.querySelectorAll<HTMLAnchorElement>('[data-path-to]'),
   );
-  const journey = document.querySelector<HTMLElement>("[data-journey]");
+
+  const journey = document.querySelector<HTMLElement>('[data-journey]');
+
   const steps = Array.from(
-    journey?.querySelectorAll<HTMLElement>("[data-journey-step]") ?? [],
+    journey?.querySelectorAll<HTMLElement>('[data-journey-step]') ?? [],
   );
+
   const controls = Array.from(
-    journey?.querySelectorAll<HTMLAnchorElement>("[data-step-to]") ?? [],
+    journey?.querySelectorAll<HTMLAnchorElement>('[data-step-to]') ?? [],
   );
 
   if (page && journey && steps.length) {
-    page.classList.add("is-enhanced");
-    journey.classList.add("is-enhanced");
+    page.classList.add('is-enhanced');
+    journey.classList.add('is-enhanced');
 
-    const showPath = (path: "fork" | "root", scroll = false) => {
+    const showPath = (path: 'fork' | 'root', scroll = false) => {
       paths.forEach((section) => {
         section.hidden = section.dataset.path !== path;
       });
+
       pathLinks.forEach((link) => {
-        if (link.dataset.pathTo === path)
-          link.setAttribute("aria-current", "true");
-        else link.removeAttribute("aria-current");
+        if (link.dataset.pathTo === path) {
+          link.setAttribute('aria-current', 'true');
+        } else {
+          link.removeAttribute('aria-current');
+        }
       });
+
       if (scroll) {
-        const behavior = window.matchMedia("(prefers-reduced-motion: reduce)")
+        const behavior = window.matchMedia('(prefers-reduced-motion: reduce)')
           .matches
-          ? "auto"
-          : "smooth";
+          ? 'auto'
+          : 'smooth';
+
         document
-          .getElementById(path === "root" ? "root-owner" : "direct-fork")
-          ?.scrollIntoView({ behavior, block: "start" });
+          .getElementById(path === 'root' ? 'root-owner' : 'direct-fork')
+          ?.scrollIntoView({ behavior, block: 'start' });
       }
     };
 
@@ -361,35 +371,43 @@ const description =
       steps.forEach((step, position) => {
         step.hidden = position !== index;
       });
+
       controls.forEach((control) => {
-        if (control.closest(".journey-progress")) {
-          if (Number(control.dataset.stepTo) === index)
-            control.setAttribute("aria-current", "step");
-          else control.removeAttribute("aria-current");
+        if (control.closest('.journey-progress')) {
+          if (Number(control.dataset.stepTo) === index) {
+            control.setAttribute('aria-current', 'step');
+          } else {
+            control.removeAttribute('aria-current');
+          }
         }
       });
 
       if (scroll) {
-        const behavior = window.matchMedia("(prefers-reduced-motion: reduce)")
+        const behavior = window.matchMedia('(prefers-reduced-motion: reduce)')
           .matches
-          ? "auto"
-          : "smooth";
-        journey.scrollIntoView({ behavior, block: "start" });
+          ? 'auto'
+          : 'smooth';
+
+        journey.scrollIntoView({ behavior, block: 'start' });
       }
     };
 
     pathLinks.forEach((link) =>
-      link.addEventListener("click", (event) => {
+      link.addEventListener('click', (event) => {
         event.preventDefault();
-        history.pushState(null, "", link.hash);
-        showPath(link.dataset.pathTo === "root" ? "root" : "fork", true);
-        if (link.dataset.pathTo === "fork") show(0);
+        history.pushState(null, '', link.hash);
+        showPath(link.dataset.pathTo === 'root' ? 'root' : 'fork', true);
+
+        if (link.dataset.pathTo === 'fork') {
+          show(0);
+        }
       }),
     );
+
     controls.forEach((control) =>
-      control.addEventListener("click", (event) => {
+      control.addEventListener('click', (event) => {
         event.preventDefault();
-        history.pushState(null, "", control.hash);
+        history.pushState(null, '', control.hash);
         show(Number(control.dataset.stepTo), true);
       }),
     );
@@ -398,11 +416,13 @@ const description =
       const initial = steps.findIndex(
         (step) => `#${step.id}` === window.location.hash,
       );
-      showPath(window.location.hash === "#root-owner" ? "root" : "fork");
+
+      showPath(window.location.hash === '#root-owner' ? 'root' : 'fork');
       show(initial < 0 ? 0 : initial);
     };
-    window.addEventListener("popstate", restore);
-    window.addEventListener("hashchange", restore);
+
+    window.addEventListener('popstate', restore);
+    window.addEventListener('hashchange', restore);
     restore();
   }
 </script>
