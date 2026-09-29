@@ -3,6 +3,8 @@ type Entry = {
   repositoryId: number;
   username: string;
   repository: string;
+  repositoryUrl: string;
+  policyUrl: string;
   joinedAt: string;
   avatarUrl: string;
   summary: { status: 'current' | 'fallback' | 'unavailable' };
@@ -94,6 +96,9 @@ export default function ReviewerDirectory({ reviewers }: { reviewers: Entry[] })
 }
 
 function ReviewerCard({ reviewer }: { reviewer: Entry }) {
+  const detailUrl = `/shoal-app/reviewers/${encodeURIComponent(reviewer.username)}/`;
+  const requestUrl = `${reviewer.repositoryUrl}/issues/new/choose`;
+
   return (
     <article className="reviewer-card">
       <div className="reviewer-card-head">
@@ -106,13 +111,17 @@ function ReviewerCard({ reviewer }: { reviewer: Entry }) {
         />
         <div>
           <h2>
-            <a href={`/shoal-app/reviewers/${encodeURIComponent(reviewer.username)}/`}>
+            <a href={detailUrl}>
               {reviewer.username}
             </a>
           </h2>
           <p>{reviewer.repository}</p>
         </div>
       </div>
+      <p className="reviewer-card-purpose">
+        Inspect this Reviewer's Policy, public Summary state, and canonical
+        Review Request surface before asking for evaluation.
+      </p>
       <div className="reviewer-card-meta">
         <p>
           Joined
@@ -130,6 +139,11 @@ function ReviewerCard({ reviewer }: { reviewer: Entry }) {
               : 'Current summary'}
           </span>
         )}
+      </div>
+      <div className="reviewer-card-actions">
+        <a href={detailUrl}>Inspect Reviewer →</a>
+        <a href={reviewer.policyUrl}>Read Policy ↗</a>
+        <a href={requestUrl}>Request review ↗</a>
       </div>
     </article>
   );
