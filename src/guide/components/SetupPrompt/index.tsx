@@ -1,10 +1,10 @@
 import { useState } from 'react';
 
-const prompt = `I have already directly forked https://github.com/taco3064/shoal-station into my personal GitHub account and personally completed the GitHub Actions page manual enable / confirmation in my fork. Help with only the remaining mechanical Shoal setup.
+const prompt = `I already directly forked taco3064/shoal-station into my personal account and manually enabled Actions on my fork's Actions page. Handle only mechanical setup:
 
-Locate my direct Reviewer Node fork or help me clone it. Check that GitHub CLI is available and that gh auth is usable as the Reviewer Node owner. If authentication requires interaction, guide me through the official gh auth flow; never ask for, collect, save, print, or transmit credentials or tokens. Ensure the official extension from https://github.com/taco3064/gh-shoal is installed, then run gh shoal init in a clean Reviewer Node checkout. Verify its managed station files are canonical, only the canonical .github/workflows/reviewer-summary.yml workflow is active, and Reviewer Node Issues are enabled. Do not enable unrelated workflows or change repository-level Actions policy.
+Find/clone my fork. Check GitHub CLI and owner gh auth; guide official login if needed, but never request, collect, store, or reveal tokens. Install the official taco3064/gh-shoal extension. In a clean checkout run gh shoal init. Verify canonical managed files, active .github/workflows/reviewer-summary.yml, and enabled Issues. Do not change repository-level Actions policy or unrelated workflows; init cannot replace my manual Actions step.
 
-Stop before Review Policy authorship. Do not author, rewrite, choose, or decide anything in my README.md Review Policy. Hand control back to me so I personally define that policy, commit it, and push it. Report any blocker without claiming that gh shoal init replaces my earlier GitHub Actions page step.`;
+Stop before README.md Review Policy. Do not write, rewrite, choose, or decide it. Tell me to author, commit, and push it myself.`;
 
 export default function SetupPrompt() {
   const [copied, setCopied] = useState(false);
@@ -12,7 +12,7 @@ export default function SetupPrompt() {
   return (
     <div className="prompt-box">
       <label htmlFor="setup-prompt">Prompt for your local AI coding agent</label>
-      <textarea id="setup-prompt" readOnly rows={14} value={prompt} />
+      <textarea id="setup-prompt" readOnly rows={8} value={prompt} />
       <button
         type="button"
         className="button primary"
