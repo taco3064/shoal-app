@@ -55,6 +55,7 @@ jobs:
       - run: npm run build
         env:
           SHOAL_PROJECTION_FILE: ${{ runner.temp }}/network.json
+          GITHUB_TOKEN: ${{ github.token }}
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
         with:

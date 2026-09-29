@@ -39,7 +39,7 @@ jobs:
       - run: npm run build
         env:
           SHOAL_PROJECTION_FILE: src/guide/services/directory/fixtures/network.json
-          SHOAL_POLICY_FETCH: skip
+          SHOAL_PUBLIC_CONTENT_FETCH: skip
       - run: npm run package:action
       - run: npm run test:network
       - run: npm run test:directory
