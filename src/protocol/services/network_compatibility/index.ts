@@ -8,8 +8,8 @@ export const networkRoot = {
 export const summaryWorkflowPath = '.github/workflows/reviewer-summary.yml';
 export const requestFormPath = '.github/ISSUE_TEMPLATE/review-request.yml';
 
-// Public Release transport: one release and one exact-byte asset per Attempt.
-export function summaryReleaseTag(
+// Public Git transport: one attempt-addressable tag per Summary Attempt.
+export function summaryTransportTag(
   repositoryId: number,
   runId: number,
   attempt: number,

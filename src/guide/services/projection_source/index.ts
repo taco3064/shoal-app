@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { validateProjection } from '~app/network/services/network_projection';
 import type { NetworkProjection } from '~app/network/services/network_projection';
+import { summaryTransportTag } from '~app/protocol/services/network_compatibility';
 
 export async function publishedProjection(): Promise<NetworkProjection> {
   const path = process.env.SHOAL_PROJECTION_FILE
@@ -67,7 +68,16 @@ export async function publishedProjection(): Promise<NetworkProjection> {
         throw new Error('Invalid selected Summary provenance.');
       }
 
-      requireGitHubUrl(source.transportUrl);
+      requirePublicTransportUrl(
+        source.transportUrl,
+        {
+          repository: reviewer.repository,
+          repositoryId: reviewer.repositoryId,
+          runId: source.runId,
+          attempt: source.runAttempt,
+        },
+      );
+
       requireGitHubUrl(source.runUrl);
     }
   }
@@ -85,5 +95,36 @@ function requireGitHubUrl(value: string): void {
     || url.password
   ) {
     throw new Error('Invalid Reviewer GitHub URL.');
+  }
+}
+
+function requirePublicTransportUrl(
+  value: string,
+  identity: {
+    repository: string;
+    repositoryId: number;
+    runId: number;
+    attempt: number;
+  },
+): void {
+  const url = new URL(value);
+
+  const tag = summaryTransportTag(
+    identity.repositoryId,
+    identity.runId,
+    identity.attempt,
+  );
+
+  const expected
+    = `https://raw.githubusercontent.com/${identity.repository}/${tag}/reviewer-summary.json`;
+
+  if (
+    !Number.isSafeInteger(identity.runId)
+    || identity.runId < 1
+    || !Number.isSafeInteger(identity.attempt)
+    || identity.attempt < 1
+    || url.href !== expected
+  ) {
+    throw new Error('Invalid Reviewer Summary transport URL.');
   }
 }

@@ -1,4 +1,4 @@
-import { summaryReleaseTag } from '~app/protocol/services/network_compatibility';
+import { summaryTransportTag } from '~app/protocol/services/network_compatibility';
 
 export type GitHubRepository = {
   id: number;
@@ -26,28 +26,9 @@ export type WorkflowRun = {
   html_url: string;
 };
 
-type ReleaseAsset = {
-  id: number;
-  name: string;
-  size: number;
-  state: string;
-  browser_download_url: string;
-  uploader: { id: number };
-};
-
-type Release = {
-  id: number;
-  tag_name: string;
-  draft: boolean;
-  author: { id: number };
-  assets: ReleaseAsset[];
-};
-
 export type PublicSummary = {
   bytes: Uint8Array;
   url: string;
-  releaseId: number;
-  assetId: number;
 };
 
 export class GitHubApi {
@@ -157,73 +138,25 @@ export class GitHubApi {
     runId: number,
     attempt: number,
   ): Promise<PublicSummary | null> {
-    const tag = summaryReleaseTag(repositoryId, runId, attempt);
-    const path = `/repos/${fullName}/releases/tags/${tag}`;
-    let release: Release;
-
-    try {
-      release = await this.publicJson<Release>(path);
-    } catch (error) {
-      if (error instanceof GitHubHttpError && error.status === 404) {
-        return null;
-      }
-
-      throw error;
-    }
-
-    const name = 'reviewer-summary.json';
-    const expected = `https://github.com/${fullName}/releases/download/${tag}/${name}`;
-    const matches = release.assets?.filter((asset) => asset.name === name);
-
-    if (
-      release.tag_name !== tag
-      || release.draft
-      || release.author?.id !== 41898282
-      || matches?.length !== 1
-    ) {
-      return null;
-    }
-
-    const asset = matches[0];
-
-    if (
-      asset.uploader?.id !== 41898282
-      || asset.state !== 'uploaded'
-      || asset.size > 1024 * 1024
-      || asset.browser_download_url !== expected
-    ) {
-      return null;
-    }
-
-    const response = await this.fetcher(expected, { redirect: 'follow' });
+    const tag = summaryTransportTag(repositoryId, runId, attempt);
+    const url = `https://raw.githubusercontent.com/${fullName}/${tag}/reviewer-summary.json`;
+    const response = await this.fetcher(url, { redirect: 'follow' });
 
     if (response.status === 404 || response.status === 410) {
       return null;
     }
 
     if (!response.ok) {
-      throw new GitHubHttpError(expected, response.status);
+      throw new GitHubHttpError(url, response.status);
     }
 
     const bytes = new Uint8Array(await response.arrayBuffer());
 
-    if (bytes.length !== asset.size || bytes.length > 1024 * 1024) {
+    if (bytes.length > 1024 * 1024) {
       return null;
     }
 
-    return { bytes, url: expected, releaseId: release.id, assetId: asset.id };
-  }
-
-  private async publicJson<T>(path: string): Promise<T> {
-    const response = await this.fetcher(`https://api.github.com${path}`, {
-      headers: { Accept: 'application/vnd.github+json' },
-    });
-
-    if (!response.ok) {
-      throw new GitHubHttpError(path, response.status);
-    }
-
-    return response.json() as Promise<T>;
+    return { bytes, url };
   }
 
   private async request(

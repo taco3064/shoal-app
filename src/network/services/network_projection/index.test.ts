@@ -125,9 +125,7 @@ function source(
             },
           }),
         ),
-        url: `https://github.com/${fullName}/releases/download/shoal-summary-${repositoryId}-${runId}-${attempt}/reviewer-summary.json`,
-        releaseId: runId,
-        assetId: attempt,
+        url: `https://raw.githubusercontent.com/${fullName}/shoal-summary-${repositoryId}-${runId}-${attempt}/reviewer-summary.json`,
       };
     },
   };

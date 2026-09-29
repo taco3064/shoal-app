@@ -33,8 +33,6 @@ export type SelectedSummary
         workflowDigest: string;
         actionCommit: string;
         transportUrl: string;
-        transportReleaseId: number;
-        transportAssetId: number;
         summaryDigest: string;
         runUrl: string;
       };
@@ -309,8 +307,6 @@ async function acceptAttempt(
       workflowDigest,
       actionCommit,
       transportUrl: transport.url,
-      transportReleaseId: transport.releaseId,
-      transportAssetId: transport.assetId,
       summaryDigest,
       runUrl: attempt.html_url,
     },
