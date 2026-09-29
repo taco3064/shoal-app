@@ -48,6 +48,7 @@ jobs:
         run: npm run scan:network
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          SHOAL_SCAN_DIAGNOSTICS: '1'
       - name: Preserve scanned projection for review
         if: matrix.os == 'ubuntu-latest' && github.event_name == 'pull_request'
         uses: actions/upload-artifact@v4

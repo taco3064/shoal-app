@@ -74,12 +74,16 @@ export async function buildNetworkProjection(
     const node = await source.repository(fork.full_name);
 
     if (!isMember(node) || seen.has(node.id)) {
+      logSkip(node, 'not a unique direct personal fork');
+
       continue;
     }
 
     seen.add(node.id);
 
     if (!node.has_issues) {
+      logSkip(node, 'Issues disabled');
+
       continue;
     }
 
@@ -97,14 +101,20 @@ export async function buildNetworkProjection(
     ]);
 
     if (!form || !workflow) {
+      logSkip(node, 'canonical Request Form or Summary Workflow missing');
+
       continue;
     }
 
     if (!allowedCanonicalReviewRequestFormDigests.has(hash(form))) {
+      logSkip(node, 'Request Form digest not supported');
+
       continue;
     }
 
     if (!allowedSummaryWorkflows.has(hash(workflow))) {
+      logSkip(node, 'Summary Workflow digest not allowed');
+
       continue;
     }
 
@@ -140,6 +150,12 @@ export async function buildNetworkProjection(
   validateProjection(projection);
 
   return projection;
+}
+
+function logSkip(node: GitHubRepository, reason: string): void {
+  if (process.env.SHOAL_SCAN_DIAGNOSTICS === '1') {
+    console.info(`Excluded ${node.full_name}: ${reason}`);
+  }
 }
 
 export function sortByJoinedAt(reviewers: ReviewerEntry[]): ReviewerEntry[] {
