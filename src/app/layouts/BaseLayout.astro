@@ -6,9 +6,8 @@ interface Props {
   title: string;
   description: string;
   image?: string;
-  wideCanvas?: boolean;
 }
-const { title, description, image = "og-shoal.webp", wideCanvas = false } = Astro.props;
+const { title, description, image = "og-shoal.webp" } = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site);
 const ogImage = new URL(`${import.meta.env.BASE_URL}${image}`, Astro.site);
 ---
@@ -39,7 +38,7 @@ const ogImage = new URL(`${import.meta.env.BASE_URL}${image}`, Astro.site);
     />
   </head>
   <body>
-    <header class:list={["site-header", "wrap", { "wide-canvas": wideCanvas }]}>
+    <header class="site-header wrap">
       <a
         class="wordmark"
         href={import.meta.env.BASE_URL}
@@ -64,7 +63,7 @@ const ogImage = new URL(`${import.meta.env.BASE_URL}${image}`, Astro.site);
     </header>
     <slot />
     <footer class="footer">
-      <div class:list={["wrap", "footer-inner", { "wide-canvas": wideCanvas }]}>
+      <div class="wrap footer-inner">
         <a class="wordmark" href={import.meta.env.BASE_URL}>
           <img
             class="brand-logo"
