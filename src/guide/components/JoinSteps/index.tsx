@@ -8,13 +8,13 @@ export default function JoinSteps() {
         <em>Your signature.</em>
       </h2>
       <p>
-        Directly fork the Network Root, open your fork’s GitHub Actions page and
-        complete its manual enable step. Then clone the fork, install the gh
-        extension, run
+        If you own the Network Root, it is your Reviewer Node. Otherwise,
+        directly fork it, complete the manual Actions confirmation in your
+        fork, then install the gh extension, run
         {' '}
         <code>gh shoal init</code>
-        , and write your review policy
-        in the README.
+        {' '}
+        on your fork. In either path, write your own Review Policy in the README.
       </p>
       <a
         className="button primary"

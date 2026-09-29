@@ -2,9 +2,9 @@
 import BaseLayout from "../layouts/BaseLayout.astro";
 import SetupPrompt from "~app/guide/components/SetupPrompt";
 
-const title = "Join Shoal — direct fork setup";
+const title = "Join Shoal — Root owner or direct fork";
 const description =
-  "Four steps to join Shoal: direct fork, confirm Actions, set up your station, and write your own Review Policy.";
+  "Choose the Network Root owner path or four direct-fork setup stages, then write your own Review Policy.";
 ---
 
 <BaseLayout title={title} description={description}>
@@ -13,15 +13,79 @@ const description =
       <p class="section-kicker">BECOME A REVIEWER</p>
       <h1>Join Shoal</h1>
       <p>
-        Fork the Network Root. Set up your station. Define your own review
-        standard.
+        The Network Root owner uses the Root as their Reviewer Node. Everyone
+        else directly forks it. Each Reviewer defines their own standard.
       </p>
       <p class="join-reassurance">
-        Four stages · no website account · no approval form
+        Choose your path · no website account · no approval form
       </p>
     </header>
 
-    <div class="journey" data-journey>
+    <nav class="join-paths" aria-label="Choose a Reviewer setup path">
+      <a href="#root-owner">I own the Network Root →</a>
+      <a href="#direct-fork">I need to fork it →</a>
+    </nav>
+
+    <section
+      id="root-owner"
+      class="root-owner-path"
+      aria-labelledby="root-owner-title"
+    >
+      <p class="section-kicker">NETWORK ROOT OWNER</p>
+      <h2 id="root-owner-title">Use your Network Root as your Reviewer Node</h2>
+      <p>
+        If you own{" "}
+        <a href="https://github.com/taco3064/shoal-station">
+          taco3064/shoal-station
+        </a>
+        , you already have the Root-owner Reviewer Node. Do not fork it or run
+        <code>gh shoal init</code> on it.
+      </p>
+      <div class="setup-options">
+        <div class="setup-option">
+          <h3>Set up locally</h3>
+          <ol>
+            <li>
+              Clone or use your existing <code>taco3064/shoal-station</code>{" "}
+              checkout.
+            </li>
+            <li>
+              Install <a href="https://cli.github.com/">GitHub CLI ↗</a> and
+              verify <code>gh auth status</code> as the Root owner.
+            </li>
+            <li>
+              Install the official extension:{" "}
+              <code>gh extension install taco3064/gh-shoal</code>.
+            </li>
+            <li>
+              Personally write your Review Policy in the Root{" "}
+              <code>README.md</code>, then commit and push it.
+            </li>
+          </ol>
+        </div>
+        <div class="setup-option">
+          <h3>Ask a local coding agent</h3>
+          <p>
+            The agent can prepare your local tools, then returns the Policy
+            decision to you.
+          </p>
+          <details class="prompt-details">
+            <summary>Show Root-owner setup prompt</summary>
+            <SetupPrompt path="root" client:load />
+          </details>
+        </div>
+      </div>
+      <p class="step-note">
+        Root repository maintenance keeps Issues enabled and the canonical
+        Review Request form and Summary Workflow valid. The Root's
+        <code>README.md</code> is both your Review Policy and the initial Policy
+        template inherited by new direct forks. Eligible Root owners appear
+        after the next complete published Network Scan.
+      </p>
+    </section>
+
+    <div id="direct-fork" class="journey" data-journey>
+      <h2>Joining with a direct fork</h2>
       <nav class="journey-progress" aria-label="Setup stages">
         <a href="#join-fork" data-step-to="0">
           <span>01</span> Fork
@@ -138,7 +202,7 @@ const description =
           </div>
         </div>
         <p class="step-note">
-          Verify the managed Issue Form and Summary Workflow are canonical, only{" "}
+          Verify the managed Issue Form and Summary Workflow are canonical,
           <code>.github/workflows/reviewer-summary.yml</code> is active, and
           Issues are enabled. Init may repair that workflow and enable Issues;
           it cannot alter repository-level Actions policy or enable unrelated
@@ -203,9 +267,10 @@ const description =
           <code>.github/workflows/reviewer-summary.yml</code> are Shoal-managed.
           Even whitespace or comment changes alter the Summary Workflow’s exact
           digest; a Summary from a workflow outside the allowed canonical digest
-          set is rejected. Run <code>gh shoal init</code> to repair managed-file
-          drift. A fresh fork’s Actions UI confirmation remains yours to
-          complete.
+          set is rejected. Direct-fork owners run <code>gh shoal init</code> to
+          repair managed-file drift; the Network Root uses its own canonical
+          repository maintenance path. A fresh fork’s Actions UI confirmation
+          remains yours to complete.
         </p>
         <p>
           Official Automated Review runs through your local{" "}

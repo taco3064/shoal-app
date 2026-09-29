@@ -19,7 +19,14 @@ const workflow = readFileSync(
 );
 
 const sha = 'a'.repeat(40);
-const root = makeNode(networkRoot.repositoryId, networkRoot.fullName);
+
+const root = {
+  ...makeNode(networkRoot.repositoryId, networkRoot.fullName),
+  fork: false,
+  parent: undefined,
+  has_issues: false,
+};
+
 const current = makeNode(12, 'alice/node');
 const later = makeNode(13, 'zoe/node');
 
@@ -66,10 +73,11 @@ function makeRun(
 function source(
   nodes: GitHubRepository[],
   runs: WorkflowRun[] = [],
+  rootNode: GitHubRepository = root,
 ): NetworkSource {
   return {
     async repository(fullName) {
-      const found = [root, ...nodes].find(
+      const found = [rootNode, ...nodes].find(
         (node) => node.full_name === fullName,
       );
 
@@ -108,7 +116,7 @@ function source(
           JSON.stringify({
             protocolVersion: 1,
             summarySchemaVersion: 1,
-            reviewerNode: { repositoryId: current.id },
+            reviewerNode: { repositoryId },
             metrics: {
               reviewBackedStarCount: 1,
               validReviewRequestIssueCount: 2,
@@ -152,6 +160,64 @@ test('flat membership and observable eligibility exclude invalid nodes', async (
   assert.equal(projection.reviewers[0].summary.status, 'unavailable');
   assert.equal('metrics' in projection.reviewers[0].summary, false);
   assert.equal(projection.reviewers[0].joinedAt, current.created_at);
+});
+
+test('eligible personal Root joins with its own identity and Summary', async () => {
+  const eligibleRoot = { ...root, has_issues: true };
+
+  const rootRun = {
+    ...makeRun(40, '2026-09-29T10:00:00Z'),
+    repository: { id: root.id },
+    head_repository: { id: root.id },
+  };
+
+  const projection = await buildNetworkProjection(
+    source([current], [rootRun], eligibleRoot),
+    '2026-09-29T11:00:00Z',
+    async () => true,
+  );
+
+  assert.deepEqual(
+    projection.reviewers.map((reviewer) => reviewer.username),
+    ['alice', 'taco3064'],
+  );
+
+  const rootReviewer = projection.reviewers.find(
+    (reviewer) => reviewer.repositoryId === root.id,
+  );
+
+  assert.equal(rootReviewer?.repository, networkRoot.fullName);
+  assert.equal(rootReviewer?.joinedAt, root.created_at);
+  assert.equal(rootReviewer?.summary.status, 'current');
+
+  if (rootReviewer?.summary.status === 'current') {
+    assert.equal(rootReviewer.summary.summary.reviewerNode.repositoryId, root.id);
+    assert.equal(rootReviewer.summary.source.runId, rootRun.id);
+  }
+});
+
+test('Organization-owned and ineligible Roots stay out', async () => {
+  const organizationRoot = {
+    ...root,
+    has_issues: true,
+    owner: { ...root.owner, type: 'Organization' },
+  };
+
+  const organization = await buildNetworkProjection(
+    source([current], [], organizationRoot),
+  );
+
+  const ineligible = await buildNetworkProjection(source([current]));
+
+  assert.deepEqual(
+    organization.reviewers.map((entry) => entry.repositoryId),
+    [current.id],
+  );
+
+  assert.deepEqual(
+    ineligible.reviewers.map((entry) => entry.repositoryId),
+    [current.id],
+  );
 });
 
 test('latest rejected attempt keeps a verified stale fallback', async () => {

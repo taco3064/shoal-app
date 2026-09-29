@@ -45,10 +45,11 @@ export interface NetworkSource extends SummarySource {
 
 export function isMember(node: GitHubRepository): boolean {
   return (
-    node.id !== networkRoot.repositoryId
-    && node.fork === true
-    && node.owner?.type === 'User'
-    && node.parent?.id === networkRoot.repositoryId
+    node.owner?.type === 'User'
+    && (
+      node.id === networkRoot.repositoryId
+      || (node.fork === true && node.parent?.id === networkRoot.repositoryId)
+    )
   );
 }
 
@@ -70,11 +71,13 @@ export async function buildNetworkProjection(
   const reviewers: ReviewerEntry[] = [];
   const seen = new Set<number>();
 
-  for (const fork of forks) {
-    const node = await source.repository(fork.full_name);
+  for (const candidate of [root, ...forks]) {
+    const node = candidate.id === root.id
+      ? root
+      : await source.repository(candidate.full_name);
 
     if (!isMember(node) || seen.has(node.id)) {
-      logSkip(node, 'not a unique direct personal fork');
+      logSkip(node, 'not a unique personal Root or direct fork');
 
       continue;
     }
@@ -180,7 +183,6 @@ export function validateProjection(projection: NetworkProjection): void {
       !Number.isSafeInteger(reviewer.repositoryId)
       || reviewer.repositoryId <= 0
       || identities.has(reviewer.repositoryId)
-      || reviewer.repositoryId === networkRoot.repositoryId
       || !reviewer.username
       || !reviewer.repository
       || !reviewer.avatarUrl
