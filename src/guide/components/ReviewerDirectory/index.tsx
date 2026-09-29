@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 type Entry = {
   repositoryId: number;
   username: string;
+  repository: string;
   joinedAt: string;
   avatarUrl: string;
   summary: { status: 'current' | 'fallback' | 'unavailable' };
@@ -47,7 +48,7 @@ export default function ReviewerDirectory({ reviewers }: { reviewers: Entry[] })
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             type="search"
-            placeholder="Username"
+            placeholder="Search a Reviewer"
           />
         </label>
         <label>
@@ -64,39 +65,70 @@ export default function ReviewerDirectory({ reviewers }: { reviewers: Entry[] })
           type="button"
           className="sort-direction"
           onClick={() => setDescending((value) => !value)}
+          aria-label={`Sort ${descending ? 'descending' : 'ascending'}; change direction`}
         >
-          {descending ? 'Descending' : 'Ascending'}
+          {descending ? 'Descending ↓' : 'Ascending ↑'}
         </button>
       </div>
+      <p className="directory-result-count" role="status">
+        Showing
+        {' '}
+        {entries.length}
+        {' '}
+        of
+        {' '}
+        {reviewers.length}
+        {' '}
+        eligible Reviewers
+      </p>
       {entries.length === 0 && (
         <p role="status">No Reviewer found in the current eligible directory.</p>
       )}
       <div className="reviewer-grid">
         {entries.map((reviewer) => (
-          <article className="reviewer-card" key={reviewer.repositoryId}>
-            <img src={reviewer.avatarUrl} alt="" width="56" height="56" loading="lazy" />
-            <div>
-              <h2>
-                <a href={`/shoal-app/reviewers/${encodeURIComponent(reviewer.username)}/`}>
-                  {reviewer.username}
-                </a>
-              </h2>
-              <p>
-                Joined
-                {' '}
-                {new Date(reviewer.joinedAt).toLocaleDateString('en-US', {
-                  timeZone: 'UTC',
-                })}
-              </p>
-              <span className={`summary-state state-${reviewer.summary.status}`}>
-                {reviewer.summary.status === 'fallback'
-                  ? 'Fallback · prior accepted snapshot'
-                  : reviewer.summary.status}
-              </span>
-            </div>
-          </article>
+          <ReviewerCard key={reviewer.repositoryId} reviewer={reviewer} />
         ))}
       </div>
     </section>
+  );
+}
+
+function ReviewerCard({ reviewer }: { reviewer: Entry }) {
+  return (
+    <article className="reviewer-card">
+      <div className="reviewer-card-head">
+        <img
+          src={reviewer.avatarUrl}
+          alt=""
+          width="64"
+          height="64"
+          loading="lazy"
+        />
+        <div>
+          <h2>
+            <a href={`/shoal-app/reviewers/${encodeURIComponent(reviewer.username)}/`}>
+              {reviewer.username}
+            </a>
+          </h2>
+          <p>{reviewer.repository}</p>
+        </div>
+      </div>
+      <div className="reviewer-card-meta">
+        <p>
+          Joined
+          {' '}
+          <time dateTime={reviewer.joinedAt}>
+            {new Date(reviewer.joinedAt).toLocaleDateString('en-US', {
+              timeZone: 'UTC',
+            })}
+          </time>
+        </p>
+        <span className={`summary-state state-${reviewer.summary.status}`}>
+          {reviewer.summary.status === 'fallback'
+            ? 'Fallback · prior accepted snapshot'
+            : reviewer.summary.status}
+        </span>
+      </div>
+    </article>
   );
 }
