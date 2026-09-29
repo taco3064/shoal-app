@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-09-29T10:33:14.761Z",
+  "generatedAt": "2026-09-29T12:42:52.274Z",
   "networkRoot": {
     "repositoryId": 1379044983,
     "repository": "taco3064/shoal-station"
@@ -44,8 +44,32 @@
       "joinedAt": "2026-09-21T03:44:11Z",
       "policyUrl": "https://github.com/taco3064/shoal-station/blob/11f679c02e88b7cd8287e92c4edd03929fa38ea9/README.md",
       "summary": {
-        "status": "unavailable",
-        "stale": false
+        "status": "current",
+        "stale": false,
+        "summary": {
+          "metrics": {
+            "invalidReviewCommentCount": 0,
+            "reReviewRequestIssueCount": 0,
+            "reviewBackedStarCount": 0,
+            "validReviewRequestIssueCount": 0
+          },
+          "protocolVersion": 1,
+          "reviewerNode": {
+            "repositoryId": 1379044983
+          },
+          "summarySchemaVersion": 1
+        },
+        "source": {
+          "runId": 36553125560,
+          "runAttempt": 1,
+          "runStartedAt": "2026-09-29T10:03:11Z",
+          "workflowCommit": "11f679c02e88b7cd8287e92c4edd03929fa38ea9",
+          "workflowDigest": "d586ab618c894d9729e21d7105becb0ca805df576198353293b1f77818927e99",
+          "actionCommit": "b4d72405ebc03afc35d29093302b5593e1ddff1b",
+          "transportUrl": "https://raw.githubusercontent.com/taco3064/shoal-station/shoal-summary-1379044983-36553125560-1/reviewer-summary.json",
+          "summaryDigest": "8189a612b94eb67d0839305545844f89c51060077bb27a34b65666eb1abeebad",
+          "runUrl": "https://github.com/taco3064/shoal-station/actions/runs/36553125560"
+        }
       }
     }
   ]
