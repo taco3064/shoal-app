@@ -4,6 +4,7 @@ import ReviewerDirectory from "~app/guide/components/ReviewerDirectory";
 import { publishedProjection } from "~app/guide/services/projection_source";
 
 const projection = await publishedProjection();
+const isFixture = import.meta.env.DEV && !process.env.SHOAL_PROJECTION_FILE;
 const title = "Reviewer Directory — Shoal";
 const description =
   "Explore the current eligible Shoal Reviewers and their public review context.";
@@ -21,6 +22,11 @@ const description =
       Snapshot generated:{" "}
       <time datetime={projection.generatedAt}>{projection.generatedAt}</time>
     </p>
+    {isFixture && (
+      <p role="status">
+        Development sample projection — these are not live Shoal Reviewers.
+      </p>
+    )}
     <ReviewerDirectory reviewers={projection.reviewers} client:load />
   </main>
 </BaseLayout>

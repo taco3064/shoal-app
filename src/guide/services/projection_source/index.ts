@@ -1,9 +1,13 @@
 import { readFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
 import { validateProjection } from '~app/network/services/network_projection';
 import type { NetworkProjection } from '~app/network/services/network_projection';
 
 export async function publishedProjection(): Promise<NetworkProjection> {
-  const path = process.env.SHOAL_PROJECTION_FILE;
+  const path = process.env.SHOAL_PROJECTION_FILE
+    ?? (import.meta.env.DEV
+      ? resolve(process.cwd(), 'src/guide/services/directory/fixtures/network.json')
+      : null);
 
   if (!path) {
     throw new Error('SHOAL_PROJECTION_FILE is required for the website build.');
