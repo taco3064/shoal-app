@@ -4,6 +4,7 @@ import type { ReviewerEntry } from "~app/network/services/network_projection";
 import BaseLayout from "../../../layouts/BaseLayout.astro";
 import { derivedMetrics } from "~app/guide/services/directory";
 import { policyContent } from "~app/guide/services/policy_content";
+import { publicProfile } from "~app/guide/services/profile_content";
 import { publishedProjection } from "~app/guide/services/projection_source";
 import ReviewPolicy from "~app/guide/components/ReviewPolicy";
 
@@ -23,10 +24,13 @@ const { reviewer, generatedAt } = Astro.props as {
 const isLocalSnapshot =
   import.meta.env.DEV && !process.env.SHOAL_PROJECTION_FILE;
 const selected = reviewer.summary;
-const policyMarkdown =
-  process.env.SHOAL_POLICY_FETCH === "skip"
-    ? null
-    : await policyContent(reviewer.repository, reviewer.policyUrl);
+const skipPublicContent = process.env.SHOAL_PUBLIC_CONTENT_FETCH === "skip";
+const [policyMarkdown, profile] = skipPublicContent
+  ? [null, null]
+  : await Promise.all([
+      policyContent(reviewer.repository, reviewer.policyUrl),
+      publicProfile(reviewer.username),
+    ]);
 const metrics =
   selected.status === "unavailable" ? null : selected.summary.metrics;
 const derived = metrics ? derivedMetrics(metrics) : null;
@@ -60,6 +64,20 @@ const percent = (value: number | null) =>
         </p>
       </div>
     </header>
+    <section class="detail-panel profile-panel" aria-labelledby="profile-title">
+      <div>
+        <p class="section-kicker">PUBLIC GITHUB PROFILE</p>
+        <h2 id="profile-title">{profile?.name || reviewer.username}</h2>
+        {profile?.bio && <p>{profile.bio}</p>}
+        {profile && (
+          <p class="profile-meta">
+            {profile.location && <span>⌖ {profile.location}</span>}
+            <span>{profile.followers} GitHub followers</span>
+          </p>
+        )}
+      </div>
+      <a href={reviewer.profileUrl}>View GitHub profile ↗</a>
+    </section>
     <section class="detail-panel" aria-labelledby="policy-title">
       <h2 id="policy-title">Review Policy</h2>
       <p class="snapshot-note">

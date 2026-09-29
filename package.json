@@ -16,7 +16,7 @@
     "package:action": "node scripts/package-action.mjs",
     "scan:network": "tsx src/network/index.ts",
     "test:network": "node --import tsx --test src/network/**/*.test.ts",
-    "test:directory": "node --import tsx --test src/guide/services/directory/index.test.ts src/guide/services/policy_content/index.test.ts src/guide/components/ReviewPolicy/index.test.tsx",
+    "test:directory": "node --import tsx --test src/guide/services/directory/index.test.ts src/guide/services/policy_content/index.test.ts src/guide/services/profile_content/index.test.ts src/guide/components/ReviewPolicy/index.test.tsx",
     "preview": "astro preview",
     "lint": "eslint src --no-error-on-unmatched-pattern",
     "format:check": "prettier --check \"src/**/*.astro\" --plugin prettier-plugin-astro",

@@ -149,6 +149,11 @@
 .review-policy-content img{max-width:100%;height:auto}
 .review-policy-content table{display:block;border-collapse:collapse}
 .review-policy-content th,.review-policy-content td{padding:8px 12px;border:1px solid #476160}
+.profile-panel{display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap}
+.profile-panel .section-kicker{margin:0 0 10px}
+.profile-panel h2{margin:0 0 10px}
+.profile-panel p{margin:0}
+.profile-panel .profile-meta{display:flex;gap:18px;flex-wrap:wrap;margin-top:14px;color:#a8babb;font-size:13px}
 .directory-footnote{max-width:780px;margin:29px 0 0;color:#91aaa6;font-size:13px;line-height:1.7}
 @media(max-width:800px){
   .directory-page .directory-hero{align-items:start;gap:20px}
