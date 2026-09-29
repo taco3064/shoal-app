@@ -8,3 +8,25 @@
 .directory-page,.reviewer-detail,.guide-page{padding-top:80px;padding-bottom:120px;min-height:65vh}.directory-page h1,.reviewer-detail h1,.guide-page h1{font:700 clamp(42px,6vw,68px)/1.1 'Space Grotesk',sans-serif;letter-spacing:-3px}.directory-page>p,.guide-page>p,.snapshot-note{color:#a8babb;line-height:1.7;max-width:780px}.directory-controls{display:flex;align-items:end;gap:14px;flex-wrap:wrap;margin:36px 0}.directory-controls label,.prompt-box label{display:grid;gap:8px;color:#d7f387;font-size:13px}.directory-controls input,.directory-controls select,.prompt-box textarea{background:#112b35;color:#edf5ee;border:1px solid #476160;border-radius:5px;padding:13px;font:inherit}.directory-controls input{min-width:240px}.sort-direction{background:#163540;color:#d7f387;border:1px solid #476160;border-radius:5px;padding:13px;cursor:pointer}.reviewer-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:15px}.reviewer-card,.detail-panel{padding:25px;background:#112b35;border:1px solid #3b5358;border-radius:6px}.reviewer-card{display:flex;gap:16px}.reviewer-card img,.detail-header img{border-radius:50%;height:max-content}.reviewer-card h2{font-size:22px;margin:0 0 8px}.reviewer-card a:hover,.detail-panel a:hover,.guide-page a:hover{color:#d7f387}.reviewer-card p{color:#a8babb;font-size:13px;margin:0 0 13px}.summary-state{display:inline-block;padding:5px 10px;border:1px solid #688264;border-radius:4px;text-transform:uppercase;font-size:11px;letter-spacing:1px;color:#d7f387}.state-fallback{color:#ffd17e;border-color:#8e6e36;background:#644b2235}.state-unavailable{color:#a6b5b4;border-color:#607173}.detail-header{display:flex;align-items:center;gap:25px;margin:30px 0 45px}.detail-header p{color:#abbfbe;margin-bottom:8px}.detail-panel{margin:20px 0;line-height:1.7}.detail-panel h2,.guide-page h2{font:600 30px 'Space Grotesk',sans-serif;margin:0 0 20px}.detail-panel a,.guide-page a:not(.button){text-decoration:underline;text-decoration-color:#5c8376;text-underline-offset:4px}.detail-panel code,.guide-page code{color:#d7f387;overflow-wrap:anywhere}.metric-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}.metric-grid div{padding:18px;border:1px solid #40605c}.metric-grid dt{font-size:12px;color:#a8babb}.metric-grid dd{font-size:27px;margin:8px 0 0;color:#efffae}.provenance{border-top:1px solid #3b5358;margin-top:30px;padding-top:22px;overflow-wrap:anywhere}.onboarding-steps{padding-left:26px;max-width:820px;line-height:1.85}.onboarding-steps li{padding:9px 0}.guide-page h2{margin-top:55px}.prompt-box{display:grid;gap:12px;max-width:900px}.prompt-box textarea{width:100%;line-height:1.5;resize:vertical}.prompt-box button{justify-self:start;cursor:pointer}
 @media(max-width:600px){.site-header nav{gap:12px}.site-header nav a:last-child{display:none}.hero-art{opacity:.55}.detail-header{align-items:start}.detail-header img{width:64px;height:64px}.directory-page,.reviewer-detail,.guide-page{padding-top:45px}}
 @media(prefers-reduced-motion:reduce){.context-line,.core-symbol svg path{animation:none!important}.context-line{opacity:.65}.core-symbol svg path{fill:#d7f387}.pulse{box-shadow:none}.button{transition:none}}
+
+/* Keep every semantic context node visible inside the Hero at each breakpoint. */
+.hero-art{right:0}
+@media(max-width:850px){
+  .hero{display:flex;flex-direction:column;min-height:0}
+  .hero-copy{width:100%;padding:60px 0 20px}
+  .hero-art{position:relative;right:auto;top:auto;flex:none;width:min(100%,500px);height:500px;margin-inline:auto;opacity:1}
+  .label-one,.label-three{left:3%}
+  .label-two,.label-four{right:3%}
+}
+@media(max-width:600px){
+  .hero-copy{padding:35px 0 20px}
+  .hero-art{width:min(100%,420px);height:420px;opacity:1}
+  .hero-art .orbit-two{width:95%;height:95%}
+  .hero-art .orbit-one{width:65%;height:65%}
+  .core-symbol svg{width:110px;height:110px}
+  .art-label{font-size:9px;padding:7px}
+  .art-label span{font-size:15px}
+  .label-one{top:14%}
+  .label-two{top:29%}
+  .label-three,.label-four{bottom:13%}
+}
