@@ -27,6 +27,17 @@ export default function ReviewerDirectory({ reviewers }: { reviewers: Entry[] })
     });
   }, [reviewers, query, key, descending]);
 
+  if (reviewers.length === 0) {
+    return (
+      <section aria-label="Eligible Reviewers">
+        <p role="status">
+          No eligible Reviewers are present in this projection. Search becomes
+          available when a complete projection contains participants.
+        </p>
+      </section>
+    );
+  }
+
   return (
     <section aria-label="Eligible Reviewers">
       <div className="directory-controls">
@@ -72,6 +83,7 @@ export default function ReviewerDirectory({ reviewers }: { reviewers: Entry[] })
               </h2>
               <p>
                 Joined
+                {' '}
                 {new Date(reviewer.joinedAt).toLocaleDateString('en-US', {
                   timeZone: 'UTC',
                 })}

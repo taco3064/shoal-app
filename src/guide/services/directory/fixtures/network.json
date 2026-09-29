@@ -8,13 +8,13 @@
   "reviewers": [
     {
       "repositoryId": 101,
-      "username": "alice",
-      "repository": "alice/shoal-station",
-      "repositoryUrl": "https://github.com/alice/shoal-station",
-      "avatarUrl": "https://avatars.githubusercontent.com/u/101",
-      "profileUrl": "https://github.com/alice",
+      "username": "example-reviewer-1",
+      "repository": "example-reviewer-1/shoal-station",
+      "repositoryUrl": "https://github.com/example-reviewer-1/shoal-station",
+      "avatarUrl": "https://avatars.githubusercontent.com/u/0",
+      "profileUrl": "https://github.com/example-reviewer-1",
       "joinedAt": "2026-09-10T00:00:00Z",
-      "policyUrl": "https://github.com/alice/shoal-station/blob/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/README.md",
+      "policyUrl": "https://github.com/example-reviewer-1/shoal-station/blob/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/README.md",
       "summary": {
         "status": "current",
         "stale": false,
@@ -38,23 +38,23 @@
           "workflowCommit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
           "workflowDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
           "actionCommit": "cccccccccccccccccccccccccccccccccccccccc",
-          "transportUrl": "https://github.com/alice/shoal-station/releases/download/attempt/summary.json",
+          "transportUrl": "https://github.com/example-reviewer-1/shoal-station/releases/download/attempt/summary.json",
           "transportReleaseId": 200,
           "transportAssetId": 400,
           "summaryDigest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
-          "runUrl": "https://github.com/alice/shoal-station/actions/runs/300"
+          "runUrl": "https://github.com/example-reviewer-1/shoal-station/actions/runs/300"
         }
       }
     },
     {
       "repositoryId": 102,
-      "username": "bob",
-      "repository": "bob/shoal-station",
-      "repositoryUrl": "https://github.com/bob/shoal-station",
-      "avatarUrl": "https://avatars.githubusercontent.com/u/102",
-      "profileUrl": "https://github.com/bob",
+      "username": "example-reviewer-2",
+      "repository": "example-reviewer-2/shoal-station",
+      "repositoryUrl": "https://github.com/example-reviewer-2/shoal-station",
+      "avatarUrl": "https://avatars.githubusercontent.com/u/0",
+      "profileUrl": "https://github.com/example-reviewer-2",
       "joinedAt": "2026-09-11T00:00:00Z",
-      "policyUrl": "https://github.com/bob/shoal-station/blob/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/README.md",
+      "policyUrl": "https://github.com/example-reviewer-2/shoal-station/blob/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/README.md",
       "summary": {
         "status": "fallback",
         "stale": true,
@@ -78,23 +78,23 @@
           "workflowCommit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
           "workflowDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
           "actionCommit": "cccccccccccccccccccccccccccccccccccccccc",
-          "transportUrl": "https://github.com/bob/shoal-station/releases/download/attempt/summary.json",
+          "transportUrl": "https://github.com/example-reviewer-2/shoal-station/releases/download/attempt/summary.json",
           "transportReleaseId": 201,
           "transportAssetId": 401,
           "summaryDigest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
-          "runUrl": "https://github.com/bob/shoal-station/actions/runs/300"
+          "runUrl": "https://github.com/example-reviewer-2/shoal-station/actions/runs/300"
         }
       }
     },
     {
       "repositoryId": 103,
-      "username": "carol",
-      "repository": "carol/shoal-station",
-      "repositoryUrl": "https://github.com/carol/shoal-station",
-      "avatarUrl": "https://avatars.githubusercontent.com/u/103",
-      "profileUrl": "https://github.com/carol",
+      "username": "example-reviewer-3",
+      "repository": "example-reviewer-3/shoal-station",
+      "repositoryUrl": "https://github.com/example-reviewer-3/shoal-station",
+      "avatarUrl": "https://avatars.githubusercontent.com/u/0",
+      "profileUrl": "https://github.com/example-reviewer-3",
       "joinedAt": "2026-09-12T00:00:00Z",
-      "policyUrl": "https://github.com/carol/shoal-station/blob/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/README.md",
+      "policyUrl": "https://github.com/example-reviewer-3/shoal-station/blob/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/README.md",
       "summary": {
         "status": "unavailable",
         "stale": false
