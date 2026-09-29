@@ -36,6 +36,7 @@ const metrics =
 const derived = metrics ? derivedMetrics(metrics) : null;
 const title = `${reviewer.username} — Shoal Reviewer`;
 const description = `Review Policy, public review metrics and Summary provenance for ${reviewer.username} on Shoal.`;
+const requestUrl = `${reviewer.repositoryUrl}/issues/new/choose`;
 const percent = (value: number | null) =>
   value === null ? "Not computable" : `${(value * 100).toFixed(1)}%`;
 ---
@@ -55,7 +56,7 @@ const percent = (value: number | null) =>
         <p class="section-kicker">REVIEWER NODE</p>
         <h1>{reviewer.username}</h1>
         <p>
-          Canonical Reviewer Node identity: Repository ID{" "}
+          Reviewer Node identity: Repository ID{" "}
           <code>{reviewer.repositoryId}</code>
         </p>
         <p>
@@ -64,6 +65,36 @@ const percent = (value: number | null) =>
         </p>
       </div>
     </header>
+    <section
+      class="detail-panel reviewer-orientation"
+      aria-labelledby="reviewer-meaning-title"
+    >
+      <div>
+        <p class="section-kicker">WHAT THIS PAGE MEANS</p>
+        <h2 id="reviewer-meaning-title">
+          {reviewer.username} publishes their own review standard
+        </h2>
+        <p>
+          This page shows the Review Policy and public Shoal context for a
+          person-controlled Reviewer Node. A Review Request asks{" "}
+          {reviewer.username} to evaluate a repository against that Policy; it
+          does not ask Shoal to grant a Star.
+        </p>
+      </div>
+      <div class="orientation-actions" aria-label="Reviewer actions">
+        <a class="button primary" href={requestUrl}>
+          Request review ↗
+        </a>
+        <a class="button secondary" href="#policy-title">
+          Read Review Policy ↓
+        </a>
+      </div>
+      <ul class="meaning-list">
+        <li>The Review Policy is owned by this Reviewer.</li>
+        <li>PASS may result in this Reviewer's real GitHub Account starring the target repository.</li>
+        <li>Shoal does not centrally approve, rank, or score this Reviewer.</li>
+      </ul>
+    </section>
     <section class="detail-panel profile-panel" aria-labelledby="profile-title">
       <div>
         <p class="section-kicker">PUBLIC GITHUB PROFILE</p>
@@ -81,7 +112,8 @@ const percent = (value: number | null) =>
     <section class="detail-panel" aria-labelledby="policy-title">
       <h2 id="policy-title">Review Policy</h2>
       <p class="snapshot-note">
-        README.md from the Reviewer Node commit captured by this projection.
+        This is the Reviewer's own README.md Review Policy from the Reviewer
+        Node commit captured by this projection.
       </p>
       {policyMarkdown ? (
         <ReviewPolicy
@@ -100,6 +132,11 @@ const percent = (value: number | null) =>
         </a>
       </p>
       <p>
+        <a href={requestUrl}>
+          Open this Reviewer's canonical Review Request surface ↗
+        </a>
+      </p>
+      <p>
         <a href={reviewer.profileUrl}>GitHub profile ↗</a>
       </p>
     </section>
@@ -108,13 +145,20 @@ const percent = (value: number | null) =>
       <p class={`summary-state state-${selected.status}`}>
         {selected.status === "unavailable"
           ? "No Summary metrics"
-          : selected.status}
+          : `${selected.status} summary`}
       </p>
+      {selected.status === "current" && (
+        <p>
+          The latest completed qualifying Summary Attempt was accepted. These
+          metrics describe the currently selected public snapshot for this
+          Reviewer.
+        </p>
+      )}
       {selected.status === "fallback" && (
         <p>
-          The latest completed qualifying Attempt was rejected. These are stale
-          snapshot facts from a prior accepted Attempt, not current Reviewer
-          facts.
+          The latest completed qualifying Summary Attempt was rejected. These
+          metrics come from a prior accepted snapshot and must be read as stale
+          fallback facts, not current Reviewer facts.
         </p>
       )}
       {selected.status === "unavailable" && (

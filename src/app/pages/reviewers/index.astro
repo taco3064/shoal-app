@@ -15,11 +15,11 @@ const description =
   <main class="wrap directory-page">
     <header class="directory-hero">
       <div>
-        <p class="section-kicker">PUBLIC NETWORK PROJECTION</p>
+        <p class="section-kicker">PUBLIC REVIEW NETWORK</p>
         <h1>Reviewer Directory</h1>
         <p>
-          Explore eligible Reviewers in the current published snapshot. Search
-          by GitHub username or sort the directory below.
+          Discover people participating in Shoal, inspect how they review, and
+          reach the public surface where you can request a review.
         </p>
       </div>
       <div class="directory-snapshot">
@@ -33,6 +33,38 @@ const description =
         </small>
       </div>
     </header>
+    <section
+      class="orientation-grid directory-orientation"
+      aria-label="What you can do in the Reviewer Directory"
+    >
+      <article>
+        <p class="section-kicker">WHAT IS A REVIEWER?</p>
+        <h2>A person-controlled Reviewer Node</h2>
+        <p>
+          Each listed Reviewer owns a public Review Policy and decides how to
+          evaluate repositories. Shoal does not centrally rank or score them.
+        </p>
+      </article>
+      <article>
+        <p class="section-kicker">WHY BROWSE?</p>
+        <h2>Find standards you trust</h2>
+        <p>
+          Open a Reviewer to read their Policy, see public review context, and
+          decide whether their judgment is relevant to your repository.
+        </p>
+      </article>
+      <article>
+        <p class="section-kicker">NEXT ACTION</p>
+        <h2>Request review, not a Star</h2>
+        <p>
+          A Review Request asks for evaluation. PASS may result in that
+          Reviewer's real GitHub Account starring the target repository.
+        </p>
+        <a class="inline-action" href={`${import.meta.env.BASE_URL}join/`}>
+          Become a Reviewer →
+        </a>
+      </article>
+    </section>
     {isLocalSnapshot && (
       <aside class="local-preview-note" role="status">
         <strong>Local preview: recorded Network Scan snapshot.</strong>

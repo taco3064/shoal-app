@@ -8,7 +8,8 @@ export default function DirectoryNotice() {
         <p className="section-kicker">PUBLIC DIRECTORY</p>
         <h2 id="directory-title">Reviewer Directory</h2>
         <p>
-          Explore eligible Reviewers in the latest complete public Network Projection.
+          Find people who publish Review Policies, inspect their public review
+          context, and reach the surface where you can request evaluation.
         </p>
         <a href="/shoal-app/reviewers/">Browse Reviewers →</a>
       </div>

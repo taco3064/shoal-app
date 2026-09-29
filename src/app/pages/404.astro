@@ -3,18 +3,33 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 
 const title = "Page or Reviewer not found — Shoal";
 const description =
-  "This page or Reviewer is not in the current public Shoal projection.";
+  "Recover to Shoal's public review network, Reviewer Directory, or Join flow.";
 ---
 
 <BaseLayout title={title} description={description}>
-  <main class="wrap directory-page">
+  <main class="wrap not-found-page">
     <p class="section-kicker">NOT FOUND</p>
-    <h1>No Reviewer found</h1>
+    <h1>This Shoal page is not available</h1>
     <p>
-      That username is not in the current published eligible Reviewer Directory.
+      The URL may point to an old page, a Reviewer not present in the current
+      public directory, or a route that does not exist.
     </p>
-    <a class="button secondary" href={`${import.meta.env.BASE_URL}reviewers/`}>
-      Browse the Directory →
-    </a>
+    <p>
+      Shoal is a public review network that makes GitHub Stars explainable with
+      a Reviewer-owned Policy, a reviewed repository version, and public
+      evidence. You can recover by learning the mechanism, finding a Reviewer,
+      or joining as one yourself.
+    </p>
+    <div class="recovery-actions" aria-label="Recovery paths">
+      <a class="button primary" href={import.meta.env.BASE_URL}>
+        Understand Shoal →
+      </a>
+      <a class="button secondary" href={`${import.meta.env.BASE_URL}reviewers/`}>
+        Explore Reviewers →
+      </a>
+      <a class="button secondary" href={`${import.meta.env.BASE_URL}join/`}>
+        Become a Reviewer →
+      </a>
+    </div>
   </main>
 </BaseLayout>

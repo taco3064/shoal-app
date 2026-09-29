@@ -6,7 +6,7 @@
 /* A visible path from public context to the endorsement. */
 .hero-art .orbit-two{border-color:#31505555}.core-symbol{width:174px;height:174px;display:grid;place-items:center;text-align:center;gap:0;font-size:9px;letter-spacing:2px;text-shadow:none}.core-symbol svg{width:132px;height:132px;filter:drop-shadow(0 0 20px #d7f38775)}.core-symbol svg path{animation:star-explained 12s ease-in-out infinite}.core-symbol span{margin-top:-10px}.art-label{z-index:2;display:flex;align-items:center;gap:8px;font-size:11px}.art-label span{font-size:18px;letter-spacing:0}.label-one{top:17%;left:26%}.label-two{top:32%;right:5%}.label-three{bottom:19%;left:22%}.label-four{bottom:20%;right:4%}.context-line{position:absolute;width:2px;height:112px;left:50%;top:50%;transform-origin:top;background:linear-gradient(#d7f387,transparent);opacity:.12;animation:context-arrives 12s ease-in-out infinite}.context-line-one{transform:rotate(205deg);animation-delay:0s}.context-line-two{transform:rotate(252deg);animation-delay:2s}.context-line-three{transform:rotate(25deg);animation-delay:4s}.context-line-four{transform:rotate(-35deg);animation-delay:6s}@keyframes context-arrives{0%,5%{opacity:.12;filter:brightness(1)}12%,20%{opacity:1;filter:brightness(1.7)}28%,100%{opacity:.12;filter:brightness(1)}}@keyframes star-explained{0%,54%{fill:transparent}65%,82%{fill:#d7f387;filter:drop-shadow(0 0 15px #d7f387)}95%,100%{fill:transparent}}
 .directory-page,.reviewer-detail,.guide-page{padding-top:80px;padding-bottom:120px;min-height:65vh}.directory-page h1,.reviewer-detail h1,.guide-page h1{font:700 clamp(42px,6vw,68px)/1.1 'Space Grotesk',sans-serif;letter-spacing:-3px}.directory-page>p,.guide-page>p,.snapshot-note{color:#a8babb;line-height:1.7;max-width:780px}.directory-controls{display:flex;align-items:end;gap:14px;flex-wrap:wrap;margin:36px 0}.directory-controls label,.prompt-box label{display:grid;gap:8px;color:#d7f387;font-size:13px}.directory-controls input,.directory-controls select,.prompt-box textarea{background:#112b35;color:#edf5ee;border:1px solid #476160;border-radius:5px;padding:13px;font:inherit}.directory-controls input{min-width:240px}.sort-direction{background:#163540;color:#d7f387;border:1px solid #476160;border-radius:5px;padding:13px;cursor:pointer}.reviewer-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:15px}.reviewer-card,.detail-panel{padding:25px;background:#112b35;border:1px solid #3b5358;border-radius:6px}.reviewer-card{display:flex;gap:16px}.reviewer-card img,.detail-header img{border-radius:50%;height:max-content}.reviewer-card h2{font-size:22px;margin:0 0 8px}.reviewer-card a:hover,.detail-panel a:hover,.guide-page a:hover{color:#d7f387}.reviewer-card p{color:#a8babb;font-size:13px;margin:0 0 13px}.summary-state{display:inline-block;padding:5px 10px;border:1px solid #688264;border-radius:4px;text-transform:uppercase;font-size:11px;letter-spacing:1px;color:#d7f387}.state-fallback{color:#ffd17e;border-color:#8e6e36;background:#644b2235}.state-unavailable{color:#a6b5b4;border-color:#607173}.detail-header{display:flex;align-items:center;gap:25px;margin:30px 0 45px}.detail-header p{color:#abbfbe;margin-bottom:8px}.detail-panel{margin:20px 0;line-height:1.7}.detail-panel h2,.guide-page h2{font:600 30px 'Space Grotesk',sans-serif;margin:0 0 20px}.detail-panel a,.guide-page a:not(.button){text-decoration:underline;text-decoration-color:#5c8376;text-underline-offset:4px}.detail-panel code,.guide-page code{color:#d7f387;overflow-wrap:anywhere}.metric-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}.metric-grid div{padding:18px;border:1px solid #40605c}.metric-grid dt{font-size:12px;color:#a8babb}.metric-grid dd{font-size:27px;margin:8px 0 0;color:#efffae}.provenance{border-top:1px solid #3b5358;margin-top:30px;padding-top:22px;overflow-wrap:anywhere}.onboarding-steps{padding-left:26px;max-width:820px;line-height:1.85}.onboarding-steps li{padding:9px 0}.guide-page h2{margin-top:55px}.prompt-box{display:grid;gap:12px;max-width:900px}.prompt-box textarea{width:100%;line-height:1.5;resize:vertical}.prompt-box button{justify-self:start;cursor:pointer}
-@media(max-width:600px){.site-header nav{gap:12px}.site-header nav a:last-child{display:none}.hero-art{opacity:.55}.detail-header{align-items:start}.detail-header img{width:64px;height:64px}.directory-page,.reviewer-detail,.guide-page{padding-top:45px}}
+@media(max-width:600px){.site-header nav{gap:12px}.hero-art{opacity:.55}.detail-header{align-items:start}.detail-header img{width:64px;height:64px}.directory-page,.reviewer-detail,.guide-page{padding-top:45px}}
 @media(prefers-reduced-motion:reduce){.context-line,.core-symbol svg path{animation:none!important}.context-line{opacity:.65}.core-symbol svg path{fill:#d7f387}.pulse{box-shadow:none}.button{transition:none}}
 
 /* Keep every semantic context node visible inside the Hero at each breakpoint. */
@@ -168,4 +168,46 @@
   .directory-page .directory-controls label:first-child,.directory-page .directory-controls label:nth-child(2){min-width:100%;width:100%}
   .directory-page .sort-direction{width:100%;justify-content:center}
   .directory-page .reviewer-card{min-height:190px}
+}
+
+/* Issue #16: visitor-facing orientation is additive; technical evidence remains visible. */
+.site-header nav{align-items:center;justify-content:flex-end;flex-wrap:wrap;row-gap:10px}
+.orientation-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:30px 0}
+.orientation-grid article,.reviewer-orientation,.reviewer-lifecycle{background:#102b35;border:1px solid #3d5958;border-radius:8px}
+.orientation-grid article{padding:24px;min-width:0}
+.orientation-grid h2,.reviewer-lifecycle h2{font:600 24px/1.2 'Space Grotesk',sans-serif;margin:8px 0 12px}
+.orientation-grid p,.reviewer-orientation p,.reviewer-lifecycle p{color:#b7c9c4;line-height:1.65}
+.inline-action{display:inline-flex;margin-top:6px;color:#d7f387;text-decoration:underline;text-decoration-color:#5c8376;text-underline-offset:4px}
+.reviewer-card-purpose{color:#b7c9c4!important;font-size:14px!important;line-height:1.6!important;margin:0!important}
+.reviewer-card-actions{display:flex;flex-wrap:wrap;gap:12px;border-top:1px solid #405b59;padding-top:17px;font-size:13px}
+.reviewer-card-actions a{color:#d7f387;text-decoration:underline;text-decoration-color:#5c8376;text-underline-offset:4px}
+.reviewer-orientation{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(220px,.6fr);gap:24px;padding:30px}
+.reviewer-orientation h2{font:600 clamp(28px,4vw,40px)/1.15 'Space Grotesk',sans-serif;margin:10px 0 14px}
+.orientation-actions{display:flex;flex-direction:column;align-items:stretch;justify-content:center;gap:12px}
+.orientation-actions .button{justify-content:space-between}
+.meaning-list{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;padding:0;margin:0;list-style:none}
+.meaning-list li{padding:15px 17px;background:#0a2530;border-left:2px solid #d7f387;color:#c6d5ce;line-height:1.55}
+.reviewer-lifecycle{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:28px;padding:30px;margin:0 0 42px}
+.reviewer-lifecycle>div{min-width:0}
+.lifecycle-steps{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:0;padding:0;list-style:none}
+.lifecycle-steps li{padding:18px;background:#0a2530;border:1px solid #365056;border-radius:6px}
+.lifecycle-steps strong{display:block;color:#d7f387;margin-bottom:8px}
+.lifecycle-steps span{display:block;color:#b7c9c4;line-height:1.55;font-size:13px}
+.not-found-page{padding-top:80px;padding-bottom:120px;min-height:65vh}
+.not-found-page h1{font:700 clamp(42px,6vw,68px)/1.1 'Space Grotesk',sans-serif;letter-spacing:-3px;max-width:760px}
+.not-found-page>p:not(.section-kicker){max-width:680px;color:#b7c9c4;line-height:1.7;font-size:17px}
+.recovery-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:30px}
+@media(max-width:850px){
+  .site-header{height:auto;min-height:96px;padding-block:18px;gap:18px}
+  .site-header nav{gap:18px}
+  .orientation-grid,.reviewer-lifecycle,.reviewer-orientation{grid-template-columns:1fr}
+  .meaning-list{grid-template-columns:1fr}
+  .orientation-actions{align-items:flex-start}
+}
+@media(max-width:600px){
+  .site-header{align-items:flex-start}
+  .site-header nav{justify-content:flex-start;gap:12px;font-size:12px}
+  .orientation-grid article,.reviewer-orientation,.reviewer-lifecycle{padding:22px}
+  .lifecycle-steps{grid-template-columns:1fr}
+  .not-found-page{padding-top:45px}
 }
