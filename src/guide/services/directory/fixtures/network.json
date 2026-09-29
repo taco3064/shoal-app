@@ -38,9 +38,7 @@
           "workflowCommit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
           "workflowDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
           "actionCommit": "cccccccccccccccccccccccccccccccccccccccc",
-          "transportUrl": "https://github.com/example-reviewer-1/shoal-station/releases/download/attempt/summary.json",
-          "transportReleaseId": 200,
-          "transportAssetId": 400,
+          "transportUrl": "https://raw.githubusercontent.com/example-reviewer-1/shoal-station/shoal-summary-101-300-2/reviewer-summary.json",
           "summaryDigest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
           "runUrl": "https://github.com/example-reviewer-1/shoal-station/actions/runs/300"
         }
@@ -78,9 +76,7 @@
           "workflowCommit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
           "workflowDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
           "actionCommit": "cccccccccccccccccccccccccccccccccccccccc",
-          "transportUrl": "https://github.com/example-reviewer-2/shoal-station/releases/download/attempt/summary.json",
-          "transportReleaseId": 201,
-          "transportAssetId": 401,
+          "transportUrl": "https://raw.githubusercontent.com/example-reviewer-2/shoal-station/shoal-summary-102-301-2/reviewer-summary.json",
           "summaryDigest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
           "runUrl": "https://github.com/example-reviewer-2/shoal-station/actions/runs/300"
         }
