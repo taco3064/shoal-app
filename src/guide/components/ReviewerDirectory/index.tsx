@@ -119,8 +119,8 @@ function ReviewerCard({ reviewer }: { reviewer: Entry }) {
         </div>
       </div>
       <p className="reviewer-card-purpose">
-        Inspect this Reviewer's Policy, public Summary state, and canonical
-        Review Request surface before asking for evaluation.
+        Inspect this Reviewer's Policy, public review activity, and where to
+        request a review before asking for evaluation.
       </p>
       <div className="reviewer-card-meta">
         <p>
