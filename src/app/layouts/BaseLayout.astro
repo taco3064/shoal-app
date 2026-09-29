@@ -6,7 +6,7 @@ interface Props {
   description: string;
   image?: string;
 }
-const { title, description, image = "og.svg" } = Astro.props;
+const { title, description, image = "og-shoal.webp" } = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site);
 const ogImage = new URL(`${import.meta.env.BASE_URL}${image}`, Astro.site);
 ---
@@ -27,9 +27,13 @@ const ogImage = new URL(`${import.meta.env.BASE_URL}${image}`, Astro.site);
     <meta property="og:image" content={ogImage} />
     <meta name="twitter:card" content="summary_large_image" />
     <link
+      rel="apple-touch-icon"
+      href={`${import.meta.env.BASE_URL}apple-touch-icon.png`}
+    />
+    <link
       rel="icon"
-      href={`${import.meta.env.BASE_URL}favicon.svg`}
-      type="image/svg+xml"
+      href={`${import.meta.env.BASE_URL}favicon.png`}
+      type="image/png"
     />
   </head>
   <body>
@@ -39,10 +43,13 @@ const ogImage = new URL(`${import.meta.env.BASE_URL}${image}`, Astro.site);
         href={import.meta.env.BASE_URL}
         aria-label="Shoal home"
       >
-        <span class="mark" aria-hidden="true">
-          ✳
-        </span>{" "}
-        shoal<span class="wordmark-dot">.</span>
+        <img
+          class="brand-logo"
+          src={`${import.meta.env.BASE_URL}shoal-logo.webp`}
+          alt="Shoal"
+          width="900"
+          height="339"
+        />
       </a>
       <nav aria-label="Main navigation">
         <a href={`${import.meta.env.BASE_URL}#how-it-works`}>How it works</a>
@@ -55,7 +62,13 @@ const ogImage = new URL(`${import.meta.env.BASE_URL}${image}`, Astro.site);
     <footer class="footer">
       <div class="wrap footer-inner">
         <a class="wordmark" href={import.meta.env.BASE_URL}>
-          shoal<span class="wordmark-dot">.</span>
+          <img
+            class="brand-logo"
+            src={`${import.meta.env.BASE_URL}shoal-logo.webp`}
+            alt="Shoal home"
+            width="900"
+            height="339"
+          />
         </a>
         <p>Review the work. Explain the Star.</p>
         <div class="footer-links">
