@@ -1,0 +1,151 @@
+---
+import type { GetStaticPaths } from "astro";
+import type { ReviewerEntry } from "~app/network/services/network_projection";
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import { derivedMetrics } from "~app/guide/services/directory";
+import { publishedProjection } from "~app/guide/services/projection_source";
+
+export const getStaticPaths = (async () => {
+  const projection = await publishedProjection();
+
+  return projection.reviewers.map((reviewer) => ({
+    params: { username: reviewer.username },
+    props: { reviewer, generatedAt: projection.generatedAt },
+  }));
+}) satisfies GetStaticPaths;
+
+const { reviewer, generatedAt } = Astro.props as {
+  reviewer: ReviewerEntry;
+  generatedAt: string;
+};
+const selected = reviewer.summary;
+const metrics =
+  selected.status === "unavailable" ? null : selected.summary.metrics;
+const derived = metrics ? derivedMetrics(metrics) : null;
+const title = `${reviewer.username} — Shoal Reviewer`;
+const description = `Review Policy, public review metrics and Summary provenance for ${reviewer.username} on Shoal.`;
+const percent = (value: number | null) =>
+  value === null ? "Not computable" : `${(value * 100).toFixed(1)}%`;
+---
+
+<BaseLayout title={title} description={description}>
+  <main class="wrap reviewer-detail">
+    <a href={`${import.meta.env.BASE_URL}reviewers/`}>← Reviewer Directory</a>
+    <header class="detail-header">
+      <img src={reviewer.avatarUrl} alt="" width="100" height="100" />
+      <div>
+        <p class="section-kicker">REVIEWER NODE</p>
+        <h1>{reviewer.username}</h1>
+        <p>
+          Canonical Reviewer Node identity: Repository ID{" "}
+          <code>{reviewer.repositoryId}</code>
+        </p>
+        <p>
+          Joined (fork created):{" "}
+          <time datetime={reviewer.joinedAt}>{reviewer.joinedAt}</time>
+        </p>
+      </div>
+    </header>
+    <section class="detail-panel" aria-labelledby="policy-title">
+      <h2 id="policy-title">Review Policy and public links</h2>
+      <p>
+        <a href={reviewer.policyUrl}>
+          Read Reviewer-owned README.md Review Policy ↗
+        </a>
+      </p>
+      <p>
+        <a href={reviewer.repositoryUrl}>
+          Reviewer Node: {reviewer.repository} ↗
+        </a>
+      </p>
+      <p>
+        <a href={reviewer.profileUrl}>GitHub profile ↗</a>
+      </p>
+    </section>
+    <section class="detail-panel" aria-labelledby="summary-title">
+      <h2 id="summary-title">Reviewer Summary</h2>
+      <p class={`summary-state state-${selected.status}`}>{selected.status}</p>
+      {selected.status === "fallback" && (
+        <p>
+          The latest completed qualifying Attempt was rejected. These are stale
+          snapshot facts from a prior accepted Attempt, not current Reviewer
+          facts.
+        </p>
+      )}
+      {selected.status === "unavailable" && (
+        <p>
+          No acceptable Reviewer Summary is selected. Primitive metrics are
+          unavailable.
+        </p>
+      )}
+      {metrics && derived && (
+        <>
+          <dl class="metric-grid">
+            <div>
+              <dt>Review-backed Stars</dt>
+              <dd>{metrics.reviewBackedStarCount}</dd>
+            </div>
+            <div>
+              <dt>Valid Review Request Issues</dt>
+              <dd>{metrics.validReviewRequestIssueCount}</dd>
+            </div>
+            <div>
+              <dt>Re-review Request Issues</dt>
+              <dd>{metrics.reReviewRequestIssueCount}</dd>
+            </div>
+            <div>
+              <dt>Invalid formal Review / Re-review result comments</dt>
+              <dd>{metrics.invalidReviewCommentCount}</dd>
+            </div>
+          </dl>
+          <p>
+            Derived from this accepted snapshot: initial requests{" "}
+            {derived.initialReviewRequestCount}; currently not endorsed{" "}
+            {derived.currentlyNotEndorsedCount}; current endorsement share{" "}
+            {percent(derived.currentEndorsementShare)}; re-review request share{" "}
+            {percent(derived.reReviewRequestShare)}; re-review request intensity{" "}
+            {percent(derived.reReviewRequestIntensity)}.
+          </p>
+        </>
+      )}
+      {selected.status !== "unavailable" && (
+        <div class="provenance">
+          <h3>Selected accepted Attempt</h3>
+          <p>
+            Repository ID {reviewer.repositoryId} · run {selected.source.runId}{" "}
+            · attempt {selected.source.runAttempt}
+          </p>
+          <p>
+            Started{" "}
+            <time datetime={selected.source.runStartedAt}>
+              {selected.source.runStartedAt}
+            </time>{" "}
+            · workflow commit <code>{selected.source.workflowCommit}</code>
+          </p>
+          <p>
+            Workflow digest <code>{selected.source.workflowDigest}</code> ·
+            pinned Action commit <code>{selected.source.actionCommit}</code>
+          </p>
+          <p>
+            Public exact-byte transport digest{" "}
+            <code>{selected.source.summaryDigest}</code>
+          </p>
+          <p>
+            <a href={selected.source.transportUrl}>
+              Selected Attempt public Summary transport ↗
+            </a>{" "}
+            · <a href={selected.source.runUrl}>Workflow run ↗</a>
+          </p>
+          <p>
+            The public transport is a retrieval surface, not an independent
+            trust anchor. The Network Aggregator accepted this Attempt upstream.
+          </p>
+        </div>
+      )}
+    </section>
+    <p class="snapshot-note">
+      Projection generated: <time datetime={generatedAt}>{generatedAt}</time>.
+      GitHub is the source of truth; this website renders a derived snapshot.
+    </p>
+  </main>
+</BaseLayout>

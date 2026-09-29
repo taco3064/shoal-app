@@ -59,7 +59,7 @@ flowchart TD
 | --- | --- | --- |
 | `action` | Compute and package the Reviewer Summary Marketplace Action source. | `protocol` |
 | `app` | Compose Astro routes, layouts, and page metadata. | `guide` |
-| `guide` | Explain Shoal endorsements and guide reviewers through joining the network. | — |
+| `guide` | Render the public Reviewer Directory and explain Shoal endorsements and onboarding. | `network` |
 | `network` | Discover eligible Reviewer Nodes, verify Summary provenance, and compile the flat Network Projection. | `protocol` |
 | `protocol` | Own Shoal protocol parsing, validation, schemas, and versioned contracts. | — |
 
