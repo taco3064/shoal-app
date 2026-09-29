@@ -3,7 +3,9 @@ import type { GetStaticPaths } from "astro";
 import type { ReviewerEntry } from "~app/network/services/network_projection";
 import BaseLayout from "../../../layouts/BaseLayout.astro";
 import { derivedMetrics } from "~app/guide/services/directory";
+import { policyContent } from "~app/guide/services/policy_content";
 import { publishedProjection } from "~app/guide/services/projection_source";
+import ReviewPolicy from "~app/guide/components/ReviewPolicy";
 
 export const getStaticPaths = (async () => {
   const projection = await publishedProjection();
@@ -21,6 +23,10 @@ const { reviewer, generatedAt } = Astro.props as {
 const isLocalSnapshot =
   import.meta.env.DEV && !process.env.SHOAL_PROJECTION_FILE;
 const selected = reviewer.summary;
+const policyMarkdown =
+  process.env.SHOAL_POLICY_FETCH === "skip"
+    ? null
+    : await policyContent(reviewer.repository, reviewer.policyUrl);
 const metrics =
   selected.status === "unavailable" ? null : selected.summary.metrics;
 const derived = metrics ? derivedMetrics(metrics) : null;
@@ -55,11 +61,20 @@ const percent = (value: number | null) =>
       </div>
     </header>
     <section class="detail-panel" aria-labelledby="policy-title">
-      <h2 id="policy-title">Review Policy and public links</h2>
+      <h2 id="policy-title">Review Policy</h2>
+      <p class="snapshot-note">
+        README.md from the Reviewer Node commit captured by this projection.
+      </p>
+      {policyMarkdown ? (
+        <ReviewPolicy
+          markdown={policyMarkdown}
+          policyUrl={reviewer.policyUrl}
+        />
+      ) : (
+        <p>This snapshot has no README.md to display.</p>
+      )}
       <p>
-        <a href={reviewer.policyUrl}>
-          Read Reviewer-owned README.md Review Policy ↗
-        </a>
+        <a href={reviewer.policyUrl}>View this README.md on GitHub ↗</a>
       </p>
       <p>
         <a href={reviewer.repositoryUrl}>
