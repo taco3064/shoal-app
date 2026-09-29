@@ -19,11 +19,11 @@ export default function Hero() {
         <div className="actions">
           <a
             className="button primary"
-            href="https://github.com/taco3064/shoal-station/fork"
+            href="/shoal-app/join/"
           >
-            Join Shoal · direct fork
+            Join Shoal · choose your path
             {' '}
-            <span aria-hidden="true">↗</span>
+            <span aria-hidden="true">→</span>
           </a>
           <a className="button secondary" href="#how-it-works">
             See how it works
