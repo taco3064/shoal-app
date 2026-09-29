@@ -30,3 +30,11 @@
   .label-two{top:29%}
   .label-three,.label-four{bottom:13%}
 }
+
+/* A radial layer fades without the SVG filter's rectangular clipping edge. */
+.core-symbol::before{content:"";position:absolute;top:50%;left:50%;width:260px;height:260px;transform:translate(-50%,-50%);background:radial-gradient(circle,#d7f38750 0%,#d7f38718 36%,transparent 72%);pointer-events:none;animation:star-glow 12s ease-in-out infinite}
+.core-symbol svg{position:relative;z-index:1;filter:none}
+.core-symbol span{position:relative;z-index:1}
+@keyframes star-explained{0%,54%{fill:transparent}65%,82%{fill:#d7f387}95%,100%{fill:transparent}}
+@keyframes star-glow{0%,54%,95%,100%{opacity:.15}65%,82%{opacity:1}}
+@media(prefers-reduced-motion:reduce){.core-symbol::before{animation:none;opacity:.65}}
