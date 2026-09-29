@@ -139,6 +139,16 @@
 .directory-page .reviewer-card-meta{border-top:1px solid #405b59;padding-top:18px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
 .directory-page .reviewer-card-meta p{margin:0;color:#a9c0bc;font-size:12px;white-space:nowrap}
 .directory-page .summary-state{white-space:normal;text-align:center}
+.review-policy-content{padding:20px 0 12px;overflow-wrap:anywhere}
+.review-policy-content h1,.review-policy-content h2,.review-policy-content h3{font:600 clamp(20px,3vw,28px)/1.3 'Space Grotesk',sans-serif;letter-spacing:normal;margin:28px 0 12px}
+.review-policy-content p,.review-policy-content li{line-height:1.75}
+.review-policy-content ul,.review-policy-content ol{padding-left:24px}
+.review-policy-content blockquote{margin:20px 0;padding:3px 18px;border-left:3px solid #b8da80;background:#183a3e}
+.review-policy-content pre,.review-policy-content table{max-width:100%;overflow:auto}
+.review-policy-content pre{padding:16px;background:#09242c;border-radius:5px}
+.review-policy-content img{max-width:100%;height:auto}
+.review-policy-content table{display:block;border-collapse:collapse}
+.review-policy-content th,.review-policy-content td{padding:8px 12px;border:1px solid #476160}
 .directory-footnote{max-width:780px;margin:29px 0 0;color:#91aaa6;font-size:13px;line-height:1.7}
 @media(max-width:800px){
   .directory-page .directory-hero{align-items:start;gap:20px}
