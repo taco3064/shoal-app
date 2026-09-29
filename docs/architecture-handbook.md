@@ -29,7 +29,7 @@ flowchart TD
     m2_l1 --> m2_l3
     m2_l2 --> m2_l3
   end
-  subgraph m3["protocol"]
+  subgraph m3["network"]
     m3_l0["components"]
     m3_l1["hooks"]
     m3_l2["contexts"]
@@ -38,6 +38,16 @@ flowchart TD
     m3_l1 -->|Context only · selfOnly| m3_l2
     m3_l1 --> m3_l3
     m3_l2 --> m3_l3
+  end
+  subgraph m4["protocol"]
+    m4_l0["components"]
+    m4_l1["hooks"]
+    m4_l2["contexts"]
+    m4_l3["services"]
+    m4_l0 -.-> m4_l1
+    m4_l1 -->|Context only · selfOnly| m4_l2
+    m4_l1 --> m4_l3
+    m4_l2 --> m4_l3
   end
 ```
 
@@ -50,6 +60,7 @@ flowchart TD
 | `action` | Compute and package the Reviewer Summary Marketplace Action source. | `protocol` |
 | `app` | Compose Astro routes, layouts, and page metadata. | `guide` |
 | `guide` | Explain Shoal endorsements and guide reviewers through joining the network. | — |
+| `network` | Discover eligible Reviewer Nodes, verify Summary provenance, and compile the flat Network Projection. | `protocol` |
 | `protocol` | Own Shoal protocol parsing, validation, schemas, and versioned contracts. | — |
 
 The optional reserved `app` module owns router composition recursively and uses the container position; it does not repeat the shared layers below.
