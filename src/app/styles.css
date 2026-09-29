@@ -78,7 +78,7 @@
 .join-page .journey:not(.is-enhanced) .journey-step{min-height:0;border-radius:8px;margin-bottom:12px}
 .join-page .journey-step h2{font-size:clamp(30px,4vw,42px);margin:10px 0 22px}
 .join-page .journey-step>p:not(.section-kicker){max-width:680px;font-size:16px;line-height:1.7}
-.join-page .journey-step .step-note{max-width:780px;margin-top:22px;padding:14px 18px;background:#0a2530;border-left:2px solid #789c75;line-height:1.65}
+.join-page .journey-step>p.step-note{max-width:none;width:100%;margin-top:22px;padding:14px 18px;background:#0a2530;border-left:2px solid #789c75;line-height:1.65}
 .join-page .journey-step-actions{align-items:center;margin-top:34px}
 .join-page .setup-options{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:26px 0}
 .join-page .setup-option{padding:0;background:#102e36;border-radius:7px;min-width:0}
@@ -90,6 +90,7 @@
 .join-page .setup-option summary span{font:600 19px 'Space Grotesk',sans-serif}
 .join-page .setup-option summary small{color:#a8c0bb;font-size:12px}
 .join-page .setup-option>ol,.join-page .setup-option>p,.join-page .setup-option>.prompt-box{margin:0 22px 22px}
+.join-page .setup-option>astro-island{display:block;min-width:0;margin:0 22px 22px}
 .join-page .setup-option>ol{padding-left:22px}
 .join-page .setup-option li{overflow-wrap:anywhere}
 .join-page .setup-option .prompt-box{min-width:0}
