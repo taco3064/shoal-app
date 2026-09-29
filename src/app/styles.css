@@ -110,3 +110,48 @@
   .join-page .journey-step-actions a{font-size:12px}
 }
 @media(prefers-reduced-motion:reduce){.join-page .join-paths a{transition:none;transform:none!important}}
+
+/* The directory uses the full content canvas; its introduction stays readable. */
+.directory-page.wrap{width:min(1480px,calc(100% - 72px))}
+.directory-page .directory-hero{display:flex;justify-content:space-between;align-items:end;gap:50px;padding-bottom:38px;border-bottom:1px solid #38565b}
+.directory-page .directory-hero>div:first-child{max-width:780px}
+.directory-page .directory-hero h1{margin:12px 0 18px}
+.directory-page .directory-hero p:not(.section-kicker){color:#b5c7c4;font-size:17px;line-height:1.65;margin:0}
+.directory-snapshot{display:flex;flex-direction:column;align-items:flex-end;flex:none;padding:20px 0;color:#d7f387}
+.directory-snapshot strong{font:600 56px/1 'Space Grotesk',sans-serif}
+.directory-snapshot span{font-size:13px;letter-spacing:1px;text-transform:uppercase;margin-top:8px}
+.directory-snapshot small{color:#94aba9;margin-top:17px;font-size:11px;text-align:right}
+.directory-page .local-preview-note{max-width:none;margin:25px 0 0;padding:14px 20px;font-size:12px}
+.directory-page .local-preview-note p{margin:4px 0 0}
+.directory-page .directory-controls{width:100%;display:flex;align-items:end;gap:14px;margin:34px 0 17px;padding:22px;background:#102b35;border:1px solid #3c5958;border-radius:8px}
+.directory-page .directory-controls label:first-child{flex:1;min-width:240px}
+.directory-page .directory-controls label:nth-child(2){min-width:250px}
+.directory-page .directory-controls input,.directory-page .directory-controls select{width:100%;min-width:0;height:48px}
+.directory-page .sort-direction{height:48px;white-space:nowrap}
+.directory-result-count{color:#9fb7b1;font-size:13px;margin:0 0 15px}
+.directory-page .reviewer-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:16px;width:100%}
+.directory-page .reviewer-card{display:flex;flex-direction:column;justify-content:space-between;gap:30px;min-width:0;min-height:220px;padding:27px;background:linear-gradient(145deg,#17343d,#102832);border:1px solid #42615f;border-radius:8px}
+.directory-page .reviewer-card-head{display:flex;gap:17px;align-items:center;min-width:0}
+.directory-page .reviewer-card-head>div{min-width:0}
+.directory-page .reviewer-card h2{font:600 23px/1.25 'Space Grotesk',sans-serif;margin:0 0 7px;overflow-wrap:anywhere}
+.directory-page .reviewer-card-head p{margin:0;font-size:12px;overflow-wrap:anywhere}
+.directory-page .reviewer-card-meta{border-top:1px solid #405b59;padding-top:18px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.directory-page .reviewer-card-meta p{margin:0;color:#a9c0bc;font-size:12px;white-space:nowrap}
+.directory-page .summary-state{white-space:normal;text-align:center}
+.directory-footnote{max-width:780px;margin:29px 0 0;color:#91aaa6;font-size:13px;line-height:1.7}
+@media(max-width:800px){
+  .directory-page .directory-hero{align-items:start;gap:20px}
+  .directory-snapshot strong{font-size:42px}
+  .directory-page .directory-controls{flex-wrap:wrap}
+  .directory-page .directory-controls label:nth-child(2){flex:1}
+}
+@media(max-width:600px){
+  .directory-page.wrap{width:calc(100% - 32px)}
+  .directory-page .directory-hero{display:block;padding-bottom:25px}
+  .directory-snapshot{align-items:flex-start;padding:25px 0 0}
+  .directory-snapshot small{text-align:left}
+  .directory-page .directory-controls{padding:17px;gap:13px}
+  .directory-page .directory-controls label:first-child,.directory-page .directory-controls label:nth-child(2){min-width:100%;width:100%}
+  .directory-page .sort-direction{width:100%;justify-content:center}
+  .directory-page .reviewer-card{min-height:190px}
+}

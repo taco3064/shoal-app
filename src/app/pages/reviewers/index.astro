@@ -13,28 +13,41 @@ const description =
 
 <BaseLayout title={title} description={description}>
   <main class="wrap directory-page">
-    <p class="section-kicker">PUBLIC NETWORK PROJECTION</p>
-    <h1>Reviewer Directory</h1>
-    <p>
-      Eligible Reviewer Nodes include the Personal Account-owned Network Root
-      and qualifying direct forks. Search covers this published snapshot only;
-      joined dates mark repository creation, not setup completion.
-    </p>
-    <p>
-      Snapshot generated:{" "}
-      <time datetime={projection.generatedAt}>{projection.generatedAt}</time>
-    </p>
+    <header class="directory-hero">
+      <div>
+        <p class="section-kicker">PUBLIC NETWORK PROJECTION</p>
+        <h1>Reviewer Directory</h1>
+        <p>
+          Explore eligible Reviewers in the current published snapshot. Search
+          by GitHub username or sort the directory below.
+        </p>
+      </div>
+      <div class="directory-snapshot">
+        <strong>{projection.reviewers.length}</strong>
+        <span>eligible Reviewers</span>
+        <small>
+          Scanned{" "}
+          <time datetime={projection.generatedAt}>
+            {projection.generatedAt}
+          </time>
+        </small>
+      </div>
+    </header>
     {isLocalSnapshot && (
       <aside class="local-preview-note" role="status">
         <strong>Local preview: recorded Network Scan snapshot.</strong>
         <p>
-          This preview uses the validated snapshot dated above. Search only
-          checks eligible Reviewers in that snapshot; it does not look up GitHub
-          users live. For newer data, provide a complete scan output through{" "}
-          <code>SHOAL_PROJECTION_FILE</code>.
+          This preview shows the validated scan dated above. For a newer scan,
+          provide its complete output through <code>SHOAL_PROJECTION_FILE</code>
+          .
         </p>
       </aside>
     )}
     <ReviewerDirectory reviewers={projection.reviewers} client:load />
+    <p class="directory-footnote">
+      The Network Root and qualifying direct forks share this flat directory.
+      Joined dates are repository creation dates, not setup completion dates.
+      Search does not query GitHub live.
+    </p>
   </main>
 </BaseLayout>

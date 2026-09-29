@@ -1,20 +1,48 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-09-29T08:25:58.721Z",
+  "generatedAt": "2026-09-29T10:33:14.761Z",
   "networkRoot": {
     "repositoryId": 1379044983,
     "repository": "taco3064/shoal-station"
   },
   "reviewers": [
     {
-      "repositoryId": 1394253703,
+      "repositoryId": 1394902247,
       "username": "june-shoal",
-      "repository": "june-shoal/jun-station",
-      "repositoryUrl": "https://github.com/june-shoal/jun-station",
+      "repository": "june-shoal/june-station",
+      "repositoryUrl": "https://github.com/june-shoal/june-station",
       "avatarUrl": "https://avatars.githubusercontent.com/u/333159609?v=4",
       "profileUrl": "https://github.com/june-shoal",
-      "joinedAt": "2026-09-29T04:07:40Z",
-      "policyUrl": "https://github.com/june-shoal/jun-station/blob/eb5734bac0ef15134abfbf6e04c880a1c1e21e56/README.md",
+      "joinedAt": "2026-09-29T10:13:52Z",
+      "policyUrl": "https://github.com/june-shoal/june-station/blob/11f679c02e88b7cd8287e92c4edd03929fa38ea9/README.md",
+      "summary": {
+        "status": "unavailable",
+        "stale": false
+      }
+    },
+    {
+      "repositoryId": 1394899778,
+      "username": "taco-gem",
+      "repository": "taco-gem/shoal-station",
+      "repositoryUrl": "https://github.com/taco-gem/shoal-station",
+      "avatarUrl": "https://avatars.githubusercontent.com/u/332790854?v=4",
+      "profileUrl": "https://github.com/taco-gem",
+      "joinedAt": "2026-09-29T10:12:24Z",
+      "policyUrl": "https://github.com/taco-gem/shoal-station/blob/11f679c02e88b7cd8287e92c4edd03929fa38ea9/README.md",
+      "summary": {
+        "status": "unavailable",
+        "stale": false
+      }
+    },
+    {
+      "repositoryId": 1379044983,
+      "username": "taco3064",
+      "repository": "taco3064/shoal-station",
+      "repositoryUrl": "https://github.com/taco3064/shoal-station",
+      "avatarUrl": "https://avatars.githubusercontent.com/u/127829492?v=4",
+      "profileUrl": "https://github.com/taco3064",
+      "joinedAt": "2026-09-21T03:44:11Z",
+      "policyUrl": "https://github.com/taco3064/shoal-station/blob/11f679c02e88b7cd8287e92c4edd03929fa38ea9/README.md",
       "summary": {
         "status": "unavailable",
         "stale": false
