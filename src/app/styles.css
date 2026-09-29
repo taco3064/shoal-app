@@ -112,8 +112,7 @@
 }
 @media(prefers-reduced-motion:reduce){.join-page .join-paths a{transition:none;transform:none!important}}
 
-/* The directory uses the full content canvas; its introduction stays readable. */
-.directory-page.wrap,.wide-canvas.wrap{width:min(1480px,calc(100% - 72px))}
+/* The directory fills the shared content canvas; its introduction stays readable. */
 .directory-page .directory-hero{display:flex;justify-content:space-between;align-items:end;gap:50px;padding-bottom:38px;border-bottom:1px solid #38565b}
 .directory-page .directory-hero>div:first-child{max-width:780px}
 .directory-page .directory-hero h1{margin:12px 0 18px}
@@ -162,7 +161,6 @@
   .directory-page .directory-controls label:nth-child(2){flex:1}
 }
 @media(max-width:600px){
-  .directory-page.wrap,.wide-canvas.wrap{width:calc(100% - 32px)}
   .directory-page .directory-hero{display:block;padding-bottom:25px}
   .directory-snapshot{align-items:flex-start;padding:25px 0 0}
   .directory-snapshot small{text-align:left}
