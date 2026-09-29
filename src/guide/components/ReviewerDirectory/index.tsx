@@ -123,11 +123,13 @@ function ReviewerCard({ reviewer }: { reviewer: Entry }) {
             })}
           </time>
         </p>
-        <span className={`summary-state state-${reviewer.summary.status}`}>
-          {reviewer.summary.status === 'fallback'
-            ? 'Fallback · prior accepted snapshot'
-            : reviewer.summary.status}
-        </span>
+        {reviewer.summary.status !== 'unavailable' && (
+          <span className={`summary-state state-${reviewer.summary.status}`}>
+            {reviewer.summary.status === 'fallback'
+              ? 'Fallback · prior accepted snapshot'
+              : 'Current summary'}
+          </span>
+        )}
       </div>
     </article>
   );
