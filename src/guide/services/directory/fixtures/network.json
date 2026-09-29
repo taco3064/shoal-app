@@ -1,0 +1,104 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-09-29T00:00:00Z",
+  "networkRoot": {
+    "repositoryId": 1379044983,
+    "repository": "taco3064/shoal-station"
+  },
+  "reviewers": [
+    {
+      "repositoryId": 101,
+      "username": "alice",
+      "repository": "alice/shoal-station",
+      "repositoryUrl": "https://github.com/alice/shoal-station",
+      "avatarUrl": "https://avatars.githubusercontent.com/u/101",
+      "profileUrl": "https://github.com/alice",
+      "joinedAt": "2026-09-10T00:00:00Z",
+      "policyUrl": "https://github.com/alice/shoal-station/blob/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/README.md",
+      "summary": {
+        "status": "current",
+        "stale": false,
+        "summary": {
+          "protocolVersion": 1,
+          "summarySchemaVersion": 1,
+          "reviewerNode": {
+            "repositoryId": 101
+          },
+          "metrics": {
+            "reviewBackedStarCount": 0,
+            "validReviewRequestIssueCount": 0,
+            "reReviewRequestIssueCount": 0,
+            "invalidReviewCommentCount": 1
+          }
+        },
+        "source": {
+          "runId": 300,
+          "runAttempt": 2,
+          "runStartedAt": "2026-09-28T00:00:00Z",
+          "workflowCommit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "workflowDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "actionCommit": "cccccccccccccccccccccccccccccccccccccccc",
+          "transportUrl": "https://github.com/alice/shoal-station/releases/download/attempt/summary.json",
+          "transportReleaseId": 200,
+          "transportAssetId": 400,
+          "summaryDigest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "runUrl": "https://github.com/alice/shoal-station/actions/runs/300"
+        }
+      }
+    },
+    {
+      "repositoryId": 102,
+      "username": "bob",
+      "repository": "bob/shoal-station",
+      "repositoryUrl": "https://github.com/bob/shoal-station",
+      "avatarUrl": "https://avatars.githubusercontent.com/u/102",
+      "profileUrl": "https://github.com/bob",
+      "joinedAt": "2026-09-11T00:00:00Z",
+      "policyUrl": "https://github.com/bob/shoal-station/blob/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/README.md",
+      "summary": {
+        "status": "fallback",
+        "stale": true,
+        "summary": {
+          "protocolVersion": 1,
+          "summarySchemaVersion": 1,
+          "reviewerNode": {
+            "repositoryId": 102
+          },
+          "metrics": {
+            "reviewBackedStarCount": 0,
+            "validReviewRequestIssueCount": 0,
+            "reReviewRequestIssueCount": 0,
+            "invalidReviewCommentCount": 1
+          }
+        },
+        "source": {
+          "runId": 301,
+          "runAttempt": 2,
+          "runStartedAt": "2026-09-28T00:00:00Z",
+          "workflowCommit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "workflowDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "actionCommit": "cccccccccccccccccccccccccccccccccccccccc",
+          "transportUrl": "https://github.com/bob/shoal-station/releases/download/attempt/summary.json",
+          "transportReleaseId": 201,
+          "transportAssetId": 401,
+          "summaryDigest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "runUrl": "https://github.com/bob/shoal-station/actions/runs/300"
+        }
+      }
+    },
+    {
+      "repositoryId": 103,
+      "username": "carol",
+      "repository": "carol/shoal-station",
+      "repositoryUrl": "https://github.com/carol/shoal-station",
+      "avatarUrl": "https://avatars.githubusercontent.com/u/103",
+      "profileUrl": "https://github.com/carol",
+      "joinedAt": "2026-09-12T00:00:00Z",
+      "policyUrl": "https://github.com/carol/shoal-station/blob/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/README.md",
+      "summary": {
+        "status": "unavailable",
+        "stale": false
+      }
+    }
+  ]
+}

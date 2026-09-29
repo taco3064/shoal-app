@@ -5,13 +5,12 @@ export default function DirectoryNotice() {
         ↗
       </div>
       <div>
-        <p className="section-kicker">COMING LATER</p>
+        <p className="section-kicker">PUBLIC DIRECTORY</p>
         <h2 id="directory-title">Reviewer Directory</h2>
         <p>
-          The public directory is not available yet. Reviewer lookup and network
-          data will arrive in a later milestone; there is no live search here
-          today.
+          Explore eligible Reviewers in the latest complete public Network Projection.
         </p>
+        <a href="/shoal-app/reviewers/">Browse Reviewers →</a>
       </div>
     </section>
   );

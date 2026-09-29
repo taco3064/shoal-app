@@ -21,7 +21,7 @@ export default function Hero() {
             className="button primary"
             href="https://github.com/taco3064/shoal-station/fork"
           >
-            Explore the station
+            Join Shoal · direct fork
             {' '}
             <span aria-hidden="true">↗</span>
           </a>
@@ -39,11 +39,40 @@ export default function Hero() {
       <div className="hero-art" aria-hidden="true">
         <div className="orbit orbit-one" />
         <div className="orbit orbit-two" />
-        <div className="orbit orbit-three" />
-        <div className="core-symbol">✳</div>
-        <span className="art-label label-one">POLICY</span>
-        <span className="art-label label-two">EVIDENCE</span>
-        <span className="art-label label-three">VERSION</span>
+        <div className="context-line context-line-one" />
+        <div className="context-line context-line-two" />
+        <div className="context-line context-line-three" />
+        <div className="context-line context-line-four" />
+        <div className="core-symbol">
+          <svg viewBox="0 0 100 100" fill="none" aria-hidden="true">
+            <path
+              d="M50 8 62 37 94 40 70 61 77 92 50 75 23 92 30 61 6 40 38 37Z"
+              stroke="currentColor"
+              strokeWidth="3"
+            />
+          </svg>
+          <span>EXPLAINED STAR</span>
+        </div>
+        <span className="art-label label-one">
+          <span aria-hidden="true">👤</span>
+          {' '}
+          REVIEWER
+        </span>
+        <span className="art-label label-two">
+          <span aria-hidden="true">📄</span>
+          {' '}
+          POLICY
+        </span>
+        <span className="art-label label-three">
+          <span aria-hidden="true">🏷️</span>
+          {' '}
+          VERSION
+        </span>
+        <span className="art-label label-four">
+          <span aria-hidden="true">🛡️</span>
+          {' '}
+          EVIDENCE
+        </span>
       </div>
     </section>
   );

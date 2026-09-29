@@ -1,0 +1,26 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import ReviewerDirectory from "~app/guide/components/ReviewerDirectory";
+import { publishedProjection } from "~app/guide/services/projection_source";
+
+const projection = await publishedProjection();
+const title = "Reviewer Directory — Shoal";
+const description =
+  "Explore the current eligible Shoal Reviewers and their public review context.";
+---
+
+<BaseLayout title={title} description={description}>
+  <main class="wrap directory-page">
+    <p class="section-kicker">PUBLIC NETWORK PROJECTION</p>
+    <h1>Reviewer Directory</h1>
+    <p>
+      Eligible direct forks of the Network Root. Search covers this published
+      snapshot only; joined dates mark fork creation, not setup completion.
+    </p>
+    <p>
+      Snapshot generated:{" "}
+      <time datetime={projection.generatedAt}>{projection.generatedAt}</time>
+    </p>
+    <ReviewerDirectory reviewers={projection.reviewers} client:load />
+  </main>
+</BaseLayout>

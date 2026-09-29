@@ -18,9 +18,9 @@ export default function JoinSteps() {
       </p>
       <a
         className="button primary"
-        href="https://github.com/taco3064/shoal-station"
+        href="/shoal-app/join/"
       >
-        Visit the Network Root
+        Join Shoal · full setup guide
         {' '}
         <span aria-hidden="true">↗</span>
       </a>

@@ -1,0 +1,20 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+const title = "Page or Reviewer not found — Shoal";
+const description =
+  "This page or Reviewer is not in the current public Shoal projection.";
+---
+
+<BaseLayout title={title} description={description}>
+  <main class="wrap directory-page">
+    <p class="section-kicker">NOT FOUND</p>
+    <h1>No Reviewer found</h1>
+    <p>
+      That username is not in the current published eligible Reviewer Directory.
+    </p>
+    <a class="button secondary" href={`${import.meta.env.BASE_URL}reviewers/`}>
+      Browse the Directory →
+    </a>
+  </main>
+</BaseLayout>
