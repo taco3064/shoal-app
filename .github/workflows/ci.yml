@@ -43,3 +43,15 @@ jobs:
       - run: npm run test:network
       - run: npm run test:directory
       - run: npm run blueprint:validate
+      - name: Scan current public Network
+        if: matrix.os == 'ubuntu-latest' && github.event_name == 'pull_request'
+        run: npm run scan:network
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+      - name: Preserve scanned projection for review
+        if: matrix.os == 'ubuntu-latest' && github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: network-projection-${{ github.event.pull_request.head.sha }}
+          path: dist/network-projection/network.json
+          if-no-files-found: error

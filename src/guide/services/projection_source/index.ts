@@ -6,7 +6,7 @@ import type { NetworkProjection } from '~app/network/services/network_projection
 export async function publishedProjection(): Promise<NetworkProjection> {
   const path = process.env.SHOAL_PROJECTION_FILE
     ?? (import.meta.env.DEV
-      ? resolve(process.cwd(), 'src/guide/services/directory/fixtures/network.json')
+      ? resolve(process.cwd(), 'src/guide/services/directory/fixtures/development.json')
       : null);
 
   if (!path) {

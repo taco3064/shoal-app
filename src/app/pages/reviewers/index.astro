@@ -18,14 +18,22 @@ const description =
       Eligible direct forks of the Network Root. Search covers this published
       snapshot only; joined dates mark fork creation, not setup completion.
     </p>
-    <p>
-      Snapshot generated:{" "}
-      <time datetime={projection.generatedAt}>{projection.generatedAt}</time>
-    </p>
-    {isFixture && (
-      <p role="status">
-        Development sample projection — these are not live Shoal Reviewers.
+    {!isFixture && (
+      <p>
+        Snapshot generated:{" "}
+        <time datetime={projection.generatedAt}>{projection.generatedAt}</time>
       </p>
+    )}
+    {isFixture && (
+      <aside class="local-preview-note" role="status">
+        <strong>Local preview: no Network Projection loaded.</strong>
+        <p>
+          Search only checks eligible Reviewers in the current projection. It
+          does not look up GitHub users live. To preview real data, run a
+          complete Network Scan and provide its output through{" "}
+          <code>SHOAL_PROJECTION_FILE</code>.
+        </p>
+      </aside>
     )}
     <ReviewerDirectory reviewers={projection.reviewers} client:load />
   </main>
