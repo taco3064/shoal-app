@@ -4,7 +4,8 @@ import ReviewerDirectory from "~app/guide/components/ReviewerDirectory";
 import { publishedProjection } from "~app/guide/services/projection_source";
 
 const projection = await publishedProjection();
-const isFixture = import.meta.env.DEV && !process.env.SHOAL_PROJECTION_FILE;
+const isLocalSnapshot =
+  import.meta.env.DEV && !process.env.SHOAL_PROJECTION_FILE;
 const title = "Reviewer Directory — Shoal";
 const description =
   "Explore the current eligible Shoal Reviewers and their public review context.";
@@ -18,19 +19,17 @@ const description =
       Eligible direct forks of the Network Root. Search covers this published
       snapshot only; joined dates mark fork creation, not setup completion.
     </p>
-    {!isFixture && (
-      <p>
-        Snapshot generated:{" "}
-        <time datetime={projection.generatedAt}>{projection.generatedAt}</time>
-      </p>
-    )}
-    {isFixture && (
+    <p>
+      Snapshot generated:{" "}
+      <time datetime={projection.generatedAt}>{projection.generatedAt}</time>
+    </p>
+    {isLocalSnapshot && (
       <aside class="local-preview-note" role="status">
-        <strong>Local preview: no Network Projection loaded.</strong>
+        <strong>Local preview: recorded Network Scan snapshot.</strong>
         <p>
-          Search only checks eligible Reviewers in the current projection. It
-          does not look up GitHub users live. To preview real data, run a
-          complete Network Scan and provide its output through{" "}
+          This preview uses the validated snapshot dated above. Search only
+          checks eligible Reviewers in that snapshot; it does not look up GitHub
+          users live. For newer data, provide a complete scan output through{" "}
           <code>SHOAL_PROJECTION_FILE</code>.
         </p>
       </aside>

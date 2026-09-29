@@ -18,7 +18,8 @@ const { reviewer, generatedAt } = Astro.props as {
   reviewer: ReviewerEntry;
   generatedAt: string;
 };
-const isFixture = import.meta.env.DEV && !process.env.SHOAL_PROJECTION_FILE;
+const isLocalSnapshot =
+  import.meta.env.DEV && !process.env.SHOAL_PROJECTION_FILE;
 const selected = reviewer.summary;
 const metrics =
   selected.status === "unavailable" ? null : selected.summary.metrics;
@@ -31,9 +32,10 @@ const percent = (value: number | null) =>
 
 <BaseLayout title={title} description={description}>
   <main class="wrap reviewer-detail">
-    {isFixture && (
+    {isLocalSnapshot && (
       <p role="status">
-        Development sample projection — this is not a live Reviewer.
+        Local preview of a validated scan from {generatedAt}. Check the current
+        published directory for newer data.
       </p>
     )}
     <a href={`${import.meta.env.BASE_URL}reviewers/`}>← Reviewer Directory</a>
