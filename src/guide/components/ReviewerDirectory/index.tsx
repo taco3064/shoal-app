@@ -57,7 +57,7 @@ export default function ReviewerDirectory({ reviewers }: { reviewers: Entry[] })
             onChange={(event) => setKey(event.target.value as 'username' | 'joinedAt')}
           >
             <option value="username">Username</option>
-            <option value="joinedAt">Joined (fork created)</option>
+            <option value="joinedAt">Joined (repository created)</option>
           </select>
         </label>
         <button
