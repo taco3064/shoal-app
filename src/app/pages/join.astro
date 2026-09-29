@@ -8,31 +8,48 @@ const description =
 ---
 
 <BaseLayout title={title} description={description}>
-  <main class="wrap guide-page">
+  <main class="wrap guide-page join-page">
     <header class="join-intro">
       <p class="section-kicker">BECOME A REVIEWER</p>
       <h1>Join Shoal</h1>
       <p>
-        The Network Root owner uses the Root as their Reviewer Node. Everyone
-        else directly forks it. Each Reviewer defines their own standard.
+        Your station. Your Review Policy. Choose the path that fits your GitHub
+        account.
       </p>
       <p class="join-reassurance">
-        Choose your path · no website account · no approval form
+        No website account · No approval form · Your standard
       </p>
     </header>
 
+    <div class="join-section-heading">
+      <p class="section-kicker">START HERE</p>
+      <h2>Which station is yours?</h2>
+    </div>
     <nav class="join-paths" aria-label="Choose a Reviewer setup path">
-      <a href="#root-owner">I own the Network Root →</a>
-      <a href="#direct-fork">I need to fork it →</a>
+      <a href="#direct-fork" data-path-to="fork">
+        <span class="path-label">FOR MOST REVIEWERS</span>
+        <strong>Fork the Network Root</strong>
+        <span>Create a station under your personal GitHub account.</span>
+        <span class="path-action">See four steps →</span>
+      </a>
+      <a href="#root-owner" data-path-to="root">
+        <span class="path-label">ROOT OWNER ONLY</span>
+        <strong>I own the Network Root</strong>
+        <span>
+          Use the existing <code>taco3064/shoal-station</code>.
+        </span>
+        <span class="path-action">See Root setup →</span>
+      </a>
     </nav>
 
     <section
       id="root-owner"
-      class="root-owner-path"
+      class="root-owner-path join-route"
+      data-path="root"
       aria-labelledby="root-owner-title"
     >
-      <p class="section-kicker">NETWORK ROOT OWNER</p>
-      <h2 id="root-owner-title">Use your Network Root as your Reviewer Node</h2>
+      <p class="section-kicker">NETWORK ROOT OWNER · EXISTING STATION</p>
+      <h2 id="root-owner-title">Your Root is already your station</h2>
       <p>
         If you own{" "}
         <a href="https://github.com/taco3064/shoal-station">
@@ -42,8 +59,11 @@ const description =
         <code>gh shoal init</code> on it.
       </p>
       <div class="setup-options">
-        <div class="setup-option">
-          <h3>Set up locally</h3>
+        <details class="setup-option">
+          <summary>
+            <span>Manual checklist</span>
+            <small>Local tools and your Policy</small>
+          </summary>
           <ol>
             <li>
               Clone or use your existing <code>taco3064/shoal-station</code>{" "}
@@ -62,18 +82,18 @@ const description =
               <code>README.md</code>, then commit and push it.
             </li>
           </ol>
-        </div>
-        <div class="setup-option">
-          <h3>Ask a local coding agent</h3>
+        </details>
+        <details class="setup-option">
+          <summary>
+            <span>Use a local coding agent</span>
+            <small>Copy one setup prompt</small>
+          </summary>
           <p>
             The agent can prepare your local tools, then returns the Policy
             decision to you.
           </p>
-          <details class="prompt-details">
-            <summary>Show Root-owner setup prompt</summary>
-            <SetupPrompt path="root" client:load />
-          </details>
-        </div>
+          <SetupPrompt path="root" client:load />
+        </details>
       </div>
       <p class="step-note">
         Root repository maintenance keeps Issues enabled and the canonical
@@ -84,8 +104,17 @@ const description =
       </p>
     </section>
 
-    <div id="direct-fork" class="journey" data-journey>
-      <h2>Joining with a direct fork</h2>
+    <div
+      id="direct-fork"
+      class="journey join-route"
+      data-journey
+      data-path="fork"
+    >
+      <p class="section-kicker">DIRECT FORK · PERSONAL ACCOUNT</p>
+      <h2>Your station in four steps</h2>
+      <p class="route-lede">
+        Fork, confirm Actions, set up the station, then write your Policy.
+      </p>
       <nav class="journey-progress" aria-label="Setup stages">
         <a href="#join-fork" data-step-to="0">
           <span>01</span> Fork
@@ -164,16 +193,15 @@ const description =
         </p>
         <h2 id="join-setup-title">Set up your station</h2>
         <div class="setup-options">
-          <div class="setup-option">
-            <h3>Do it manually</h3>
+          <details class="setup-option">
+            <summary>
+              <span>Manual setup</span>
+              <small>Commands and verification</small>
+            </summary>
             <ol>
               <li>
-                Clone your fork:{" "}
-                <code>
-                  git clone
-                  https://github.com/&lt;your-username&gt;/shoal-station.git
-                </code>
-                , then enter the folder.
+                Clone your fork using its GitHub URL, then enter the clean
+                checkout.
               </li>
               <li>
                 Install the <a href="https://cli.github.com/">GitHub CLI ↗</a>{" "}
@@ -188,18 +216,18 @@ const description =
                 In a clean checkout, run <code>gh shoal init</code>.
               </li>
             </ol>
-          </div>
-          <div class="setup-option">
-            <h3>Ask a local coding agent</h3>
+          </details>
+          <details class="setup-option">
+            <summary>
+              <span>Use a local coding agent</span>
+              <small>One copyable prompt</small>
+            </summary>
             <p>
               Already completed stages 1 and 2? Copy one short prompt. The agent
               handles only the mechanical steps and stops before your Policy.
             </p>
-            <details class="prompt-details">
-              <summary>Show copyable setup prompt</summary>
-              <SetupPrompt client:load />
-            </details>
-          </div>
+            <SetupPrompt client:load />
+          </details>
         </div>
         <p class="step-note">
           Verify the managed Issue Form and Summary Workflow are canonical,
@@ -290,6 +318,13 @@ const description =
 </BaseLayout>
 
 <script>
+  const page = document.querySelector<HTMLElement>(".join-page");
+  const paths = Array.from(
+    document.querySelectorAll<HTMLElement>("[data-path]"),
+  );
+  const pathLinks = Array.from(
+    document.querySelectorAll<HTMLAnchorElement>("[data-path-to]"),
+  );
   const journey = document.querySelector<HTMLElement>("[data-journey]");
   const steps = Array.from(
     journey?.querySelectorAll<HTMLElement>("[data-journey-step]") ?? [],
@@ -298,8 +333,29 @@ const description =
     journey?.querySelectorAll<HTMLAnchorElement>("[data-step-to]") ?? [],
   );
 
-  if (journey && steps.length) {
+  if (page && journey && steps.length) {
+    page.classList.add("is-enhanced");
     journey.classList.add("is-enhanced");
+
+    const showPath = (path: "fork" | "root", scroll = false) => {
+      paths.forEach((section) => {
+        section.hidden = section.dataset.path !== path;
+      });
+      pathLinks.forEach((link) => {
+        if (link.dataset.pathTo === path)
+          link.setAttribute("aria-current", "true");
+        else link.removeAttribute("aria-current");
+      });
+      if (scroll) {
+        const behavior = window.matchMedia("(prefers-reduced-motion: reduce)")
+          .matches
+          ? "auto"
+          : "smooth";
+        document
+          .getElementById(path === "root" ? "root-owner" : "direct-fork")
+          ?.scrollIntoView({ behavior, block: "start" });
+      }
+    };
 
     const show = (index: number, scroll = false) => {
       steps.forEach((step, position) => {
@@ -322,16 +378,31 @@ const description =
       }
     };
 
+    pathLinks.forEach((link) =>
+      link.addEventListener("click", (event) => {
+        event.preventDefault();
+        history.pushState(null, "", link.hash);
+        showPath(link.dataset.pathTo === "root" ? "root" : "fork", true);
+        if (link.dataset.pathTo === "fork") show(0);
+      }),
+    );
     controls.forEach((control) =>
       control.addEventListener("click", (event) => {
         event.preventDefault();
+        history.pushState(null, "", control.hash);
         show(Number(control.dataset.stepTo), true);
       }),
     );
 
-    const initial = steps.findIndex(
-      (step) => `#${step.id}` === window.location.hash,
-    );
-    show(initial < 0 ? 0 : initial);
+    const restore = () => {
+      const initial = steps.findIndex(
+        (step) => `#${step.id}` === window.location.hash,
+      );
+      showPath(window.location.hash === "#root-owner" ? "root" : "fork");
+      show(initial < 0 ? 0 : initial);
+    };
+    window.addEventListener("popstate", restore);
+    window.addEventListener("hashchange", restore);
+    restore();
   }
 </script>
