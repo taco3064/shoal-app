@@ -27,4 +27,9 @@ export const allowedSummaryWorkflows = new Map([
     '616eea6f7ce06c0991f0023768c02c79a99d53aeb2f845c0934461720546a999',
     'b4d72405ebc03afc35d29093302b5593e1ddff1b',
   ],
+  [
+    // shoal-station 1d329860: attempt-addressable public transport, same pinned Action.
+    'd586ab618c894d9729e21d7105becb0ca805df576198353293b1f77818927e99',
+    'b4d72405ebc03afc35d29093302b5593e1ddff1b',
+  ],
 ]);
