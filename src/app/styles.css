@@ -46,3 +46,67 @@
 
 .local-preview-note{max-width:800px;padding:20px 24px;margin:28px 0;border-left:3px solid #d7f387;background:#17343b;color:#d6e5da;line-height:1.6}.local-preview-note strong{color:#d7f387}.local-preview-note p{margin:8px 0 0}.local-preview-note code{color:#efffae}
 .join-paths{display:flex;flex-wrap:wrap;gap:12px;margin:0 0 35px}.join-paths a{display:inline-flex;padding:13px 18px;border:1px solid #527766;border-radius:5px;background:#14333a;color:#d7f387;text-decoration:none!important}.join-paths a:hover,.join-paths a:focus-visible{background:#214a49}.root-owner-path{padding:32px;margin:0 0 65px;border:1px solid #527766;border-radius:7px;background:#0d252e}.root-owner-path>p:not(.section-kicker){color:#c2d0ca;line-height:1.75;max-width:820px}.root-owner-path .setup-options{margin-bottom:18px}.root-owner-path .step-note{font-size:13px;color:#a8babb!important}.journey>h2{margin-bottom:24px}
+
+/* Join: one decision, then one action at a time. Without JS both paths remain readable. */
+.join-page{max-width:1080px}
+.join-page .join-intro{max-width:760px;margin-bottom:58px}
+.join-page .join-intro h1{margin-bottom:17px}
+.join-page .join-intro>p:not(.section-kicker){max-width:640px}
+.join-page .join-intro .join-reassurance{display:inline-block;margin-top:14px;padding:9px 14px;border:1px solid #56705a;border-radius:100px;background:#18362f}
+.join-section-heading{margin-bottom:20px}
+.join-section-heading .section-kicker{margin-bottom:12px}
+.join-page .join-section-heading h2{font-size:clamp(26px,3.5vw,38px);margin:0}
+.join-page .join-paths{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-bottom:52px}
+.join-page .join-paths a{display:flex;flex-direction:column;align-items:flex-start;gap:13px;min-width:0;min-height:208px;padding:27px 30px;background:#112d35;border:1px solid #46625e;border-radius:10px;color:#dcebe4;box-shadow:0 15px 35px #07151b38;transition:border-color .18s,background .18s,transform .18s}
+.join-page .join-paths a:hover,.join-page .join-paths a:focus-visible,.join-page .join-paths a[aria-current=true]{border-color:#d7f387;background:#1b3b3e;color:#f2f8ee;transform:translateY(-2px)}
+.join-page .join-paths .path-label{font-size:10px;letter-spacing:2px;font-weight:700;color:#c7e88a}
+.join-page .join-paths strong{font:600 clamp(21px,2.6vw,27px)/1.2 'Space Grotesk',sans-serif}
+.join-page .join-paths a>span:nth-last-child(2){color:#b5c9c4;font-size:14px;line-height:1.5}
+.join-page .join-paths .path-action{margin-top:auto;color:#d7f387;font-size:13px;font-weight:700}
+.join-page .join-route{max-width:none;scroll-margin-top:35px;margin:0 0 42px}
+.join-page .join-route[hidden]{display:none!important}
+.join-page .journey>h2,.join-page .root-owner-path>h2{font-size:clamp(30px,4vw,42px);line-height:1.15;margin:10px 0 12px}
+.join-page .route-lede{color:#b5c7c4;margin:0 0 26px;line-height:1.6}
+.join-page .root-owner-path{padding:40px;background:linear-gradient(145deg,#17383b,#102830);border-color:#58736b}
+.join-page .root-owner-path>p:not(.section-kicker){max-width:750px}
+.join-page .root-owner-path .setup-options{margin-top:28px}
+.join-page .journey-progress{gap:10px;margin-bottom:0}
+.join-page .journey-progress a{border-color:#3d5958;background:#102b34;padding:17px 18px;min-width:0}
+.join-page .journey-progress a:first-child{border-radius:8px 0 0 0}
+.join-page .journey-progress a:last-child{border-radius:0 8px 0 0}
+.join-page .journey-step{min-height:350px;border-radius:0 0 9px 9px;padding:42px 48px;background:linear-gradient(135deg,#19383e,#102a34)}
+.join-page .journey:not(.is-enhanced) .journey-step{min-height:0;border-radius:8px;margin-bottom:12px}
+.join-page .journey-step h2{font-size:clamp(30px,4vw,42px);margin:10px 0 22px}
+.join-page .journey-step>p:not(.section-kicker){max-width:680px;font-size:16px;line-height:1.7}
+.join-page .journey-step .step-note{max-width:780px;margin-top:22px;padding:14px 18px;background:#0a2530;border-left:2px solid #789c75;line-height:1.65}
+.join-page .journey-step-actions{align-items:center;margin-top:34px}
+.join-page .setup-options{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:26px 0}
+.join-page .setup-option{padding:0;background:#102e36;border-radius:7px;min-width:0}
+.join-page .setup-option summary{display:flex;flex-direction:column;gap:8px;min-height:86px;padding:21px 24px;cursor:pointer;list-style:none;color:#ecf5e8}
+.join-page .setup-option summary::-webkit-details-marker{display:none}
+.join-page .setup-option summary::after{content:'+';float:right;position:absolute;right:22px;top:20px;color:#d7f387;font-size:24px}
+.join-page .setup-option summary{position:relative;padding-right:50px}
+.join-page .setup-option[open] summary::after{content:'−'}
+.join-page .setup-option summary span{font:600 19px 'Space Grotesk',sans-serif}
+.join-page .setup-option summary small{color:#a8c0bb;font-size:12px}
+.join-page .setup-option>ol,.join-page .setup-option>p,.join-page .setup-option>.prompt-box{margin:0 22px 22px}
+.join-page .setup-option>ol{padding-left:22px}
+.join-page .setup-option li{overflow-wrap:anywhere}
+.join-page .setup-option .prompt-box{min-width:0}
+.join-page .setup-option textarea{font-size:12px;min-height:190px}
+.join-page .join-reference{max-width:none;margin-top:42px;background:#0d2530}
+.join-page .join-reference summary{font-size:15px}
+.join-page .join-reference>div{display:grid;grid-template-columns:1fr 1fr;gap:24px;font-size:13px}
+.join-page .join-reference p{margin:0}
+@media(max-width:700px){
+  .join-page .join-intro{margin-bottom:42px}
+  .join-page .join-paths{grid-template-columns:1fr;gap:10px;margin-bottom:35px}
+  .join-page .join-paths a{min-height:0;padding:22px 24px;gap:9px}
+  .join-page .journey-progress{gap:4px}
+  .join-page .journey-progress a{padding:12px 4px;font-size:11px;text-align:center}
+  .join-page .journey-step,.join-page .root-owner-path{padding:28px 23px}
+  .join-page .setup-options,.join-page .join-reference>div{grid-template-columns:1fr}
+  .join-page .journey-step-actions{gap:10px}
+  .join-page .journey-step-actions a{font-size:12px}
+}
+@media(prefers-reduced-motion:reduce){.join-page .join-paths a{transition:none;transform:none!important}}
