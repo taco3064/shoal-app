@@ -6,7 +6,9 @@ import useReviewerDirectory, {
 export default function ReviewerDirectory(
   { reviewers }: { reviewers: DirectoryEntry[] },
 ) {
-  const { entries, state, total, pageCount, update } = useReviewerDirectory(reviewers);
+  const {
+    entries, state, total, pageCount, update, pageUrl, navigatePage,
+  } = useReviewerDirectory(reviewers);
 
   return (
     <section aria-label="Eligible Reviewers">
@@ -62,14 +64,21 @@ export default function ReviewerDirectory(
       </div>
       {total > 0 && (
         <nav className="directory-pagination" aria-label="Reviewer pages">
-          <button
-            type="button"
-            className="button"
-            disabled={state.page === 1}
-            onClick={() => update({ page: state.page - 1 })}
-          >
-            Previous
-          </button>
+          {state.page > 1
+            ? (
+                <a
+                  className="text-link"
+                  href={pageUrl(state.page - 1)}
+                  onClick={(event) => navigatePage(event, state.page - 1)}
+                >
+                  Previous
+                </a>
+              )
+            : (
+                <span className="pagination-unavailable" aria-disabled="true">
+                  Previous
+                </span>
+              )}
           <span role="status">
             Page
             {' '}
@@ -79,14 +88,17 @@ export default function ReviewerDirectory(
             {' '}
             {pageCount}
           </span>
-          <button
-            type="button"
-            className="button"
-            disabled={state.page === pageCount}
-            onClick={() => update({ page: state.page + 1 })}
-          >
-            Next
-          </button>
+          {state.page < pageCount
+            ? (
+                <a
+                  className="text-link"
+                  href={pageUrl(state.page + 1)}
+                  onClick={(event) => navigatePage(event, state.page + 1)}
+                >
+                  Next
+                </a>
+              )
+            : <span className="pagination-unavailable" aria-disabled="true">Next</span>}
         </nav>
       )}
     </section>
@@ -101,20 +113,21 @@ function ReviewerCard({ reviewer }: { reviewer: DirectoryEntry }) {
     <article className="reviewer-card">
       <a className="reviewer-card-body" href={detailUrl}>
         <div className="reviewer-card-head">
-          <img
-            src={reviewer.avatarUrl}
-            alt=""
-            width="64"
-            height="64"
-            loading="lazy"
-          />
+          <div className="reviewer-avatar">
+            <img
+              src={reviewer.avatarUrl}
+              alt=""
+              width="64"
+              height="64"
+              loading="lazy"
+            />
+            <TestReviewer username={reviewer.username} />
+          </div>
           <div>
             <h2>
               {reviewer.username}
-
             </h2>
             <p>{reviewer.repository}</p>
-            <TestReviewer username={reviewer.username} />
           </div>
         </div>
         <div className="reviewer-card-meta">

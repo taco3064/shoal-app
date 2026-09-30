@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type MouseEvent } from 'react';
 import {
   defaultDirectoryState, directorySearch, directoryView, readDirectoryState,
   type DirectoryEntry, type DirectoryState,
@@ -46,5 +46,17 @@ export default function useReviewerDirectory(reviewers: DirectoryEntry[]) {
     setState(next);
   };
 
-  return { ...view, update };
+  const pageUrl = (page: number) => directorySearch({ ...state, page });
+
+  const navigatePage = (event: MouseEvent<HTMLAnchorElement>, page: number) => {
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey
+      || event.altKey) {
+      return;
+    }
+
+    event.preventDefault();
+    update({ page });
+  };
+
+  return { ...view, update, pageUrl, navigatePage };
 }

@@ -4,9 +4,8 @@ export default function TestReviewer({ username }: { username: string }) {
   }
 
   return (
-    <p className="test-reviewer">
-      <strong>Test Reviewer</strong>
-      {' · Used to validate Shoal flows.'}
-    </p>
+    <span className="test-reviewer" aria-label="Test Reviewer" title="Test Reviewer">
+      Test
+    </span>
   );
 }
