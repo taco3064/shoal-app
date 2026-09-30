@@ -21,7 +21,7 @@ export default function Hero() {
             className="text-link"
             href="/shoal-app/join/"
           >
-            Join Shoal · choose your path
+            Join Shoal · set up your station
           </a>
           <a className="text-link" href="#how-it-works">
             See how it works

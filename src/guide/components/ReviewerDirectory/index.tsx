@@ -1,45 +1,12 @@
-import { useMemo, useState } from 'react';
-type Entry = {
-  repositoryId: number;
-  username: string;
-  repository: string;
-  repositoryUrl: string;
-  policyUrl: string;
-  joinedAt: string;
-  avatarUrl: string;
-  summary: { status: 'current' | 'fallback' | 'unavailable' };
-};
+import TestReviewer from '../TestReviewer';
+import useReviewerDirectory, {
+  type DirectoryEntry,
+} from '~app/guide/hooks/useReviewerDirectory';
 
-export default function ReviewerDirectory({ reviewers }: { reviewers: Entry[] }) {
-  const [query, setQuery] = useState('');
-  const [key, setKey] = useState<'username' | 'joinedAt'>('username');
-  const [descending, setDescending] = useState(false);
-
-  const entries = useMemo(() => {
-    const filtered = reviewers.filter((reviewer) => reviewer.username
-      .toLowerCase().includes(query.trim().toLowerCase()));
-
-    const direction = descending ? -1 : 1;
-
-    return filtered.sort((a, b) => {
-      const comparison = key === 'username'
-        ? a.username.toLowerCase().localeCompare(b.username.toLowerCase(), 'en')
-        : a.joinedAt.localeCompare(b.joinedAt);
-
-      return direction * (comparison || a.repositoryId - b.repositoryId);
-    });
-  }, [reviewers, query, key, descending]);
-
-  if (reviewers.length === 0) {
-    return (
-      <section aria-label="Eligible Reviewers">
-        <p role="status">
-          No eligible Reviewers are present in this projection. Search becomes
-          available when a complete projection contains participants.
-        </p>
-      </section>
-    );
-  }
+export default function ReviewerDirectory(
+  { reviewers }: { reviewers: DirectoryEntry[] },
+) {
+  const { entries, state, total, pageCount, update } = useReviewerDirectory(reviewers);
 
   return (
     <section aria-label="Eligible Reviewers">
@@ -47,8 +14,8 @@ export default function ReviewerDirectory({ reviewers }: { reviewers: Entry[] })
         <label>
           Search GitHub username
           <input
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
+            value={state.username}
+            onChange={(event) => update({ username: event.target.value })}
             type="search"
             placeholder="Search a Reviewer"
           />
@@ -56,8 +23,10 @@ export default function ReviewerDirectory({ reviewers }: { reviewers: Entry[] })
         <label>
           Sort by
           <select
-            value={key}
-            onChange={(event) => setKey(event.target.value as 'username' | 'joinedAt')}
+            value={state.sortBy}
+            onChange={(event) => update({
+              sortBy: event.target.value as 'username' | 'joinedAt',
+            })}
           >
             <option value="username">Username</option>
             <option value="joinedAt">Joined (repository created)</option>
@@ -66,10 +35,10 @@ export default function ReviewerDirectory({ reviewers }: { reviewers: Entry[] })
         <button
           type="button"
           className="button sort-direction"
-          onClick={() => setDescending((value) => !value)}
-          aria-label={`Sort ${descending ? 'descending' : 'ascending'}; change direction`}
+          onClick={() => update({ sortDir: state.sortDir === 'desc' ? 'asc' : 'desc' })}
+          aria-label={`Sort ${state.sortDir === 'desc' ? 'descending' : 'ascending'}; change direction`}
         >
-          {descending ? 'Descending ↓' : 'Ascending ↑'}
+          {state.sortDir === 'desc' ? 'Descending ↓' : 'Ascending ↑'}
         </button>
       </div>
       <p className="directory-result-count" role="status">
@@ -79,7 +48,7 @@ export default function ReviewerDirectory({ reviewers }: { reviewers: Entry[] })
         {' '}
         of
         {' '}
-        {reviewers.length}
+        {total}
         {' '}
         eligible Reviewers
       </p>
@@ -91,11 +60,40 @@ export default function ReviewerDirectory({ reviewers }: { reviewers: Entry[] })
           <ReviewerCard key={reviewer.repositoryId} reviewer={reviewer} />
         ))}
       </div>
+      {total > 0 && (
+        <nav className="directory-pagination" aria-label="Reviewer pages">
+          <button
+            type="button"
+            className="button"
+            disabled={state.page === 1}
+            onClick={() => update({ page: state.page - 1 })}
+          >
+            Previous
+          </button>
+          <span role="status">
+            Page
+            {' '}
+            {state.page}
+            {' '}
+            of
+            {' '}
+            {pageCount}
+          </span>
+          <button
+            type="button"
+            className="button"
+            disabled={state.page === pageCount}
+            onClick={() => update({ page: state.page + 1 })}
+          >
+            Next
+          </button>
+        </nav>
+      )}
     </section>
   );
 }
 
-function ReviewerCard({ reviewer }: { reviewer: Entry }) {
+function ReviewerCard({ reviewer }: { reviewer: DirectoryEntry }) {
   const detailUrl = `/shoal-app/reviewers/${encodeURIComponent(reviewer.username)}/`;
   const requestUrl = `${reviewer.repositoryUrl}/issues/new/choose`;
 
@@ -113,14 +111,12 @@ function ReviewerCard({ reviewer }: { reviewer: Entry }) {
           <div>
             <h2>
               {reviewer.username}
+
             </h2>
             <p>{reviewer.repository}</p>
+            <TestReviewer username={reviewer.username} />
           </div>
         </div>
-        <p className="reviewer-card-purpose">
-          Inspect this Reviewer's Policy, public review activity, and where to
-          request a review before asking for evaluation.
-        </p>
         <div className="reviewer-card-meta">
           <p>
             Joined

@@ -52,8 +52,8 @@ const ogImage = new URL(`${import.meta.env.BASE_URL}${image}`, Astro.site);
           class="brand-logo"
           src={`${import.meta.env.BASE_URL}shoal-logo.webp`}
           alt="Shoal"
-          width="900"
-          height="323"
+          width="1200"
+          height="403"
         />
       </a>
       <nav class="desktop-navigation" aria-label="Main navigation">
@@ -80,8 +80,8 @@ const ogImage = new URL(`${import.meta.env.BASE_URL}${image}`, Astro.site);
             class="brand-logo"
             src={`${import.meta.env.BASE_URL}shoal-logo.webp`}
             alt="Shoal home"
-            width="900"
-            height="323"
+            width="1200"
+            height="403"
           />
         </a>
         <p>Review the work. Explain the Star.</p>
@@ -101,8 +101,37 @@ const ogImage = new URL(`${import.meta.env.BASE_URL}${image}`, Astro.site);
     trigger.hidden = false;
     document.documentElement.classList.add('navigation-enhanced');
 
+    let closingTimer: ReturnType<typeof setTimeout> | undefined;
+
+    const closeDrawer = () => {
+      if (!drawer.open || drawer.classList.contains('is-closing')) {
+        return;
+      }
+
+      drawer.classList.remove('is-visible');
+      drawer.classList.add('is-closing');
+      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      closingTimer = setTimeout(() => drawer.close(), reduced ? 0 : 260);
+    };
+
+    drawer.addEventListener('cancel', (event) => {
+      event.preventDefault();
+      closeDrawer();
+    });
+
+    drawer.querySelector('form')?.addEventListener('submit', (event) => {
+      event.preventDefault();
+      closeDrawer();
+    });
+
     trigger.addEventListener('click', () => {
+      clearTimeout(closingTimer);
+      drawer.classList.remove('is-closing', 'is-visible');
       drawer.showModal();
+      // Commit the offscreen state before beginning the visible transition.
+      drawer.getBoundingClientRect();
+      drawer.classList.add('is-visible');
       trigger.setAttribute('aria-expanded', 'true');
     });
 
@@ -125,8 +154,15 @@ const ogImage = new URL(`${import.meta.env.BASE_URL}${image}`, Astro.site);
     });
 
     drawer.addEventListener('close', () => {
+      clearTimeout(closingTimer);
+      drawer.classList.remove('is-visible', 'is-closing');
       trigger.setAttribute('aria-expanded', 'false');
-      trigger.focus();
+
+      const focusTarget = trigger.getClientRects().length
+        ? trigger
+        : document.querySelector<HTMLElement>('.desktop-navigation a');
+
+      focusTarget?.focus();
     });
 
     drawer.addEventListener('click', (event) => {
@@ -135,19 +171,118 @@ const ogImage = new URL(`${import.meta.env.BASE_URL}${image}`, Astro.site);
 
         if (event.clientX < bounds.left || event.clientX > bounds.right
           || event.clientY < bounds.top || event.clientY > bounds.bottom) {
-          drawer.close();
+          closeDrawer();
         }
       }
     });
 
     drawer.querySelectorAll('a').forEach((link) => {
-      link.addEventListener('click', () => drawer.close());
+      link.addEventListener('click', () => closeDrawer());
     });
 
     window.matchMedia('(min-width: 801px)').addEventListener('change', (event) => {
       if (event.matches && drawer.open) {
-        drawer.close();
+        closeDrawer();
       }
     });
   }
+</script>
+
+
+<script>
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const groups = document.querySelectorAll<HTMLElement>('[data-count-group]');
+  const running = new Set<Animation>();
+
+  const animateGroup = (group: HTMLElement) => {
+    if (group.dataset.countPlayed) {
+      return;
+    }
+
+    group.dataset.countPlayed = 'true';
+
+    if (reducedMotion.matches) {
+      return;
+    }
+
+    group.querySelectorAll<HTMLElement>('[data-rolling-count]').forEach((metric) => {
+      const value = metric.textContent?.trim() ?? '';
+
+      if (!/^\d+$/.test(value)) {
+        return;
+      }
+
+      const accessibleValue = document.createElement('span');
+
+      accessibleValue.className = 'sr-only';
+      accessibleValue.textContent = value;
+      const visual = document.createElement('span');
+
+      visual.className = 'rolling-number';
+      visual.setAttribute('aria-hidden', 'true');
+      const animations: Animation[] = [];
+
+      for (const digit of value) {
+        const column = document.createElement('span');
+
+        column.className = 'rolling-digit';
+        const strip = document.createElement('span');
+
+        strip.className = 'rolling-strip';
+        const target = 10 + Number(digit);
+
+        for (let position = 0; position <= target; position++) {
+          const item = document.createElement('span');
+
+          item.textContent = String(position % 10);
+          strip.append(item);
+        }
+
+        column.append(strip);
+        visual.append(column);
+      }
+
+      metric.replaceChildren(accessibleValue, visual);
+
+      visual.querySelectorAll<HTMLElement>('.rolling-strip').forEach((strip, index) => {
+        const offset = (10 + Number(value[index])) * 1.15;
+
+        const animation = strip.animate([
+          { transform: 'translateY(0)' },
+          { transform: `translateY(-${offset}em)` },
+        ], { duration: 900, easing: 'cubic-bezier(.2,.65,.3,1)', fill: 'forwards' });
+
+        running.add(animation);
+        animations.push(animation);
+      });
+
+      const finish = () => {
+        metric.textContent = value;
+        animations.forEach((animation) => running.delete(animation));
+      };
+
+      const completed = animations.map((animation) =>
+        animation.finished.catch(() => undefined),
+      );
+
+      Promise.all(completed).then(finish);
+    });
+  };
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        animateGroup(entry.target as HTMLElement);
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.15 });
+
+  groups.forEach((group) => observer.observe(group));
+
+  reducedMotion.addEventListener('change', () => {
+    if (reducedMotion.matches) {
+      running.forEach((animation) => animation.finish());
+    }
+  });
 </script>

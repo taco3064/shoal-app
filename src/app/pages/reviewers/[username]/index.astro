@@ -6,6 +6,7 @@ import { derivedMetrics } from "~app/guide/services/directory";
 import { policyContent } from "~app/guide/services/policy_content";
 import { publicProfile } from "~app/guide/services/profile_content";
 import { publishedProjection } from "~app/guide/services/projection_source";
+import TestReviewer from "~app/guide/components/TestReviewer";
 import ReviewPolicy from "~app/guide/components/ReviewPolicy";
 
 export const getStaticPaths = (async () => {
@@ -53,8 +54,9 @@ const percent = (value: number | null) =>
     <header class="detail-header">
       <img src={reviewer.avatarUrl} alt="" width="100" height="100" />
       <div>
-        <p class="section-kicker">REVIEWER NODE</p>
+        <p class="section-kicker">REVIEWER STATION</p>
         <h1>{reviewer.username}</h1>
+        <TestReviewer username={reviewer.username} />
         <p>
           Reviewer Node identity: Repository ID{" "}
           <code>{reviewer.repositoryId}</code>
@@ -115,7 +117,7 @@ const percent = (value: number | null) =>
       )}
       <div class="policy-actions" aria-label="Reviewer destinations">
         <a class="button external" href={reviewer.repositoryUrl} target="_blank" rel="noopener noreferrer">
-          Reviewer Node
+          View station
         </a>
         <a class="button primary" href={requestUrl} target="_blank" rel="noopener noreferrer">
           Request Review
@@ -152,22 +154,22 @@ const percent = (value: number | null) =>
       )}
       {metrics && derived && (
         <>
-          <dl class="metric-grid">
+          <dl class="metric-grid" data-count-group>
             <div>
               <dt>Review-backed Stars</dt>
-              <dd>{metrics.reviewBackedStarCount}</dd>
+              <dd data-rolling-count>{metrics.reviewBackedStarCount}</dd>
             </div>
             <div>
               <dt>Valid Review Request Issues</dt>
-              <dd>{metrics.validReviewRequestIssueCount}</dd>
+              <dd data-rolling-count>{metrics.validReviewRequestIssueCount}</dd>
             </div>
             <div>
               <dt>Re-review Request Issues</dt>
-              <dd>{metrics.reReviewRequestIssueCount}</dd>
+              <dd data-rolling-count>{metrics.reReviewRequestIssueCount}</dd>
             </div>
             <div>
               <dt>Invalid formal Review / Re-review result comments</dt>
-              <dd>{metrics.invalidReviewCommentCount}</dd>
+              <dd data-rolling-count>{metrics.invalidReviewCommentCount}</dd>
             </div>
           </dl>
           <p>

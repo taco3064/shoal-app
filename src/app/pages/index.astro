@@ -1,6 +1,9 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import Guide from "~app/guide";
+import { publishedProjection } from "~app/guide/services/projection_source";
+
+const projection = await publishedProjection();
 
 const title = "Shoal — Make a GitHub Star explainable";
 const description =
@@ -8,5 +11,5 @@ const description =
 ---
 
 <BaseLayout title={title} description={description}>
-  <Guide />
+  <Guide eligibleCount={projection.reviewers.length} />
 </BaseLayout>
