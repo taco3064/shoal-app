@@ -1,5 +1,9 @@
 # Shoal platform
 
+<p>
+  <img src="public/shoal-logo.webp" alt="Shoal logo" width="360" />
+</p>
+
 Shoal makes a GitHub Star explainable: a reviewer publishes their own policy, reviews a repository against a specific commit, and records the decision. A PASS can become a review-backed Star. The [public website](https://taco3064.github.io/shoal-app/) explains the mechanism and publishes the Reviewer Directory from the latest successfully deployed Network Projection.
 
 This repository owns the platform website, shared protocol and schemas, Marketplace Action source, Network Aggregator, and Network Scan. It is one npm package. It does not own the [`gh-shoal`](https://github.com/taco3064/gh-shoal) extension runtime, the [`shoal-station`](https://github.com/taco3064/shoal-station) Network Root and reviewer policy, or the [`shoal-action`](https://github.com/taco3064/shoal-action) distribution surface.
