@@ -17,6 +17,7 @@
     "scan:network": "tsx src/network/index.ts",
     "test:network": "node --import tsx --test src/network/**/*.test.ts",
     "test:directory": "node --import tsx --test src/guide/services/directory/index.test.ts src/guide/services/directory_view/index.test.ts src/guide/services/policy_content/index.test.ts src/guide/services/profile_content/index.test.ts src/guide/components/ReviewPolicy/index.test.tsx",
+    "test:seo": "node scripts/validate-seo.mjs",
     "preview": "astro preview",
     "lint": "eslint src --ext .astro --no-error-on-unmatched-pattern",
     "typecheck": "astro check && tsc --noEmit",
