@@ -8,13 +8,12 @@ export default function JoinSteps() {
         <em>Your signature.</em>
       </h2>
       <p>
-        If you own the Network Root, it is your Reviewer Node. Otherwise,
-        directly fork it, complete the manual Actions confirmation in your
+        Directly fork the Network Root, complete the manual Actions confirmation in your
         fork, then install the gh extension, run
         {' '}
         <code>gh shoal init</code>
         {' '}
-        on your fork. In either path, write your own Review Policy in the README.
+        on your fork. Write your own Review Policy in the README.
       </p>
       <a
         className="text-link"

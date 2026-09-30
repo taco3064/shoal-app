@@ -26,5 +26,6 @@ test('keeps Policy destinations while isolating external navigation', () => {
   assert.ok(html.includes(`href="${policyUrl}#criteria"`));
   assert.match(html, /href="https:\/\/example.com"/);
   assert.equal((html.match(/target="_blank" rel="noopener noreferrer"/g) ?? []).length, 3);
-  assert.equal((html.match(/class="button external"/g) ?? []).length, 3);
+  assert.equal((html.match(/class="text-link"/g) ?? []).length, 3);
+  assert.doesNotMatch(html, /class="[^"]*button/);
 });
