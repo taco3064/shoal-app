@@ -14,7 +14,7 @@ export default function ReviewPolicy({ markdown, policyUrl }: {
         components={{
           a: ({ href, children }) => (
             <a
-              className="button external"
+              className="text-link"
               href={href}
               target="_blank"
               rel="noopener noreferrer"

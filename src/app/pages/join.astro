@@ -2,9 +2,9 @@
 import BaseLayout from "../layouts/BaseLayout.astro";
 import SetupPrompt from "~app/guide/components/SetupPrompt";
 
-const title = "Join Shoal — Root owner or direct fork";
+const title = "Join Shoal — Fork the Network Root";
 const description =
-  "Choose the Network Root owner path or four direct-fork setup stages, then write your own Review Policy.";
+  "Directly fork the Network Root, complete four setup stages, and write your own Review Policy.";
 ---
 
 <BaseLayout title={title} description={description}>
@@ -18,8 +18,8 @@ const description =
         real GitHub Stars explainable.
       </p>
       <p>
-        Your station. Your Review Policy. Choose the path that fits your GitHub
-        account.
+        Your station. Your Review Policy. Directly fork the Network Root to
+        join.
       </p>
       <p class="join-reassurance">
         No website account · No approval form · Your standard
@@ -58,7 +58,7 @@ const description =
 
     <div class="join-section-heading">
       <p class="section-kicker">START HERE</p>
-      <h2>Which station is yours?</h2>
+      <h2>Fork the Network Root</h2>
     </div>
     <details
       id="direct-fork"
@@ -152,7 +152,7 @@ const description =
                   checkout.
                 </li>
                 <li>
-                  Install the <a class="button external" href="https://cli.github.com/" target="_blank" rel="noopener noreferrer">GitHub CLI</a>{" "}
+                  Install the <a class="text-link" href="https://cli.github.com/" target="_blank" rel="noopener noreferrer">GitHub CLI</a>{" "}
                   and confirm <code>gh auth status</code> works as the Reviewer
                   Node owner.
                 </li>
@@ -235,71 +235,6 @@ const description =
       </div>
     </details>
 
-    <details
-      id="root-owner"
-      class="root-owner-path join-route"
-    >
-      <summary class="path-heading">
-        <span class="section-kicker">ROOT OWNER ONLY</span>
-        <strong>I own the Network Root</strong>
-      </summary>
-      <div class="path-content">
-        <h2 id="root-owner-title">Your Root is already your station</h2>
-        <p>
-          If you own{" "}
-          <a class="button external" href="https://github.com/taco3064/shoal-station" target="_blank" rel="noopener noreferrer">
-            taco3064/shoal-station
-          </a>
-          , you already have the Root-owner Reviewer Node. Do not fork it or run
-          <code>gh shoal init</code> on it.
-        </p>
-        <div class="setup-options">
-          <details class="setup-option">
-            <summary>
-              <span>Manual checklist</span>
-              <small>Local tools and your Policy</small>
-            </summary>
-            <ol>
-              <li>
-                Clone or use your existing <code>taco3064/shoal-station</code>{" "}
-                checkout.
-              </li>
-              <li>
-                Install <a class="button external" href="https://cli.github.com/" target="_blank" rel="noopener noreferrer">GitHub CLI</a> and
-                verify <code>gh auth status</code> as the Root owner.
-              </li>
-              <li>
-                Install the official extension:{" "}
-                <code>gh extension install taco3064/gh-shoal</code>.
-              </li>
-              <li>
-                Personally write your Review Policy in the Root{" "}
-                <code>README.md</code>, then commit and push it.
-              </li>
-            </ol>
-          </details>
-          <details class="setup-option">
-            <summary>
-              <span>Use a local coding agent</span>
-              <small>Copy one setup prompt</small>
-            </summary>
-            <p>
-              The agent can prepare your local tools, then returns the Policy
-              decision to you.
-            </p>
-            <SetupPrompt path="root" client:load />
-          </details>
-        </div>
-        <p class="step-note">
-          Root repository maintenance keeps Issues enabled and the canonical
-          Review Request form and Summary Workflow valid. The Root's
-          <code>README.md</code> is both your Review Policy and the initial Policy
-          template inherited by new direct forks. Eligible Root owners appear
-          after the next complete published Network Scan.
-        </p>
-      </div>
-    </details>
-
     <details class="join-reference">
       <summary>How Policy, trust, and Automated Review work</summary>
       <div>
@@ -310,8 +245,7 @@ const description =
           Even whitespace or comment changes alter the Summary Workflow’s exact
           digest; a Summary from a workflow outside the allowed canonical digest
           set is rejected. Direct-fork owners run <code>gh shoal init</code> to
-          repair managed-file drift; the Network Root uses its own canonical
-          repository maintenance path. A fresh fork’s Actions UI confirmation
+          repair managed-file drift. A fresh fork’s Actions UI confirmation
           remains yours to complete.
         </p>
         <p>
@@ -382,12 +316,6 @@ const description =
       if (index >= 0) {
         journey.open = true;
         show(index);
-      } else if (window.location.hash === '#root-owner') {
-        const root = document.querySelector<HTMLDetailsElement>('#root-owner');
-
-        if (root) {
-          root.open = true;
-        }
       } else if (window.location.hash === '#direct-fork') {
         journey.open = true;
       } else if (!window.location.hash) {
