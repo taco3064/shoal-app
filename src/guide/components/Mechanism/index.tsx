@@ -69,6 +69,11 @@ export default function Mechanism() {
             </article>
           ))}
         </div>
+        <p>
+          <a className="text-link" href="/shoal-app/how-it-works/">
+            See the full Review lifecycle
+          </a>
+        </p>
       </section>
     </>
   );

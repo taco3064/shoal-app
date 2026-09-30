@@ -1,0 +1,84 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { Content } from "~app/guide/lifecycle.md";
+
+const title = "How Shoal works — Review and Re-review";
+const description =
+  "Follow a Review Request from Policy and admission to local judgment, a review-backed Star, and changed-basis Re-review.";
+---
+
+<BaseLayout title={title} description={description}>
+  <main class="wrap guide-page lifecycle-page">
+    <header>
+      <p class="section-kicker">REQUESTER + REVIEWER</p>
+      <h1>How Shoal works</h1>
+      <p class="lifecycle-intro">
+        One public lifecycle connects the person requesting evaluation with
+        the Reviewer whose Policy gives that evaluation meaning.
+      </p>
+    </header>
+    <article class="lifecycle-content">
+      <Content />
+    </article>
+    <div class="actions">
+      <a class="text-link" href={`${import.meta.env.BASE_URL}reviewers/`}>Explore Reviewers</a>
+      <a class="text-link" href={`${import.meta.env.BASE_URL}join/`}>Become a Reviewer</a>
+    </div>
+  </main>
+</BaseLayout>
+
+<script>
+  import mermaid from 'mermaid';
+
+  const code = document.querySelector<HTMLElement>(
+    '.lifecycle-content pre[data-language="mermaid"] code',
+  );
+
+  const source = code?.textContent;
+  const pre = code?.parentElement;
+
+  if (pre && source) {
+    mermaid.initialize({
+      startOnLoad: false,
+      securityLevel: 'strict',
+      theme: 'dark',
+      fontFamily: 'Arial, sans-serif',
+      flowchart: { htmlLabels: false, useMaxWidth: true, wrappingWidth: 240 },
+    });
+
+    try {
+      const { svg } = await mermaid.render('review-lifecycle', source);
+      const region = document.createElement('div');
+
+      region.className = 'lifecycle-diagram';
+      region.setAttribute('role', 'region');
+
+      region.setAttribute(
+        'aria-label',
+        'Review and Re-review lifecycle diagram; scroll horizontally to explore',
+      );
+
+      region.tabIndex = 0;
+      region.innerHTML = svg;
+      pre.replaceWith(region);
+    } catch {
+      // The authored diagram and the full text explanation remain readable.
+      pre.setAttribute('aria-label', 'Review lifecycle diagram source');
+    }
+  }
+</script>
+
+<style>
+  .lifecycle-page { padding-bottom: 70px; }
+  .lifecycle-intro { max-width: 760px; color: #b7c9c4; line-height: 1.7; font-size: 18px; }
+  .lifecycle-content { margin-block: 36px; color: #c6d5ce; line-height: 1.75; }
+  .lifecycle-content :global(h2) { color: #ecf3ed; font: 600 clamp(24px, 4vw, 32px)/1.3 'Space Grotesk', sans-serif; margin-top: 40px; }
+  .lifecycle-content :global(p), .lifecycle-content :global(ol) { max-width: 850px; }
+  .lifecycle-content :global(li) { margin-block: 15px; }
+  .lifecycle-content :global(code) { overflow-wrap: anywhere; }
+  .lifecycle-content :global(pre) { padding: 20px; overflow: auto; border: 1px solid #42615f; border-radius: 8px; }
+  .lifecycle-content :global(.lifecycle-diagram) { overflow-x: auto; padding: 24px 12px; background: #102b35; border: 1px solid #42615f; border-radius: 8px; }
+  .lifecycle-content :global(.lifecycle-diagram svg) { display: block; width: 100%; min-width: 660px; height: auto; margin-inline: auto; }
+  .lifecycle-content :global(.lifecycle-diagram:focus-visible) { outline: 3px solid #d7f387; outline-offset: 4px; }
+  @media (max-width: 600px) { .lifecycle-content :global(ol) { padding-left: 22px; } }
+</style>
