@@ -23,7 +23,7 @@ export default function Hero() {
           >
             Join Shoal · set up your station
           </a>
-          <a className="text-link" href="#how-it-works">
+          <a className="text-link" href="/shoal-app/how-it-works/">
             See how it works
           </a>
         </div>
