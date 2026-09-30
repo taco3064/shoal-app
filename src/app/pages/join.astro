@@ -60,266 +60,245 @@ const description =
       <p class="section-kicker">START HERE</p>
       <h2>Which station is yours?</h2>
     </div>
-    <nav class="join-paths" aria-label="Choose a Reviewer setup path">
-      <a href="#direct-fork" data-path-to="fork">
-        <span class="path-label">FOR MOST REVIEWERS</span>
-        <strong>Fork the Network Root</strong>
-        <span>Create a station under your personal GitHub account.</span>
-        <span class="path-action">See four steps →</span>
-      </a>
-      <a href="#root-owner" data-path-to="root">
-        <span class="path-label">ROOT OWNER ONLY</span>
-        <strong>I own the Network Root</strong>
-        <span>
-          Use the existing <code>taco3064/shoal-station</code>.
-        </span>
-        <span class="path-action">See Root setup →</span>
-      </a>
-    </nav>
-
-    <section
-      id="root-owner"
-      class="root-owner-path join-route"
-      data-path="root"
-      aria-labelledby="root-owner-title"
-    >
-      <p class="section-kicker">NETWORK ROOT OWNER · EXISTING STATION</p>
-      <h2 id="root-owner-title">Your Root is already your station</h2>
-      <p>
-        If you own{" "}
-        <a href="https://github.com/taco3064/shoal-station">
-          taco3064/shoal-station
-        </a>
-        , you already have the Root-owner Reviewer Node. Do not fork it or run
-        <code>gh shoal init</code> on it.
-      </p>
-      <div class="setup-options">
-        <details class="setup-option">
-          <summary>
-            <span>Manual checklist</span>
-            <small>Local tools and your Policy</small>
-          </summary>
-          <ol>
-            <li>
-              Clone or use your existing <code>taco3064/shoal-station</code>{" "}
-              checkout.
-            </li>
-            <li>
-              Install <a href="https://cli.github.com/">GitHub CLI ↗</a> and
-              verify <code>gh auth status</code> as the Root owner.
-            </li>
-            <li>
-              Install the official extension:{" "}
-              <code>gh extension install taco3064/gh-shoal</code>.
-            </li>
-            <li>
-              Personally write your Review Policy in the Root{" "}
-              <code>README.md</code>, then commit and push it.
-            </li>
-          </ol>
-        </details>
-        <details class="setup-option">
-          <summary>
-            <span>Use a local coding agent</span>
-            <small>Copy one setup prompt</small>
-          </summary>
-          <p>
-            The agent can prepare your local tools, then returns the Policy
-            decision to you.
-          </p>
-          <SetupPrompt path="root" client:load />
-        </details>
-      </div>
-      <p class="step-note">
-        Root repository maintenance keeps Issues enabled and the canonical
-        Review Request form and Summary Workflow valid. The Root's
-        <code>README.md</code> is both your Review Policy and the initial Policy
-        template inherited by new direct forks. Eligible Root owners appear
-        after the next complete published Network Scan.
-      </p>
-    </section>
-
-    <div
+    <details
       id="direct-fork"
       class="journey join-route"
       data-journey
-      data-path="fork"
+      open
     >
-      <p class="section-kicker">DIRECT FORK · PERSONAL ACCOUNT</p>
-      <h2>Your station in four steps</h2>
-      <p class="route-lede">
-        Fork, confirm Actions, set up the station, then write your Policy.
-      </p>
-      <nav class="journey-progress" aria-label="Setup stages">
-        <a href="#join-fork" data-step-to="0">
-          <span>01</span> Fork
-        </a>
-        <a href="#join-actions" data-step-to="1">
-          <span>02</span> Actions
-        </a>
-        <a href="#join-setup" data-step-to="2">
-          <span>03</span> Setup
-        </a>
-        <a href="#join-policy" data-step-to="3">
-          <span>04</span> Policy
-        </a>
-      </nav>
-
-      <section
-        id="join-fork"
-        class="journey-step"
-        data-journey-step
-        aria-labelledby="join-fork-title"
-      >
-        <p class="section-kicker">01 / 04 · YOUR NETWORK IDENTITY</p>
-        <h2 id="join-fork-title">Directly fork the Network Root</h2>
-        <p>
-          Your personal account must directly fork the canonical Network Root. A
-          fork of another Reviewer Node does not qualify.
+      <summary class="path-heading">
+        <span class="section-kicker">FOR MOST REVIEWERS</span>
+        <strong>Fork the Network Root</strong>
+      </summary>
+      <div class="path-content">
+        <h2>Your station in four steps</h2>
+        <p class="route-lede">
+          Fork, confirm Actions, set up the station, then write your Policy.
         </p>
-        <a
-          class="button primary"
-          href="https://github.com/taco3064/shoal-station/fork"
+
+        <section
+          id="join-fork"
+          class="journey-step"
+          data-journey-step
+          aria-labelledby="join-fork-title"
         >
-          Fork shoal-station ↗
-        </a>
-        <div class="journey-step-actions">
-          <a href="#join-actions" data-step-to="1">
-            Next: enable Actions →
+          <p class="section-kicker">01 / 04 · YOUR NETWORK IDENTITY</p>
+          <h2 id="join-fork-title">Directly fork the Network Root</h2>
+          <p>
+            Your personal account must directly fork the canonical Network Root. A
+            fork of another Reviewer Node does not qualify.
+          </p>
+          <a
+            class="button primary"
+            href="https://github.com/taco3064/shoal-station/fork"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Fork shoal-station
           </a>
-        </div>
-      </section>
+          <div class="journey-step-actions">
+            <a class="text-link" href="#join-actions" data-step-to="1" data-step-forward>
+              Next: enable Actions →
+            </a>
+          </div>
+        </section>
 
-      <section
-        id="join-actions"
-        class="journey-step"
-        data-journey-step
-        aria-labelledby="join-actions-title"
-      >
-        <p class="section-kicker">02 / 04 · YOU COMPLETE THIS IN GITHUB</p>
-        <h2 id="join-actions-title">Confirm GitHub Actions</h2>
+        <section
+          id="join-actions"
+          class="journey-step"
+          data-journey-step
+          aria-labelledby="join-actions-title"
+        >
+          <p class="section-kicker">02 / 04 · YOU COMPLETE THIS IN GITHUB</p>
+          <h2 id="join-actions-title">Confirm GitHub Actions</h2>
+          <p>
+            Open <strong>your new fork’s Actions page</strong> and personally
+            complete GitHub’s manual enable / confirmation. Do this before{" "}
+            <code>gh shoal init</code>.
+          </p>
+          <p class="step-note">
+            Init cannot replace this UI step. Repository-level Actions permissions
+            or an active workflow do not prove you completed it.
+          </p>
+          <div class="journey-step-actions">
+            <a class="text-link" href="#join-fork" data-step-to="0">
+              ← Back
+            </a>
+            <a class="text-link" href="#join-setup" data-step-to="2" data-step-forward>
+              Next: set up station →
+            </a>
+          </div>
+        </section>
+
+        <section
+          id="join-setup"
+          class="journey-step"
+          data-journey-step
+          aria-labelledby="join-setup-title"
+        >
+          <p class="section-kicker">
+            03 / 04 · CHOOSE MANUAL OR AI-ASSISTED SETUP
+          </p>
+          <h2 id="join-setup-title">Set up your station</h2>
+          <div class="setup-options">
+            <details class="setup-option">
+              <summary>
+                <span>Manual setup</span>
+                <small>Commands and verification</small>
+              </summary>
+              <ol>
+                <li>
+                  Clone your fork using its GitHub URL, then enter the clean
+                  checkout.
+                </li>
+                <li>
+                  Install the <a class="button external" href="https://cli.github.com/" target="_blank" rel="noopener noreferrer">GitHub CLI</a>{" "}
+                  and confirm <code>gh auth status</code> works as the Reviewer
+                  Node owner.
+                </li>
+                <li>
+                  Install the official extension:{" "}
+                  <code>gh extension install taco3064/gh-shoal</code>.
+                </li>
+                <li>
+                  In a clean checkout, run <code>gh shoal init</code>.
+                </li>
+              </ol>
+            </details>
+            <details class="setup-option">
+              <summary>
+                <span>Use a local coding agent</span>
+                <small>One copyable prompt</small>
+              </summary>
+              <p>
+                Already completed stages 1 and 2? Copy one short prompt. The agent
+                handles only the mechanical steps and stops before your Policy.
+              </p>
+              <SetupPrompt client:load />
+            </details>
+          </div>
+          <p class="step-note">
+            Verify the managed Issue Form and Summary Workflow are canonical,
+            <code>.github/workflows/reviewer-summary.yml</code> is active, and
+            Issues are enabled. Init may repair that workflow and enable Issues;
+            it cannot alter repository-level Actions policy or enable unrelated
+            workflows.
+          </p>
+          <p class="step-note">
+            This setup agent is separate from the agent later selected for{" "}
+            <code>gh shoal review --agent &lt;agent&gt;</code>.
+          </p>
+          <div class="journey-step-actions">
+            <a class="text-link" href="#join-actions" data-step-to="1">
+              ← Back
+            </a>
+            <a class="text-link" href="#join-policy" data-step-to="3" data-step-forward>
+              Next: write your Policy →
+            </a>
+          </div>
+        </section>
+
+        <section
+          id="join-policy"
+          class="journey-step"
+          data-journey-step
+          aria-labelledby="join-policy-title"
+        >
+          <p class="section-kicker">04 / 04 · YOUR DECISION</p>
+          <h2 id="join-policy-title">Write your Review Policy</h2>
+          <p>
+            <strong>You</strong> define the review standard in{" "}
+            <code>README.md</code>. The setup agent and <code>gh shoal init</code>{" "}
+            must leave that choice to you. Commit and push your Policy.
+          </p>
+          <p class="step-note">
+            Directory eligibility requires Issues enabled, a supported canonical
+            Review Request form, and an allowed Summary Workflow digest. Your
+            entry appears after the next successful complete Network Scan and
+            publication; the fork alone does not make you appear immediately.
+          </p>
+          <a
+            class="text-link"
+            href={`${import.meta.env.BASE_URL}reviewers/`}
+          >
+            Explore the Reviewer Directory
+          </a>
+          <div class="journey-step-actions">
+            <a class="text-link" href="#join-setup" data-step-to="2">
+              ← Back
+            </a>
+            <a class="text-link" href="#join-fork" data-step-to="0">
+              Start again
+            </a>
+          </div>
+        </section>
+      </div>
+    </details>
+
+    <details
+      id="root-owner"
+      class="root-owner-path join-route"
+    >
+      <summary class="path-heading">
+        <span class="section-kicker">ROOT OWNER ONLY</span>
+        <strong>I own the Network Root</strong>
+      </summary>
+      <div class="path-content">
+        <h2 id="root-owner-title">Your Root is already your station</h2>
         <p>
-          Open <strong>your new fork’s Actions page</strong> and personally
-          complete GitHub’s manual enable / confirmation. Do this before{" "}
-          <code>gh shoal init</code>.
-        </p>
-        <p class="step-note">
-          Init cannot replace this UI step. Repository-level Actions permissions
-          or an active workflow do not prove you completed it.
-        </p>
-        <div class="journey-step-actions">
-          <a href="#join-fork" data-step-to="0">
-            ← Back
+          If you own{" "}
+          <a class="button external" href="https://github.com/taco3064/shoal-station" target="_blank" rel="noopener noreferrer">
+            taco3064/shoal-station
           </a>
-          <a href="#join-setup" data-step-to="2">
-            Next: set up station →
-          </a>
-        </div>
-      </section>
-
-      <section
-        id="join-setup"
-        class="journey-step"
-        data-journey-step
-        aria-labelledby="join-setup-title"
-      >
-        <p class="section-kicker">
-          03 / 04 · CHOOSE MANUAL OR AI-ASSISTED SETUP
+          , you already have the Root-owner Reviewer Node. Do not fork it or run
+          <code>gh shoal init</code> on it.
         </p>
-        <h2 id="join-setup-title">Set up your station</h2>
         <div class="setup-options">
           <details class="setup-option">
             <summary>
-              <span>Manual setup</span>
-              <small>Commands and verification</small>
+              <span>Manual checklist</span>
+              <small>Local tools and your Policy</small>
             </summary>
             <ol>
               <li>
-                Clone your fork using its GitHub URL, then enter the clean
+                Clone or use your existing <code>taco3064/shoal-station</code>{" "}
                 checkout.
               </li>
               <li>
-                Install the <a href="https://cli.github.com/">GitHub CLI ↗</a>{" "}
-                and confirm <code>gh auth status</code> works as the Reviewer
-                Node owner.
+                Install <a class="button external" href="https://cli.github.com/" target="_blank" rel="noopener noreferrer">GitHub CLI</a> and
+                verify <code>gh auth status</code> as the Root owner.
               </li>
               <li>
                 Install the official extension:{" "}
                 <code>gh extension install taco3064/gh-shoal</code>.
               </li>
               <li>
-                In a clean checkout, run <code>gh shoal init</code>.
+                Personally write your Review Policy in the Root{" "}
+                <code>README.md</code>, then commit and push it.
               </li>
             </ol>
           </details>
           <details class="setup-option">
             <summary>
               <span>Use a local coding agent</span>
-              <small>One copyable prompt</small>
+              <small>Copy one setup prompt</small>
             </summary>
             <p>
-              Already completed stages 1 and 2? Copy one short prompt. The agent
-              handles only the mechanical steps and stops before your Policy.
+              The agent can prepare your local tools, then returns the Policy
+              decision to you.
             </p>
-            <SetupPrompt client:load />
+            <SetupPrompt path="root" client:load />
           </details>
         </div>
         <p class="step-note">
-          Verify the managed Issue Form and Summary Workflow are canonical,
-          <code>.github/workflows/reviewer-summary.yml</code> is active, and
-          Issues are enabled. Init may repair that workflow and enable Issues;
-          it cannot alter repository-level Actions policy or enable unrelated
-          workflows.
+          Root repository maintenance keeps Issues enabled and the canonical
+          Review Request form and Summary Workflow valid. The Root's
+          <code>README.md</code> is both your Review Policy and the initial Policy
+          template inherited by new direct forks. Eligible Root owners appear
+          after the next complete published Network Scan.
         </p>
-        <p class="step-note">
-          This setup agent is separate from the agent later selected for{" "}
-          <code>gh shoal review --agent &lt;agent&gt;</code>.
-        </p>
-        <div class="journey-step-actions">
-          <a href="#join-actions" data-step-to="1">
-            ← Back
-          </a>
-          <a href="#join-policy" data-step-to="3">
-            Next: write your Policy →
-          </a>
-        </div>
-      </section>
-
-      <section
-        id="join-policy"
-        class="journey-step"
-        data-journey-step
-        aria-labelledby="join-policy-title"
-      >
-        <p class="section-kicker">04 / 04 · YOUR DECISION</p>
-        <h2 id="join-policy-title">Write your Review Policy</h2>
-        <p>
-          <strong>You</strong> define the review standard in{" "}
-          <code>README.md</code>. The setup agent and <code>gh shoal init</code>{" "}
-          must leave that choice to you. Commit and push your Policy.
-        </p>
-        <p class="step-note">
-          Directory eligibility requires Issues enabled, a supported canonical
-          Review Request form, and an allowed Summary Workflow digest. Your
-          entry appears after the next successful complete Network Scan and
-          publication; the fork alone does not make you appear immediately.
-        </p>
-        <a
-          class="button secondary"
-          href={`${import.meta.env.BASE_URL}reviewers/`}
-        >
-          Explore the Reviewer Directory →
-        </a>
-        <div class="journey-step-actions">
-          <a href="#join-setup" data-step-to="2">
-            ← Back
-          </a>
-          <a href="#join-fork" data-step-to="0">
-            Start again ↺
-          </a>
-        </div>
-      </section>
-    </div>
+      </div>
+    </details>
 
     <details class="join-reference">
       <summary>How Policy, trust, and Automated Review work</summary>
@@ -353,17 +332,7 @@ const description =
 </BaseLayout>
 
 <script>
-  const page = document.querySelector<HTMLElement>('.join-page');
-
-  const paths = Array.from(
-    document.querySelectorAll<HTMLElement>('[data-path]'),
-  );
-
-  const pathLinks = Array.from(
-    document.querySelectorAll<HTMLAnchorElement>('[data-path-to]'),
-  );
-
-  const journey = document.querySelector<HTMLElement>('[data-journey]');
+  const journey = document.querySelector<HTMLDetailsElement>('[data-journey]');
 
   const steps = Array.from(
     journey?.querySelectorAll<HTMLElement>('[data-journey-step]') ?? [],
@@ -373,71 +342,29 @@ const description =
     journey?.querySelectorAll<HTMLAnchorElement>('[data-step-to]') ?? [],
   );
 
-  if (page && journey && steps.length) {
-    page.classList.add('is-enhanced');
+  if (journey && steps.length) {
     journey.classList.add('is-enhanced');
-
-    const showPath = (path: 'fork' | 'root', scroll = false) => {
-      paths.forEach((section) => {
-        section.hidden = section.dataset.path !== path;
-      });
-
-      pathLinks.forEach((link) => {
-        if (link.dataset.pathTo === path) {
-          link.setAttribute('aria-current', 'true');
-        } else {
-          link.removeAttribute('aria-current');
-        }
-      });
-
-      if (scroll) {
-        const behavior = window.matchMedia('(prefers-reduced-motion: reduce)')
-          .matches
-          ? 'auto'
-          : 'smooth';
-
-        document
-          .getElementById(path === 'root' ? 'root-owner' : 'direct-fork')
-          ?.scrollIntoView({ behavior, block: 'start' });
-      }
-    };
 
     const show = (index: number, scroll = false) => {
       steps.forEach((step, position) => {
         step.hidden = position !== index;
       });
 
-      controls.forEach((control) => {
-        if (control.closest('.journey-progress')) {
-          if (Number(control.dataset.stepTo) === index) {
-            control.setAttribute('aria-current', 'step');
-          } else {
-            control.removeAttribute('aria-current');
-          }
-        }
-      });
-
       if (scroll) {
+        journey.open = true;
+
+        const heading = steps[index]?.querySelector<HTMLElement>('h2');
+
         const behavior = window.matchMedia('(prefers-reduced-motion: reduce)')
           .matches
           ? 'auto'
           : 'smooth';
 
-        journey.scrollIntoView({ behavior, block: 'start' });
+        heading?.setAttribute('tabindex', '-1');
+        heading?.focus({ preventScroll: true });
+        steps[index]?.scrollIntoView({ behavior, block: 'start' });
       }
     };
-
-    pathLinks.forEach((link) =>
-      link.addEventListener('click', (event) => {
-        event.preventDefault();
-        history.pushState(null, '', link.hash);
-        showPath(link.dataset.pathTo === 'root' ? 'root' : 'fork', true);
-
-        if (link.dataset.pathTo === 'fork') {
-          show(0);
-        }
-      }),
-    );
 
     controls.forEach((control) =>
       control.addEventListener('click', (event) => {
@@ -448,14 +375,27 @@ const description =
     );
 
     const restore = () => {
-      const initial = steps.findIndex(
+      const index = steps.findIndex(
         (step) => `#${step.id}` === window.location.hash,
       );
 
-      showPath(window.location.hash === '#root-owner' ? 'root' : 'fork');
-      show(initial < 0 ? 0 : initial);
+      if (index >= 0) {
+        journey.open = true;
+        show(index);
+      } else if (window.location.hash === '#root-owner') {
+        const root = document.querySelector<HTMLDetailsElement>('#root-owner');
+
+        if (root) {
+          root.open = true;
+        }
+      } else if (window.location.hash === '#direct-fork') {
+        journey.open = true;
+      } else if (!window.location.hash) {
+        show(0);
+      }
     };
 
+    show(0);
     window.addEventListener('popstate', restore);
     window.addEventListener('hashchange', restore);
     restore();

@@ -8,6 +8,11 @@ interface Props {
   image?: string;
 }
 const { title, description, image = "og-shoal.webp" } = Astro.props;
+const navigation = [
+  { href: `${import.meta.env.BASE_URL}#how-it-works`, label: "Understand Shoal" },
+  { href: `${import.meta.env.BASE_URL}reviewers/`, label: "Explore Reviewers" },
+  { href: `${import.meta.env.BASE_URL}join/`, label: "Become a Reviewer" },
+];
 const canonical = new URL(Astro.url.pathname, Astro.site);
 const ogImage = new URL(`${import.meta.env.BASE_URL}${image}`, Astro.site);
 ---
@@ -52,16 +57,22 @@ const ogImage = new URL(`${import.meta.env.BASE_URL}${image}`, Astro.site);
           height="323"
         />
       </a>
-      <nav aria-label="Main navigation">
-        <a href={`${import.meta.env.BASE_URL}#how-it-works`}>
-          Understand Shoal
-        </a>
-        <a href={`${import.meta.env.BASE_URL}reviewers/`}>
-          Explore Reviewers
-        </a>
-        <a href={`${import.meta.env.BASE_URL}join/`}>Become a Reviewer</a>
+      <nav class="desktop-navigation" aria-label="Main navigation">
+        {navigation.map(({ href, label }) => <a class="text-link" href={href}>{label}</a>)}
       </nav>
+      <button class="button menu-trigger" type="button" aria-expanded="false" aria-controls="mobile-navigation" aria-haspopup="dialog" hidden>
+        Menu
+      </button>
     </header>
+    <dialog id="mobile-navigation" class="navigation-drawer" aria-labelledby="menu-title">
+      <div class="drawer-heading">
+        <h2 id="menu-title">Explore Shoal</h2>
+        <form method="dialog"><button class="button" autofocus>Close menu</button></form>
+      </div>
+      <nav aria-label="Mobile navigation">
+        {navigation.map(({ href, label }) => <a class="text-link" href={href}>{label}</a>)}
+      </nav>
+    </dialog>
     <slot />
     <footer class="footer">
       <div class="wrap footer-inner">
@@ -76,10 +87,69 @@ const ogImage = new URL(`${import.meta.env.BASE_URL}${image}`, Astro.site);
         </a>
         <p>Review the work. Explain the Star.</p>
         <div class="footer-links">
-          <a href="https://github.com/taco3064/shoal-app">Source ↗</a>
+          <a class="button external" href="https://github.com/taco3064/shoal-app" target="_blank" rel="noopener noreferrer">Source</a>
           <ShareLink client:load />
         </div>
       </div>
     </footer>
   </body>
 </html>
+
+<script>
+  const trigger = document.querySelector<HTMLButtonElement>('.menu-trigger');
+  const drawer = document.querySelector<HTMLDialogElement>('#mobile-navigation');
+
+  if (trigger && drawer) {
+    trigger.hidden = false;
+    document.documentElement.classList.add('navigation-enhanced');
+
+    trigger.addEventListener('click', () => {
+      drawer.showModal();
+      trigger.setAttribute('aria-expanded', 'true');
+    });
+
+    drawer.addEventListener('keydown', (event) => {
+      if (event.key !== 'Tab') {
+        return;
+      }
+
+      const controls = Array.from(drawer.querySelectorAll<HTMLElement>('button, a[href]'));
+      const first = controls[0];
+      const last = controls.at(-1);
+
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last?.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first?.focus();
+      }
+    });
+
+    drawer.addEventListener('close', () => {
+      trigger.setAttribute('aria-expanded', 'false');
+      trigger.focus();
+    });
+
+    drawer.addEventListener('click', (event) => {
+      if (event.target === drawer) {
+        const bounds = drawer.getBoundingClientRect();
+
+        if (event.clientX < bounds.left || event.clientX > bounds.right
+          || event.clientY < bounds.top || event.clientY > bounds.bottom) {
+          drawer.close();
+        }
+      }
+    });
+
+    drawer.querySelectorAll('a').forEach((link) => {
+      link.addEventListener('click', () => drawer.close());
+    });
+
+    window.matchMedia('(min-width: 801px)').addEventListener('change', (event) => {
+      if (event.matches && drawer.open) {
+        drawer.close();
+      }
+    });
+  }
+</script>

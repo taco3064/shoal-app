@@ -10,7 +10,7 @@ export default function ShareLink() {
   }
 
   return (
-    <button className="share-link" type="button" onClick={copyLink}>
+    <button className="button share-link" type="button" onClick={copyLink}>
       {copied ? 'Link copied' : 'Copy page link'}
     </button>
   );

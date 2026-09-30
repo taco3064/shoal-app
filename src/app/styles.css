@@ -206,3 +206,102 @@
   .lifecycle-steps{grid-template-columns:1fr}
   .not-found-page{padding-top:45px}
 }
+
+/* Shared interaction language: text navigation, outlined destinations, filled actions. */
+.text-link{color:#d7f387;text-decoration:underline;text-decoration-color:#789c75;text-underline-offset:5px;font-weight:600;line-height:1.6}
+.text-link:hover{text-decoration-color:currentColor}
+.button{justify-content:center;text-align:center;gap:10px;border:1px solid #789c75;background:#244b45;color:#ecf3ed;cursor:pointer;line-height:1.5;text-decoration:none}
+.button.primary{background:#d7f387;color:#11242a;border-color:#d7f387}
+.button.primary:hover{background:#efffae;color:#11242a}
+.button.external{background:transparent;border-color:#637c7d;color:#c5d3d0}
+.button.external:hover{background:#183a3e;color:#eff4eb}
+a:focus-visible,button:focus-visible,summary:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #d7f387;outline-offset:4px}
+.actions,.recovery-actions{gap:20px;align-items:center}
+.share-link{padding-inline:16px}
+.menu-trigger{display:none}
+.navigation-drawer{position:fixed;inset:0 0 0 auto;margin:0;width:min(360px,90vw);height:100dvh;max-height:100dvh;padding:28px;color:#ecf3ed;background:#102b35;border:0;border-left:1px solid #637c7d}
+.navigation-drawer::backdrop{background:#030e18bb}
+.drawer-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:40px}
+.drawer-heading h2{font:600 21px/1.3 'Space Grotesk',sans-serif;margin:0}
+.drawer-heading .button{padding-inline:14px;min-height:44px}
+.navigation-drawer nav{flex-direction:column;gap:28px;font-size:17px}
+html:has(.navigation-drawer[open]){overflow:hidden}
+
+/* Both Hero columns own their space; stacked artwork stays in normal flow. */
+.hero{grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:32px;overflow:visible;min-height:650px}
+.hero-copy{min-width:0}
+.hero-art{position:relative;inset:auto;width:100%;height:auto;aspect-ratio:1;max-width:500px;opacity:1;margin-inline:auto}
+.hero-art .orbit-two{width:88%;height:88%}
+.hero-art .orbit-one{width:58%;height:58%}
+.label-one,.label-three{left:3%}
+.label-two,.label-four{right:3%}
+.directory-icon{border:0;width:80px;height:80px}
+.directory-icon svg{width:100%;height:100%}
+.directory-orbit{stroke:#42605b;stroke-width:1}
+.directory .text-link{display:inline-block;margin-top:12px}
+
+/* Linked card body and product action are separate keyboard targets. */
+.directory-page .reviewer-card{padding:0;gap:0;overflow:visible}
+.reviewer-card-body{display:grid;gap:24px;padding:27px;border-radius:8px 8px 0 0;transition:background .2s}
+.reviewer-card-body:hover{background:#24463f}
+.reviewer-card-body:focus-visible{outline-offset:-4px;background:#24463f}
+.reviewer-card-actions{margin:0 27px;padding:20px 0;justify-content:flex-start}
+.reviewer-card-actions a.button{text-decoration:none;color:#11242a}
+.reviewer-orientation{display:block}
+.reviewer-orientation h2{font-size:clamp(24px,3vw,30px)}
+.reviewer-orientation p{margin-bottom:16px}
+.orientation-actions{display:block}
+.policy-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:24px}
+.detail-panel a.button{text-decoration:none}
+.provenance-values{display:grid;gap:16px;margin:24px 0}
+.provenance-values>div,.provenance-values dd{min-width:0}
+.provenance-values dt{font-size:13px;color:#a8babb;margin-bottom:6px}
+.provenance-values dd{margin:0}
+.identifier-value{display:block;padding:14px 16px;background:#071c25;border:1px solid #365056;border-radius:5px;font-family:monospace;font-size:13px;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word}
+
+/* Native disclosures keep both paths available, with locally scoped sticky headings. */
+.join-page .join-route{padding:0;border:1px solid #416059;border-radius:9px;background:#102830}
+.join-route>.path-heading{position:sticky;top:0;z-index:3;display:list-item;list-style-position:inside;padding:22px 30px;cursor:pointer;background:#17383b;border-radius:8px;border-bottom:1px solid #416059;color:#d7f387}
+.path-heading .section-kicker{display:inline;margin-right:12px;font-size:10px}
+.path-heading strong{display:block;font:600 clamp(24px,3vw,32px)/1.2 'Space Grotesk',sans-serif;margin-top:10px;color:#ecf3ed}
+.path-content{padding:30px}
+.path-content>h2{margin:0 0 12px}
+.path-content>p{color:#b5c7c4;line-height:1.75}
+.join-page .journey-step{border-radius:8px;margin-top:22px}
+.journey-step-actions{display:flex;align-items:center}
+.journey-step-actions [data-step-forward]{margin-inline-start:auto;text-align:right}
+.journey-step-actions a{max-width:48%}
+.journey-step-actions a:only-child{max-width:100%}
+.journey-step{scroll-margin-top:160px}
+.join-page .setup-option summary{justify-content:center;text-align:center}
+@media(max-width:1100px){
+  .hero{display:flex;flex-direction:column;gap:0;min-height:0}
+  .hero-copy{width:100%;padding:60px 0 20px}
+  .hero-art{width:min(100%,500px);height:auto;flex:none;margin-bottom:35px}
+}
+@media(max-width:800px){
+  .navigation-enhanced .site-header{min-height:76px;height:76px;padding-block:0;align-items:center}
+  .navigation-enhanced .desktop-navigation{display:none}
+  .navigation-enhanced .menu-trigger{display:inline-flex;min-height:44px}
+}
+@media(max-width:600px){
+  .hero-copy{padding-top:35px}
+  .hero h1{font-size:clamp(44px,10vw,58px)}
+  .hero-art{width:min(100%,420px);height:auto}
+  .directory{gap:18px;padding:24px;flex-direction:column}
+  .directory-icon{width:52px;height:52px}
+  .button{min-height:48px}
+  .policy-actions,.provenance>.actions{flex-direction:column;align-items:stretch}
+  .policy-actions .button,.provenance>.actions .button,.reviewer-card-actions .button,.journey-step>.button.primary{width:100%}
+  .reviewer-card-body{padding:22px}
+  .reviewer-card-actions{margin-inline:22px}
+  .directory-page .directory-controls label:first-child,.directory-page .directory-controls label:nth-child(2){min-width:0}
+  .detail-header{gap:16px;min-width:0}
+  .detail-header>div{min-width:0;overflow-wrap:anywhere}
+  .path-content{padding:20px}
+  .join-route>.path-heading{padding:18px 20px}
+  .path-heading .section-kicker{display:inline-block;margin:0}
+  .join-page .journey-step{padding:24px 20px}
+  .join-page .setup-option .button.external{display:flex;width:100%;margin:8px 0}
+}
+@media(prefers-reduced-motion:reduce){.reviewer-card-body{transition:none}}

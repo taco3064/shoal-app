@@ -18,17 +18,13 @@ export default function Hero() {
         </p>
         <div className="actions">
           <a
-            className="button primary"
+            className="text-link"
             href="/shoal-app/join/"
           >
             Join Shoal · choose your path
-            {' '}
-            <span aria-hidden="true">→</span>
           </a>
-          <a className="button secondary" href="#how-it-works">
+          <a className="text-link" href="#how-it-works">
             See how it works
-            {' '}
-            <span aria-hidden="true">↓</span>
           </a>
         </div>
         <p className="hero-note">
