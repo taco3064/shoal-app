@@ -49,7 +49,7 @@ const percent = (value: number | null) =>
         published directory for newer data.
       </p>
     )}
-    <a href={`${import.meta.env.BASE_URL}reviewers/`}>← Reviewer Directory</a>
+    <a class="text-link" href={`${import.meta.env.BASE_URL}reviewers/`}>Reviewer Directory</a>
     <header class="detail-header">
       <img src={reviewer.avatarUrl} alt="" width="100" height="100" />
       <div>
@@ -75,30 +75,15 @@ const percent = (value: number | null) =>
           {reviewer.username} publishes their own review standard
         </h2>
         <p>
-          Shoal is a public review network where repository owners request
-          evaluation from independent Reviewers. A passing review may back{" "}
-          {reviewer.username}'s real GitHub Star with public evidence.
-        </p>
-        <p>
-          This page shows the Review Policy and public Shoal context for a
-          person-controlled Reviewer Node. A Review Request asks{" "}
-          {reviewer.username} to evaluate a repository against that Policy; it
-          does not ask Shoal to grant a Star.
+          This page presents {reviewer.username}'s Review Policy, public profile,
+          and Shoal Summary context. Read their Policy before requesting a review.
         </p>
       </div>
       <div class="orientation-actions" aria-label="Reviewer actions">
-        <a class="button primary" href={requestUrl}>
-          Request review ↗
-        </a>
-        <a class="button secondary" href="#policy-title">
-          Read Review Policy ↓
+        <a class="text-link" href="#policy-title">
+          Read Review Policy
         </a>
       </div>
-      <ul class="meaning-list">
-        <li>The Review Policy is owned by this Reviewer.</li>
-        <li>PASS may result in this Reviewer's real GitHub Account starring the target repository.</li>
-        <li>Shoal does not centrally approve, rank, or score this Reviewer.</li>
-      </ul>
     </section>
     <section class="detail-panel profile-panel" aria-labelledby="profile-title">
       <div>
@@ -112,7 +97,7 @@ const percent = (value: number | null) =>
           </p>
         )}
       </div>
-      <a href={reviewer.profileUrl}>View GitHub profile ↗</a>
+      <a class="button external" href={reviewer.profileUrl} target="_blank" rel="noopener noreferrer">View GitHub profile</a>
     </section>
     <section class="detail-panel" aria-labelledby="policy-title">
       <h2 id="policy-title">Review Policy</h2>
@@ -128,22 +113,15 @@ const percent = (value: number | null) =>
       ) : (
         <p>This snapshot has no README.md to display.</p>
       )}
-      <p>
-        <a href={reviewer.policyUrl}>View this README.md on GitHub ↗</a>
-      </p>
-      <p>
-        <a href={reviewer.repositoryUrl}>
-          Reviewer Node: {reviewer.repository} ↗
+      <div class="policy-actions" aria-label="Reviewer destinations">
+        <a class="button external" href={reviewer.repositoryUrl} target="_blank" rel="noopener noreferrer">
+          Reviewer Node
         </a>
-      </p>
-      <p>
-        <a href={requestUrl}>
-          Open this Reviewer's canonical Review Request surface ↗
+        <a class="button primary" href={requestUrl} target="_blank" rel="noopener noreferrer">
+          Request Review
         </a>
-      </p>
-      <p>
-        <a href={reviewer.profileUrl}>GitHub profile ↗</a>
-      </p>
+        <a class="button external" href={reviewer.profileUrl} target="_blank" rel="noopener noreferrer">GitHub Profile</a>
+      </div>
     </section>
     <section class="detail-panel" aria-labelledby="summary-title">
       <h2 id="summary-title">Reviewer Summary</h2>
@@ -214,23 +192,32 @@ const percent = (value: number | null) =>
             Started{" "}
             <time datetime={selected.source.runStartedAt}>
               {selected.source.runStartedAt}
-            </time>{" "}
-            · workflow commit <code>{selected.source.workflowCommit}</code>
+            </time>
           </p>
-          <p>
-            Workflow digest <code>{selected.source.workflowDigest}</code> ·
-            pinned Action commit <code>{selected.source.actionCommit}</code>
-          </p>
-          <p>
-            Public exact-byte transport digest{" "}
-            <code>{selected.source.summaryDigest}</code>
-          </p>
-          <p>
-            <a href={selected.source.transportUrl}>
-              Selected Attempt public Summary transport ↗
-            </a>{" "}
-            · <a href={selected.source.runUrl}>Workflow run ↗</a>
-          </p>
+          <dl class="provenance-values">
+            <div>
+              <dt>Workflow commit</dt>
+              <dd><code class="identifier-value">{selected.source.workflowCommit}</code></dd>
+            </div>
+            <div>
+              <dt>Workflow digest</dt>
+              <dd><code class="identifier-value">{selected.source.workflowDigest}</code></dd>
+            </div>
+            <div>
+              <dt>Pinned Action commit</dt>
+              <dd><code class="identifier-value">{selected.source.actionCommit}</code></dd>
+            </div>
+            <div>
+              <dt>Public exact-byte transport digest</dt>
+              <dd><code class="identifier-value">{selected.source.summaryDigest}</code></dd>
+            </div>
+          </dl>
+          <div class="policy-actions" aria-label="Summary evidence">
+            <a class="button external" href={selected.source.transportUrl} target="_blank" rel="noopener noreferrer">
+              Selected Attempt public Summary transport
+            </a>
+            <a class="button external" href={selected.source.runUrl} target="_blank" rel="noopener noreferrer">Workflow run</a>
+          </div>
           <p>
             The public transport is a retrieval surface, not an independent
             trust anchor. The Network Aggregator accepted this Attempt upstream.

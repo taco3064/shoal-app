@@ -12,6 +12,16 @@ export default function ReviewPolicy({ markdown, policyUrl }: {
       <Markdown
         remarkPlugins={[remarkGfm]}
         components={{
+          a: ({ href, children }) => (
+            <a
+              className="button external"
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {children}
+            </a>
+          ),
           img: ({ src, alt }) => (
             <img
               src={src?.replace(/^https:\/\/github\.com\/([^/]+\/[^/]+)\/blob\//, 'https://raw.githubusercontent.com/$1/')}

@@ -17,12 +17,10 @@ export default function JoinSteps() {
         on your fork. In either path, write your own Review Policy in the README.
       </p>
       <a
-        className="button primary"
+        className="text-link"
         href="/shoal-app/join/"
       >
         Join Shoal · full setup guide
-        {' '}
-        <span aria-hidden="true">↗</span>
       </a>
     </section>
   );

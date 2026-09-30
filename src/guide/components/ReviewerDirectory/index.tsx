@@ -65,7 +65,7 @@ export default function ReviewerDirectory({ reviewers }: { reviewers: Entry[] })
         </label>
         <button
           type="button"
-          className="sort-direction"
+          className="button sort-direction"
           onClick={() => setDescending((value) => !value)}
           aria-label={`Sort ${descending ? 'descending' : 'ascending'}; change direction`}
         >
@@ -101,50 +101,55 @@ function ReviewerCard({ reviewer }: { reviewer: Entry }) {
 
   return (
     <article className="reviewer-card">
-      <div className="reviewer-card-head">
-        <img
-          src={reviewer.avatarUrl}
-          alt=""
-          width="64"
-          height="64"
-          loading="lazy"
-        />
-        <div>
-          <h2>
-            <a href={detailUrl}>
+      <a className="reviewer-card-body" href={detailUrl}>
+        <div className="reviewer-card-head">
+          <img
+            src={reviewer.avatarUrl}
+            alt=""
+            width="64"
+            height="64"
+            loading="lazy"
+          />
+          <div>
+            <h2>
               {reviewer.username}
-            </a>
-          </h2>
-          <p>{reviewer.repository}</p>
+            </h2>
+            <p>{reviewer.repository}</p>
+          </div>
         </div>
-      </div>
-      <p className="reviewer-card-purpose">
-        Inspect this Reviewer's Policy, public review activity, and where to
-        request a review before asking for evaluation.
-      </p>
-      <div className="reviewer-card-meta">
-        <p>
-          Joined
-          {' '}
-          <time dateTime={reviewer.joinedAt}>
-            {new Date(reviewer.joinedAt).toLocaleDateString('en-US', {
-              timeZone: 'UTC',
-            })}
-          </time>
+        <p className="reviewer-card-purpose">
+          Inspect this Reviewer's Policy, public review activity, and where to
+          request a review before asking for evaluation.
         </p>
-        {reviewer.summary.status !== 'unavailable' && (
-          <span className={`summary-state state-${reviewer.summary.status}`}>
-            {reviewer.summary.status === 'fallback'
-              ? 'Fallback · prior accepted snapshot'
-              : 'Current summary'}
-          </span>
-        )}
-      </div>
-      <div className="reviewer-card-actions">
-        <a href={detailUrl}>Inspect Reviewer →</a>
-        <a href={reviewer.policyUrl}>Read Policy ↗</a>
-        <a href={requestUrl}>Request review ↗</a>
-      </div>
+        <div className="reviewer-card-meta">
+          <p>
+            Joined
+            {' '}
+            <time dateTime={reviewer.joinedAt}>
+              {new Date(reviewer.joinedAt).toLocaleDateString('en-US', {
+                timeZone: 'UTC',
+              })}
+            </time>
+          </p>
+          {reviewer.summary.status !== 'unavailable' && (
+            <span className={`summary-state state-${reviewer.summary.status}`}>
+              {reviewer.summary.status === 'fallback'
+                ? 'Fallback · prior accepted snapshot'
+                : 'Current summary'}
+            </span>
+          )}
+        </div>
+      </a>
+      <footer className="reviewer-card-actions">
+        <a
+          className="button primary"
+          href={requestUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Request review
+        </a>
+      </footer>
     </article>
   );
 }
