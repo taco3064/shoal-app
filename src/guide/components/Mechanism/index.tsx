@@ -2,7 +2,8 @@ const steps = [
   {
     number: '01',
     title: 'Publish your policy',
-    body: 'Fork the station and write down what earns your endorsement in its README.',
+    body: 'Directly fork the Shoal station template and write down '
+      + 'what earns your endorsement in its README.',
   },
   {
     number: '02',

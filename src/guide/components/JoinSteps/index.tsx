@@ -8,8 +8,8 @@ export default function JoinSteps() {
         <em>Your signature.</em>
       </h2>
       <p>
-        Directly fork the Network Root, complete the manual Actions confirmation in your
-        fork, then install the gh extension, run
+        Directly fork the Shoal station template, complete the manual Actions
+        confirmation in your fork, then install the gh extension, run
         {' '}
         <code>gh shoal init</code>
         {' '}

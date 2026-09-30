@@ -2,9 +2,9 @@
 import BaseLayout from "../layouts/BaseLayout.astro";
 import SetupPrompt from "~app/guide/components/SetupPrompt";
 
-const title = "Join Shoal — Fork the Network Root";
+const title = "Join Shoal — Set up your station";
 const description =
-  "Directly fork the Network Root, complete four setup stages, and write your own Review Policy.";
+  "Directly fork the Shoal station template, complete four setup stages, and write your own Review Policy.";
 ---
 
 <BaseLayout title={title} description={description}>
@@ -18,7 +18,7 @@ const description =
         real GitHub Stars explainable.
       </p>
       <p>
-        Your station. Your Review Policy. Directly fork the Network Root to
+        Your station. Your Review Policy. Directly fork the Shoal station template to
         join.
       </p>
       <p class="join-reassurance">
@@ -58,7 +58,7 @@ const description =
 
     <div class="join-section-heading">
       <p class="section-kicker">START HERE</p>
-      <h2>Fork the Network Root</h2>
+      <h2>Set up your station</h2>
     </div>
     <section id="direct-fork" class="journey" data-journey aria-label="Your station in four steps">
       <section
@@ -67,11 +67,13 @@ const description =
         data-journey-step
         aria-labelledby="join-fork-title"
       >
-        <p class="section-kicker">01 / 04 · YOUR NETWORK IDENTITY</p>
-        <h2 id="join-fork-title">Directly fork the Network Root</h2>
+        <p class="section-kicker">01 / 04 · CREATE YOUR STATION</p>
+        <h2 id="join-fork-title">Fork the Shoal station template</h2>
         <p>
-          Your personal account must directly fork the canonical Network Root. A
-          fork of another Reviewer Node does not qualify.
+          Directly fork <strong>taco3064/shoal-station</strong>, Shoal’s canonical
+          Network Root, using your personal GitHub account. This creates your
+          station, formally a Reviewer Node. A fork of another Reviewer Node
+          does not qualify.
         </p>
         <a
           class="button primary"

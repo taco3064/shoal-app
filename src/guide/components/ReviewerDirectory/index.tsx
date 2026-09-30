@@ -128,25 +128,25 @@ function ReviewerCard({ reviewer }: { reviewer: DirectoryEntry }) {
               {reviewer.username}
             </h2>
             <p>{reviewer.repository}</p>
+            <div className="reviewer-card-meta">
+              <p>
+                Joined
+                {' '}
+                <time dateTime={reviewer.joinedAt}>
+                  {new Date(reviewer.joinedAt).toLocaleDateString('en-US', {
+                    timeZone: 'UTC',
+                  })}
+                </time>
+              </p>
+              {reviewer.summary.status !== 'unavailable' && (
+                <span className={`summary-state state-${reviewer.summary.status}`}>
+                  {reviewer.summary.status === 'fallback'
+                    ? 'Fallback · prior accepted snapshot'
+                    : 'Current summary'}
+                </span>
+              )}
+            </div>
           </div>
-        </div>
-        <div className="reviewer-card-meta">
-          <p>
-            Joined
-            {' '}
-            <time dateTime={reviewer.joinedAt}>
-              {new Date(reviewer.joinedAt).toLocaleDateString('en-US', {
-                timeZone: 'UTC',
-              })}
-            </time>
-          </p>
-          {reviewer.summary.status !== 'unavailable' && (
-            <span className={`summary-state state-${reviewer.summary.status}`}>
-              {reviewer.summary.status === 'fallback'
-                ? 'Fallback · prior accepted snapshot'
-                : 'Current summary'}
-            </span>
-          )}
         </div>
       </a>
       <footer className="reviewer-card-actions">
