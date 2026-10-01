@@ -16,11 +16,10 @@ import {
   isJudgmentLifecycleValid,
   isPriorInitialReviewEvidence,
 } from './review_lifecycle';
+import { isValidRequesterNode } from './requester_membership';
 import type {
   CanonicalThread,
   GitHubIssue,
-  GitHubUser,
-  RequesterNode,
   ReviewerNode,
   SummaryInput,
   ValidRequest,
@@ -467,18 +466,4 @@ function hasCurrentRequest(
   thread: CanonicalThread,
 ): thread is CanonicalThread & { currentRequest: ValidRequest } {
   return Boolean(thread.currentRequest);
-}
-
-function isValidRequesterNode(
-  requesterNode: RequesterNode | null,
-  author: GitHubUser,
-  networkRootRepositoryId: number,
-): requesterNode is RequesterNode {
-  return Boolean(
-    requesterNode
-    && requesterNode.isFork
-    && requesterNode.owner.type === 'User'
-    && requesterNode.owner.id === author.id
-    && requesterNode.parentRepositoryId === networkRootRepositoryId,
-  );
 }

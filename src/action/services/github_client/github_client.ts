@@ -6,6 +6,7 @@ import type {
   ReviewerNode,
   SummaryResolvers,
 } from '../reviewer_summary';
+import { isValidRequesterNode } from '../reviewer_summary';
 import { reviewProtocol } from '~app/protocol/services/review_protocol';
 import type { AutomationProvenance } from '~app/protocol/services/review_protocol';
 import type {
@@ -17,7 +18,6 @@ import type {
 import {
   isCommentResponse,
   isCommitResponse,
-  isDirectFork,
   isIssueListResponse,
   isIssueResponse,
   isRecord,
@@ -178,8 +178,10 @@ export class GitHubClient {
       `${author.login}/${networkRootRepositoryName}`,
     );
 
-    if (isDirectFork(directNameCandidate, author.id, networkRootRepositoryId)) {
-      return toRequesterNode(directNameCandidate);
+    const directNode = directNameCandidate && toRequesterNode(directNameCandidate);
+
+    if (isValidRequesterNode(directNode, author, networkRootRepositoryId)) {
+      return directNode;
     }
 
     const repositories = await this.paginate(
@@ -188,14 +190,16 @@ export class GitHubClient {
     );
 
     for (const item of repositories) {
-      if (!item.fork) {
+      if (!item.fork && item.id !== networkRootRepositoryId) {
         continue;
       }
 
       const repository = await this.getRepositoryOrNull(item.full_name);
 
-      if (isDirectFork(repository, author.id, networkRootRepositoryId)) {
-        return toRequesterNode(repository);
+      const node = repository && toRequesterNode(repository);
+
+      if (isValidRequesterNode(node, author, networkRootRepositoryId)) {
+        return node;
       }
     }
 

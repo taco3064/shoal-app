@@ -38,7 +38,7 @@ export type ReviewerNode = {
 export type RequesterNode = {
   id: number;
   owner: GitHubUser;
-  parentRepositoryId: number;
+  parentRepositoryId: number | null;
   isFork: boolean;
 };
 
