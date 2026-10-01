@@ -84,17 +84,6 @@ export class GitHubApi {
       const response = await this.request(nextPath);
       const data = await response.json() as T[] | Record<string, unknown>;
 
-      if (
-        !Array.isArray(data)
-        && typeof data.total_count === 'number'
-        && data.total_count > 1000
-        && path.includes('/actions/runs')
-      ) {
-        throw new Error(
-          'GitHub Actions run listing exceeds the complete 1000-run window.',
-        );
-      }
-
       const entries = (
         key ? (data as Record<string, unknown>)[key] : data
       ) as T[];
@@ -204,17 +193,16 @@ export class GitHubApi {
     init: RequestInit,
   ): Promise<Response> {
     const started = this.now();
-    let delayedMs = 0;
 
     for (;;) {
       const response = await this.fetcher(input, init);
 
-      if (!isRetryableStatus(response.status)) {
+      if (!isPotentiallyRetryable(response)) {
         return response;
       }
 
       const elapsed = this.now() - started;
-      const remaining = this.retryBudgetMs - elapsed - delayedMs;
+      const remaining = this.retryBudgetMs - elapsed;
       const delay = retryDelayMs(response, remaining, this.now());
 
       if (delay === null) {
@@ -228,7 +216,6 @@ export class GitHubApi {
       }
 
       await this.sleep(delay);
-      delayedMs += delay;
     }
   }
 }
@@ -277,8 +264,23 @@ function nextPagePath(linkHeader: string | null): string | null {
   return next;
 }
 
-function isRetryableStatus(status: number): boolean {
-  return status === 429 || [500, 502, 503, 504].includes(status);
+function isPotentiallyRetryable(response: Response): boolean {
+  if ([500, 502, 503, 504].includes(response.status)) {
+    return true;
+  }
+
+  if (response.status === 429) {
+    return true;
+  }
+
+  return (
+    response.status === 403
+    && (
+      response.headers.get('retry-after') !== null
+      || response.headers.get('x-ratelimit-remaining') === '0'
+      || response.headers.has('x-ratelimit-resource')
+    )
+  );
 }
 
 function retryDelayMs(
@@ -286,15 +288,35 @@ function retryDelayMs(
   remainingMs: number,
   now: number,
 ): number | null {
-  const retryAfter = response.headers.get('retry-after');
-  const reset = response.headers.get('x-ratelimit-reset');
-  const delay = retryAfterDelayMs(retryAfter, now) ?? resetDelayMs(reset, now);
+  const delay = rateLimitDelayMs(response, now) ?? transientDelayMs(response);
 
   if (delay === null) {
-    return remainingMs >= 100 ? 100 : null;
+    return null;
   }
 
   return delay <= remainingMs ? delay : null;
+}
+
+function rateLimitDelayMs(response: Response, now: number): number | null {
+  const retryAfter = retryAfterDelayMs(response.headers.get('retry-after'), now);
+
+  if (retryAfter !== null) {
+    return retryAfter;
+  }
+
+  if (response.headers.get('x-ratelimit-remaining') === '0') {
+    return resetDelayMs(response.headers.get('x-ratelimit-reset'), now);
+  }
+
+  if (response.status === 429 || response.status === 403) {
+    return 60_000;
+  }
+
+  return null;
+}
+
+function transientDelayMs(response: Response): number | null {
+  return [500, 502, 503, 504].includes(response.status) ? 100 : null;
 }
 
 function retryAfterDelayMs(value: string | null, now: number): number | null {

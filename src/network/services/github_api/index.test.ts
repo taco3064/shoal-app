@@ -108,6 +108,46 @@ test('paginated reads follow GitHub Link headers to terminal page', async () => 
   ]);
 });
 
+test('unfiltered Actions runs allow total_count above 1000', async () => {
+  const requests: string[] = [];
+
+  const api = new GitHubApi('token', async (input) => {
+    requests.push(String(input));
+
+    if (String(input).endsWith('page=1')) {
+      return new Response(
+        JSON.stringify({
+          total_count: 1500,
+          workflow_runs: [{ id: 1 }],
+        }),
+        {
+          headers: {
+            link: '<https://api.github.com/repos/alice/node/actions/runs?per_page=100&page=2>; rel="next"',
+          },
+        },
+      );
+    }
+
+    return new Response(JSON.stringify({
+      total_count: 1500,
+      workflow_runs: [{ id: 2 }],
+    }));
+  });
+
+  assert.deepEqual(
+    await api.pages<{ id: number }>(
+      '/repos/alice/node/actions/runs',
+      'workflow_runs',
+    ),
+    [{ id: 1 }, { id: 2 }],
+  );
+
+  assert.deepEqual(requests, [
+    'https://api.github.com/repos/alice/node/actions/runs?per_page=100&page=1',
+    'https://api.github.com/repos/alice/node/actions/runs?per_page=100&page=2',
+  ]);
+});
+
 test('malformed pagination and later-page failures fail the read', async () => {
   const malformed = new GitHubApi('token', async () =>
     new Response(JSON.stringify([]), { headers: { link: 'not-a-link' } }));
@@ -185,4 +225,126 @@ test('retryable GitHub failures honor the bounded retry budget', async () => {
     (error: unknown) =>
       error instanceof GitHubHttpError && error.status === 429,
   );
+});
+
+test('rate-limited primary 403 follows reset within the bounded budget', async () => {
+  const delays: number[] = [];
+  let attempts = 0;
+  let now = 1_000;
+
+  const api = new GitHubApi(
+    'token',
+    async () => {
+      attempts += 1;
+
+      return attempts === 1
+        ? new Response('', {
+            status: 403,
+            headers: {
+              'x-ratelimit-remaining': '0',
+              'x-ratelimit-reset': '2',
+            },
+          })
+        : new Response(JSON.stringify({ ok: true }));
+    },
+    {
+      retryBudgetMs: 1000,
+      sleep: async (ms) => {
+        delays.push(ms);
+        now += ms;
+      },
+      now: () => now,
+    },
+  );
+
+  assert.deepEqual(await api.json('/repos/alice/node'), { ok: true });
+  assert.deepEqual(delays, [1000]);
+  assert.equal(attempts, 2);
+});
+
+test('rate-limited primary 403 fails immediately when reset exceeds budget', async () => {
+  let attempts = 0;
+
+  const api = new GitHubApi(
+    'token',
+    async () => {
+      attempts += 1;
+
+      return new Response('', {
+        status: 403,
+        headers: {
+          'x-ratelimit-remaining': '0',
+          'x-ratelimit-reset': '3',
+        },
+      });
+    },
+    {
+      retryBudgetMs: 1000,
+      sleep: async () => {
+        throw new Error('must not sleep');
+      },
+      now: () => 1_000,
+    },
+  );
+
+  await assert.rejects(
+    api.json('/repos/alice/node'),
+    (error: unknown) =>
+      error instanceof GitHubHttpError && error.status === 403,
+  );
+
+  assert.equal(attempts, 1);
+});
+
+test('secondary rate limits honor retry-after and documented minimum delay', async () => {
+  const retryAfterDelays: number[] = [];
+  let retryAfterAttempts = 0;
+
+  const retryAfter = new GitHubApi(
+    'token',
+    async () => {
+      retryAfterAttempts += 1;
+
+      return retryAfterAttempts === 1
+        ? new Response('', {
+            status: 403,
+            headers: { 'retry-after': '2' },
+          })
+        : new Response(JSON.stringify({ ok: true }));
+    },
+    {
+      retryBudgetMs: 2000,
+      sleep: async (ms) => {
+        retryAfterDelays.push(ms);
+      },
+      now: () => 0,
+    },
+  );
+
+  assert.deepEqual(await retryAfter.json('/repos/alice/node'), { ok: true });
+  assert.deepEqual(retryAfterDelays, [2000]);
+
+  const minimumDelays: number[] = [];
+  let minimumAttempts = 0;
+
+  const minimum = new GitHubApi(
+    'token',
+    async () => {
+      minimumAttempts += 1;
+
+      return minimumAttempts === 1
+        ? new Response('', { status: 429 })
+        : new Response(JSON.stringify({ ok: true }));
+    },
+    {
+      retryBudgetMs: 60_000,
+      sleep: async (ms) => {
+        minimumDelays.push(ms);
+      },
+      now: () => 0,
+    },
+  );
+
+  assert.deepEqual(await minimum.json('/repos/alice/node'), { ok: true });
+  assert.deepEqual(minimumDelays, [60_000]);
 });

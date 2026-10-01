@@ -13,6 +13,11 @@ const reviewers: DirectoryEntry[] = Array.from({ length: 123 }, (_, index) => ({
   policyUrl: '',
   joinedAt: '2026-01-01T00:00:00Z',
   avatarUrl: '',
+  stationStatus: index % 10 === 0 ? 'setup_required' : 'ready',
+  stationReadinessReasons: index % 10 === 0
+    ? ['issues_disabled']
+    : [],
+  summaryStatus: 'current',
   summary: { status: 'current' },
 }));
 
@@ -75,4 +80,18 @@ test('valid deep links round trip sort, direction, filter and page', () => {
 
   assert.deepEqual(readDirectoryState(directorySearch(state)), state);
   assert.equal(directoryView(reviewers, state).entries.length, 23);
+});
+
+test('setup-required reviewers remain searchable, counted and paginated', () => {
+  const view = directoryView(reviewers, {
+    ...defaultDirectoryState,
+    username: 'reviewer-010',
+  });
+
+  assert.equal(view.total, 1);
+  assert.equal(view.entries[0].stationStatus, 'setup_required');
+
+  assert.deepEqual(view.entries[0].stationReadinessReasons, [
+    'issues_disabled',
+  ]);
 });

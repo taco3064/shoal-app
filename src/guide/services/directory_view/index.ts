@@ -6,6 +6,13 @@ export type DirectoryEntry = {
   policyUrl: string;
   joinedAt: string;
   avatarUrl: string;
+  stationStatus: 'ready' | 'setup_required';
+  stationReadinessReasons: Array<
+    | 'issues_disabled'
+    | 'review_request_surface_missing_or_unsupported'
+    | 'summary_workflow_missing_or_unsupported'
+  >;
+  summaryStatus: 'current' | 'fallback' | 'unavailable';
   summary: { status: 'current' | 'fallback' | 'unavailable' };
 };
 

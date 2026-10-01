@@ -3,8 +3,12 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import type { GitHubRepository, WorkflowRun } from '../github_api';
 import { hash } from '../summary_selection';
-import { buildNetworkProjection, sortByJoinedAt } from './index';
-import type { NetworkSource } from './index';
+import {
+  buildNetworkProjection,
+  sortByJoinedAt,
+  validateProjection,
+} from './index';
+import type { NetworkProjection, NetworkSource } from './index';
 import {
   allowedSummaryWorkflows,
   currentReviewerSummaryContract,
@@ -137,7 +141,7 @@ function source(
 
 const workflowTrust = allowedSummaryWorkflows.get(hash(workflow));
 
-test('flat membership and observable eligibility exclude invalid nodes', async () => {
+test('flat membership projects valid nodes and excludes invalid lineage', async () => {
   const disabled = { ...later, has_issues: false };
 
   const downstream = {
@@ -158,12 +162,29 @@ test('flat membership and observable eligibility exclude invalid nodes', async (
 
   assert.deepEqual(
     projection.reviewers.map((reviewer) => reviewer.repositoryId),
-    [12],
+    [12, root.id, 13],
   );
 
-  assert.equal(projection.reviewers[0].summary.status, 'unavailable');
-  assert.equal('metrics' in projection.reviewers[0].summary, false);
-  assert.equal(projection.reviewers[0].joinedAt, current.created_at);
+  const currentReviewer = projection.reviewers.find(
+    (reviewer) => reviewer.repositoryId === current.id,
+  );
+
+  const disabledReviewer = projection.reviewers.find(
+    (reviewer) => reviewer.repositoryId === disabled.id,
+  );
+
+  assert.equal(currentReviewer?.summary.status, 'unavailable');
+  assert.equal('metrics' in currentReviewer!.summary, false);
+  assert.equal(currentReviewer?.joinedAt, current.created_at);
+
+  assert.equal(currentReviewer?.stationStatus, 'ready');
+  assert.deepEqual(currentReviewer?.stationReadinessReasons, []);
+
+  assert.equal(disabledReviewer?.stationStatus, 'setup_required');
+
+  assert.deepEqual(disabledReviewer?.stationReadinessReasons, [
+    'issues_disabled',
+  ]);
 });
 
 test('eligible personal Root joins with its own identity and Summary', async () => {
@@ -192,6 +213,8 @@ test('eligible personal Root joins with its own identity and Summary', async () 
 
   assert.equal(rootReviewer?.repository, networkRoot.fullName);
   assert.equal(rootReviewer?.joinedAt, root.created_at);
+  assert.equal(rootReviewer?.stationStatus, 'ready');
+  assert.deepEqual(rootReviewer?.stationReadinessReasons, []);
   assert.equal(rootReviewer?.summary.status, 'current');
 
   if (rootReviewer?.summary.status === 'current') {
@@ -206,7 +229,7 @@ test('eligible personal Root joins with its own identity and Summary', async () 
   }
 });
 
-test('Organization-owned and ineligible Roots stay out', async () => {
+test('Organization-owned Roots stay out and setup-required Roots stay in', async () => {
   const organizationRoot = {
     ...root,
     has_issues: true,
@@ -226,7 +249,13 @@ test('Organization-owned and ineligible Roots stay out', async () => {
 
   assert.deepEqual(
     ineligible.reviewers.map((entry) => entry.repositoryId),
-    [current.id],
+    [current.id, root.id],
+  );
+
+  assert.equal(
+    ineligible.reviewers.find((entry) => entry.repositoryId === root.id)
+      ?.stationStatus,
+    'setup_required',
   );
 });
 
@@ -378,7 +407,7 @@ test('stable identity and chronological ordering survive rename', async () => {
 
   assert.deepEqual(
     sortByJoinedAt(projection.reviewers).map((entry) => entry.repositoryId),
-    [current.id, later.id],
+    [current.id, later.id, root.id],
   );
 });
 
@@ -413,18 +442,126 @@ test('rerun attempt ordering selects the latest accepted attempt', async () => {
   }
 });
 
-test('managed-file byte drift removes directory eligibility', async () => {
+test('managed-surface drift keeps membership and records setup reasons', async () => {
   const api = source([current]);
   const original = api.committedBytes.bind(api);
 
-  api.committedBytes = async (fullName, path, ref) =>
-    path === requestFormPath
-      ? new Uint8Array([...form, 10])
-      : original(fullName, path, ref);
+  api.committedBytes = async (fullName, path, ref) => {
+    if (path === requestFormPath) {
+      return new Uint8Array([...form, 10]);
+    }
+
+    if (path === summaryWorkflowPath) {
+      return null;
+    }
+
+    return original(fullName, path, ref);
+  };
 
   const projection = await buildNetworkProjection(api);
 
-  assert.deepEqual(projection.reviewers, []);
+  const reviewer = projection.reviewers.find((entry) =>
+    entry.repositoryId === current.id);
+
+  assert.equal(reviewer?.stationStatus, 'setup_required');
+
+  assert.deepEqual(reviewer?.stationReadinessReasons, [
+    'review_request_surface_missing_or_unsupported',
+    'summary_workflow_missing_or_unsupported',
+  ]);
+});
+
+test('setup-required reviewers retain independent summaries', async () => {
+  const currentRun = makeRun(20, '2026-09-29T10:00:00Z');
+
+  const currentApi = source(
+    [{ ...current, has_issues: false }],
+    [currentRun],
+  );
+
+  const currentProjection = await buildNetworkProjection(
+    currentApi,
+    '2026-09-29T00:00:00Z',
+    async () => true,
+  );
+
+  assert.equal(currentProjection.reviewers[0].stationStatus, 'setup_required');
+  assert.equal(currentProjection.reviewers[0].summary.status, 'current');
+
+  const newest = makeRun(22, '2026-09-30T10:00:00Z', 'failure');
+  const prior = makeRun(21, '2026-09-29T10:00:00Z');
+  const fallbackApi = source([{ ...current, has_issues: false }], [prior, newest]);
+
+  const fallbackProjection = await buildNetworkProjection(
+    fallbackApi,
+    '2026-09-30T00:00:00Z',
+    async () => true,
+  );
+
+  assert.equal(fallbackProjection.reviewers[0].stationStatus, 'setup_required');
+  assert.equal(fallbackProjection.reviewers[0].summary.status, 'fallback');
+});
+
+test('projection validation enforces Station Readiness contract', () => {
+  const base: NetworkProjection = {
+    schemaVersion: 1,
+    generatedAt: '2026-09-29T00:00:00Z',
+    networkRoot: { repositoryId: root.id, repository: root.full_name },
+    reviewers: [
+      {
+        repositoryId: current.id,
+        username: 'alice',
+        repository: current.full_name,
+        repositoryUrl: current.html_url,
+        avatarUrl: current.owner.avatar_url,
+        profileUrl: current.owner.html_url,
+        joinedAt: current.created_at,
+        policyUrl: `${current.html_url}/blob/${sha}/README.md`,
+        stationStatus: 'ready',
+        stationReadinessReasons: [],
+        summaryStatus: 'unavailable',
+        summary: { status: 'unavailable', stale: false },
+      },
+    ],
+  };
+
+  assert.doesNotThrow(() => validateProjection(base));
+
+  assert.throws(
+    () => validateProjection({
+      ...base,
+      reviewers: [{
+        ...base.reviewers[0],
+        stationStatus: 'ready',
+        stationReadinessReasons: ['issues_disabled'],
+      }],
+    }),
+    /Ready Reviewer must not include readiness reasons/,
+  );
+
+  assert.throws(
+    () => validateProjection({
+      ...base,
+      reviewers: [{
+        ...base.reviewers[0],
+        stationStatus: 'setup_required',
+        stationReadinessReasons: [],
+      }],
+    }),
+    /Setup-required Reviewer must include readiness reasons/,
+  );
+
+  assert.throws(
+    () => validateProjection({
+      ...base,
+      reviewers: [{
+        ...base.reviewers[0],
+        stationStatus: 'setup_required',
+        stationReadinessReasons: ['not_a_reason'] as never,
+      }],
+    }),
+    /Invalid Reviewer Station Readiness reasons/,
+  );
 });
 
 test('scan diagnostics expose stable reason categories when enabled', async () => {
@@ -467,7 +604,10 @@ test('scan diagnostics expose stable reason categories when enabled', async () =
   }
 
   assert.equal(
-    logs.some((line) => line.includes('reason=issues-disabled')),
+    logs.some((line) =>
+      line.includes('Station readiness')
+      && line.includes('reason')
+      && line.includes('issues_disabled')),
     true,
   );
 

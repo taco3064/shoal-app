@@ -3,12 +3,12 @@ import Mechanism from '~app/guide/components/Mechanism';
 import DirectoryNotice from '~app/guide/components/DirectoryNotice';
 import JoinSteps from '~app/guide/components/JoinSteps';
 
-export default function Guide({ eligibleCount }: { eligibleCount: number }) {
+export default function Guide({ reviewerCount }: { reviewerCount: number }) {
   return (
     <main>
       <Hero />
       <Mechanism />
-      <DirectoryNotice eligibleCount={eligibleCount} />
+      <DirectoryNotice reviewerCount={reviewerCount} />
       <JoinSteps />
     </main>
   );

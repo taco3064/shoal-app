@@ -40,6 +40,14 @@ const description = `Review Policy, public review metrics and Summary provenance
 const requestUrl = `${reviewer.repositoryUrl}/issues/new/choose`;
 const percent = (value: number | null) =>
   value === null ? "Not computable" : `${(value * 100).toFixed(1)}%`;
+const readinessReasonLabels = {
+  issues_disabled:
+    "GitHub Issues are not currently enabled for this station repository.",
+  review_request_surface_missing_or_unsupported:
+    "The managed Review Request issue form is missing or not a supported canonical form.",
+  summary_workflow_missing_or_unsupported:
+    "The managed Reviewer Summary workflow is missing or not a supported canonical workflow.",
+};
 ---
 
 <BaseLayout title={title} description={description}>
@@ -88,6 +96,32 @@ const percent = (value: number | null) =>
         </a>
       </div>
     </section>
+    <section class="detail-panel" aria-labelledby="station-readiness-title">
+      <h2 id="station-readiness-title">Station Readiness</h2>
+      <p class={`station-state station-${reviewer.stationStatus}`}>
+        {reviewer.stationStatus === "ready"
+          ? "Station ready"
+          : "Station setup required"}
+      </p>
+      {reviewer.stationStatus === "ready" ? (
+        <p>
+          This station currently exposes the managed surfaces required for
+          Review Requests. Readiness is separate from Reviewer Summary state.
+        </p>
+      ) : (
+        <>
+          <p>
+            This Reviewer remains listed in the Directory, but station setup is
+            required before Review Requests are available.
+          </p>
+          <ul class="readiness-reasons">
+            {reviewer.stationReadinessReasons.map((reason) => (
+              <li>{readinessReasonLabels[reason]}</li>
+            ))}
+          </ul>
+        </>
+      )}
+    </section>
     <section class="detail-panel profile-panel" aria-labelledby="profile-title">
       <div>
         <p class="section-kicker">PUBLIC GITHUB PROFILE</p>
@@ -120,9 +154,15 @@ const percent = (value: number | null) =>
         <a class="button external" href={reviewer.repositoryUrl} target="_blank" rel="noopener noreferrer">
           View station
         </a>
-        <a class="button primary" href={requestUrl} target="_blank" rel="noopener noreferrer">
-          Request Review
-        </a>
+        {reviewer.stationStatus === "ready" ? (
+          <a class="button primary" href={requestUrl} target="_blank" rel="noopener noreferrer">
+            Request Review
+          </a>
+        ) : (
+          <span class="request-unavailable">
+            Station setup is required before Review Requests are available.
+          </span>
+        )}
       </div>
     </section>
     <section class="detail-panel" aria-labelledby="summary-title">
@@ -148,9 +188,9 @@ const percent = (value: number | null) =>
       )}
       {selected.status === "unavailable" && (
         <p>
-          This Reviewer is eligible to receive Review Requests. No accepted
-          Summary snapshot is selected for this publication, so there are no
-          metrics to show here. This does not affect Directory membership.
+          No accepted Summary snapshot is selected for this publication, so
+          there are no metrics to show here. This is independent of Station
+          Readiness and does not affect Directory membership.
         </p>
       )}
       {metrics && derived && (
