@@ -15,6 +15,12 @@
       "profileUrl": "https://github.com/june-shoal",
       "joinedAt": "2026-09-29T10:13:52Z",
       "policyUrl": "https://github.com/june-shoal/june-station/blob/11f679c02e88b7cd8287e92c4edd03929fa38ea9/README.md",
+      "stationStatus": "setup_required",
+      "stationReadinessReasons": [
+        "review_request_surface_missing_or_unsupported",
+        "summary_workflow_missing_or_unsupported"
+      ],
+      "summaryStatus": "unavailable",
       "summary": {
         "status": "unavailable",
         "stale": false
@@ -29,6 +35,9 @@
       "profileUrl": "https://github.com/taco-gem",
       "joinedAt": "2026-09-29T10:12:24Z",
       "policyUrl": "https://github.com/taco-gem/shoal-station/blob/11f679c02e88b7cd8287e92c4edd03929fa38ea9/README.md",
+      "stationStatus": "ready",
+      "stationReadinessReasons": [],
+      "summaryStatus": "unavailable",
       "summary": {
         "status": "unavailable",
         "stale": false
@@ -43,6 +52,9 @@
       "profileUrl": "https://github.com/taco3064",
       "joinedAt": "2026-09-21T03:44:11Z",
       "policyUrl": "https://github.com/taco3064/shoal-station/blob/11f679c02e88b7cd8287e92c4edd03929fa38ea9/README.md",
+      "stationStatus": "ready",
+      "stationReadinessReasons": [],
+      "summaryStatus": "current",
       "summary": {
         "status": "current",
         "stale": false,

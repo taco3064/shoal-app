@@ -15,6 +15,9 @@
       "profileUrl": "https://github.com/example-reviewer-1",
       "joinedAt": "2026-09-10T00:00:00Z",
       "policyUrl": "https://github.com/example-reviewer-1/shoal-station/blob/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/README.md",
+      "stationStatus": "ready",
+      "stationReadinessReasons": [],
+      "summaryStatus": "current",
       "summary": {
         "status": "current",
         "stale": false,
@@ -53,6 +56,11 @@
       "profileUrl": "https://github.com/example-reviewer-2",
       "joinedAt": "2026-09-11T00:00:00Z",
       "policyUrl": "https://github.com/example-reviewer-2/shoal-station/blob/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/README.md",
+      "stationStatus": "setup_required",
+      "stationReadinessReasons": [
+        "review_request_surface_missing_or_unsupported"
+      ],
+      "summaryStatus": "fallback",
       "summary": {
         "status": "fallback",
         "stale": true,
@@ -91,6 +99,9 @@
       "profileUrl": "https://github.com/example-reviewer-3",
       "joinedAt": "2026-09-12T00:00:00Z",
       "policyUrl": "https://github.com/example-reviewer-3/shoal-station/blob/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/README.md",
+      "stationStatus": "ready",
+      "stationReadinessReasons": [],
+      "summaryStatus": "unavailable",
       "summary": {
         "status": "unavailable",
         "stale": false

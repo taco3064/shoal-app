@@ -26,6 +26,9 @@ export type ReviewerEntry = {
   profileUrl: string;
   joinedAt: string;
   policyUrl: string;
+  stationStatus: StationStatus;
+  stationReadinessReasons: StationReadinessReason[];
+  summaryStatus: SelectedSummary['status'];
   summary: SelectedSummary;
 };
 
@@ -37,11 +40,20 @@ export type NetworkProjection = {
 };
 
 type DirectoryExclusionReason
-  = | 'not-unique-personal-root-or-direct-fork'
-    | 'issues-disabled'
-    | 'managed-files-missing'
-    | 'request-form-digest-unsupported'
-    | 'summary-workflow-digest-unsupported';
+  = 'not-unique-personal-root-or-direct-fork';
+
+export type StationStatus = 'ready' | 'setup_required';
+
+export type StationReadinessReason
+  = | 'issues_disabled'
+    | 'review_request_surface_missing_or_unsupported'
+    | 'summary_workflow_missing_or_unsupported';
+
+const stationReadinessReasons = new Set<StationReadinessReason>([
+  'issues_disabled',
+  'review_request_surface_missing_or_unsupported',
+  'summary_workflow_missing_or_unsupported',
+]);
 
 export interface NetworkSource extends SummarySource {
   repository(fullName: string): Promise<GitHubRepository>;
@@ -91,12 +103,6 @@ export async function buildNetworkProjection(
 
     seen.add(node.id);
 
-    if (!node.has_issues) {
-      logSkip(node, 'issues-disabled');
-
-      continue;
-    }
-
     const commit = await source.json<{ sha: string }>(
       `/repos/${node.full_name}/commits/${encodeURIComponent(node.default_branch)}`,
     );
@@ -110,23 +116,11 @@ export async function buildNetworkProjection(
       source.committedBytes(node.full_name, summaryWorkflowPath, commit.sha),
     ]);
 
-    if (!form || !workflow) {
-      logSkip(node, 'managed-files-missing');
+    const reasons = readinessReasons(node, form, workflow);
 
-      continue;
-    }
-
-    if (!allowedCanonicalReviewRequestFormDigests.has(hash(form))) {
-      logSkip(node, 'request-form-digest-unsupported');
-
-      continue;
-    }
-
-    if (!allowedSummaryWorkflows.has(hash(workflow))) {
-      logSkip(node, 'summary-workflow-digest-unsupported');
-
-      continue;
-    }
+    const stationStatus: StationStatus = reasons.length === 0
+      ? 'ready'
+      : 'setup_required';
 
     const runs = await source.summaryRuns(node.full_name);
     const summary = await selectSummary(node, runs, source, verifier);
@@ -140,8 +134,13 @@ export async function buildNetworkProjection(
       profileUrl: node.owner.html_url,
       joinedAt: node.created_at,
       policyUrl: `${node.html_url}/blob/${commit.sha}/README.md`,
+      stationStatus,
+      stationReadinessReasons: reasons,
+      summaryStatus: summary.status,
       summary,
     });
+
+    logStationReadiness(node, stationStatus, reasons);
   }
 
   reviewers.sort(
@@ -162,6 +161,34 @@ export async function buildNetworkProjection(
   return projection;
 }
 
+function readinessReasons(
+  node: GitHubRepository,
+  form: Uint8Array | null,
+  workflow: Uint8Array | null,
+): StationReadinessReason[] {
+  const reasons: StationReadinessReason[] = [];
+
+  if (!node.has_issues) {
+    reasons.push('issues_disabled');
+  }
+
+  if (
+    !form
+    || !allowedCanonicalReviewRequestFormDigests.has(hash(form))
+  ) {
+    reasons.push('review_request_surface_missing_or_unsupported');
+  }
+
+  if (
+    !workflow
+    || !allowedSummaryWorkflows.has(hash(workflow))
+  ) {
+    reasons.push('summary_workflow_missing_or_unsupported');
+  }
+
+  return reasons;
+}
+
 function logSkip(
   node: GitHubRepository,
   reason: DirectoryExclusionReason,
@@ -173,6 +200,24 @@ function logSkip(
         `reviewer=${node.full_name}`,
         `repositoryId=${node.id}`,
         `reason=${reason}`,
+      ].join(' '),
+    );
+  }
+}
+
+function logStationReadiness(
+  node: GitHubRepository,
+  status: StationStatus,
+  reasons: StationReadinessReason[],
+): void {
+  if (process.env.SHOAL_SCAN_DIAGNOSTICS === '1') {
+    console.info(
+      [
+        'Station readiness',
+        `reviewer=${node.full_name}`,
+        `repositoryId=${node.id}`,
+        `status=${status}`,
+        `reasons=${reasons.length === 0 ? 'none' : reasons.join(',')}`,
       ].join(' '),
     );
   }
@@ -209,7 +254,41 @@ export function validateProjection(projection: NetworkProjection): void {
     }
 
     identities.add(reviewer.repositoryId);
+
+    if (
+      reviewer.stationStatus !== 'ready'
+      && reviewer.stationStatus !== 'setup_required'
+    ) {
+      throw new Error('Invalid Reviewer Station Readiness status.');
+    }
+
+    if (
+      !Array.isArray(reviewer.stationReadinessReasons)
+      || reviewer.stationReadinessReasons.some((reason) =>
+        !stationReadinessReasons.has(reason))
+    ) {
+      throw new Error('Invalid Reviewer Station Readiness reasons.');
+    }
+
+    if (
+      reviewer.stationStatus === 'ready'
+      && reviewer.stationReadinessReasons.length > 0
+    ) {
+      throw new Error('Ready Reviewer must not include readiness reasons.');
+    }
+
+    if (
+      reviewer.stationStatus === 'setup_required'
+      && reviewer.stationReadinessReasons.length === 0
+    ) {
+      throw new Error('Setup-required Reviewer must include readiness reasons.');
+    }
+
     const selected = reviewer.summary;
+
+    if (reviewer.summaryStatus !== selected.status) {
+      throw new Error('Reviewer Summary status must match selected Summary.');
+    }
 
     if (
       selected.status === 'unavailable'

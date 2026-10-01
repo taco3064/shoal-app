@@ -11,7 +11,7 @@ export default function ReviewerDirectory(
   } = useReviewerDirectory(reviewers);
 
   return (
-    <section aria-label="Eligible Reviewers">
+    <section aria-label="Reviewer Directory">
       <div className="directory-controls">
         <label>
           Search GitHub username
@@ -52,10 +52,10 @@ export default function ReviewerDirectory(
         {' '}
         {total}
         {' '}
-        eligible Reviewers
+        Directory Reviewers
       </p>
       {entries.length === 0 && (
-        <p role="status">No Reviewer found in the current eligible directory.</p>
+        <p role="status">No Reviewer found in the current directory.</p>
       )}
       <div className="reviewer-grid">
         {entries.map((reviewer) => (
@@ -145,19 +145,32 @@ function ReviewerCard({ reviewer }: { reviewer: DirectoryEntry }) {
                     : 'Current summary'}
                 </span>
               )}
+              <span className={`station-state station-${reviewer.stationStatus}`}>
+                {reviewer.stationStatus === 'ready'
+                  ? 'Station ready'
+                  : 'Station setup required'}
+              </span>
             </div>
           </div>
         </div>
       </a>
       <footer className="reviewer-card-actions">
-        <a
-          className="button primary"
-          href={requestUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Request review
-        </a>
+        {reviewer.stationStatus === 'ready'
+          ? (
+              <a
+                className="button primary"
+                href={requestUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Request review
+              </a>
+            )
+          : (
+              <p className="station-note">
+                Station setup is required before Review Requests are available.
+              </p>
+            )}
       </footer>
     </article>
   );

@@ -318,3 +318,4 @@ html:has(.navigation-drawer[open]){overflow:hidden}
 @media(prefers-reduced-motion:reduce){.navigation-drawer,.navigation-drawer::backdrop{transition:none}}
 
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
+.station-state{display:inline-block;padding:5px 10px;border:1px solid #688264;border-radius:4px;text-transform:uppercase;font-size:11px;letter-spacing:1px;color:#d7f387}.station-setup_required{color:#ffd17e;border-color:#8e6e36;background:#644b2235}.station-note,.request-unavailable{color:#ffd17e;font-size:13px;line-height:1.5;margin:0}.readiness-reasons{padding-left:22px;color:#c2d0ca}.readiness-reasons li{margin:8px 0}

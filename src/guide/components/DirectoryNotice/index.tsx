@@ -1,4 +1,4 @@
-export default function DirectoryNotice({ eligibleCount }: { eligibleCount: number }) {
+export default function DirectoryNotice({ reviewerCount }: { reviewerCount: number }) {
   return (
     <section className="directory wrap" aria-labelledby="directory-title">
       <div className="directory-icon" aria-hidden="true">
@@ -15,9 +15,9 @@ export default function DirectoryNotice({ eligibleCount }: { eligibleCount: numb
         <p className="section-kicker">PUBLIC DIRECTORY</p>
         <h2 id="directory-title">Reviewer Directory</h2>
         <p data-count-group>
-          <strong data-rolling-count>{eligibleCount}</strong>
+          <strong data-rolling-count>{reviewerCount}</strong>
           {' '}
-          Eligible Reviewers
+          Directory Reviewers
         </p>
         <p>
           Find people who publish Review Policies, inspect their public review

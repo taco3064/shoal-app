@@ -23,5 +23,5 @@ const website = {
     type="application/ld+json"
     set:html={JSON.stringify(website).replace(/</g, "\\u003c")}
   />
-  <Guide eligibleCount={projection.reviewers.length} />
+  <Guide reviewerCount={projection.reviewers.length} />
 </BaseLayout>

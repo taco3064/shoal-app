@@ -8,7 +8,7 @@ const isLocalSnapshot =
   import.meta.env.DEV && !process.env.SHOAL_PROJECTION_FILE;
 const title = "Reviewer Directory — Shoal";
 const description =
-  "Explore the current eligible Shoal Reviewers and their public review context.";
+  "Explore the current Shoal Reviewer Directory and public review context.";
 ---
 
 <BaseLayout title={title} description={description}>
@@ -24,7 +24,7 @@ const description =
       </div>
       <div class="directory-snapshot" data-count-group>
         <strong data-rolling-count>{projection.reviewers.length}</strong>
-        <span>eligible Reviewers</span>
+        <span>Directory Reviewers</span>
         <small>
           Scanned{" "}
           <time datetime={projection.generatedAt}>
