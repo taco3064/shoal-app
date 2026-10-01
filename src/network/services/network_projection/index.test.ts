@@ -26,6 +26,13 @@ const workflow = readFileSync(
   new URL('./fixtures/reviewer-summary.yml', import.meta.url),
 );
 
+const station11Workflow = readFileSync(
+  new URL(
+    '../summary_selection/fixtures/reviewer-summary-station-11.yml',
+    import.meta.url,
+  ),
+);
+
 const sha = 'a'.repeat(40);
 
 const root = {
@@ -140,6 +147,7 @@ function source(
 }
 
 const workflowTrust = allowedSummaryWorkflows.get(hash(workflow));
+const station11Trust = allowedSummaryWorkflows.get(hash(station11Workflow));
 
 test('flat membership projects valid nodes and excludes invalid lineage', async () => {
   const disabled = { ...later, has_issues: false };
@@ -224,6 +232,45 @@ test('eligible personal Root joins with its own identity and Summary', async () 
 
     assert.deepEqual(
       workflowTrust?.reviewerSummary,
+      currentReviewerSummaryContract,
+    );
+  }
+});
+
+test('accepted station#11 Summary projects through normal current state', async () => {
+  const station11Run = makeRun(70, '2026-10-01T10:05:57Z');
+  const station11Source = source([current], [station11Run]);
+
+  const originalCommittedBytes = station11Source.committedBytes;
+
+  station11Source.committedBytes = async (fullName, path, ref) => {
+    if (path === summaryWorkflowPath) {
+      return station11Workflow;
+    }
+
+    return originalCommittedBytes(fullName, path, ref);
+  };
+
+  const projection = await buildNetworkProjection(
+    station11Source,
+    '2026-10-01T11:00:00Z',
+    async () => true,
+  );
+
+  const reviewer = projection.reviewers.find(
+    (entry) => entry.repositoryId === current.id,
+  );
+
+  assert.equal(reviewer?.stationStatus, 'ready');
+  assert.deepEqual(reviewer?.stationReadinessReasons, []);
+  assert.equal(reviewer?.summary.status, 'current');
+
+  if (reviewer?.summary.status === 'current') {
+    assert.equal(reviewer.summary.source.workflowDigest, hash(station11Workflow));
+    assert.equal(reviewer.summary.source.actionCommit, station11Trust?.actionCommit);
+
+    assert.deepEqual(
+      station11Trust?.reviewerSummary,
       currentReviewerSummaryContract,
     );
   }
