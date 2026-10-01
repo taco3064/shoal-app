@@ -31,11 +31,31 @@ export type PublicSummary = {
   url: string;
 };
 
+type GitHubApiOptions = {
+  retryBudgetMs?: number;
+  sleep?: (ms: number) => Promise<void>;
+  now?: () => number;
+};
+
 export class GitHubApi {
+  private readonly retryBudgetMs: number;
+  private readonly sleep: (ms: number) => Promise<void>;
+  private readonly now: () => number;
+
   constructor(
     private readonly token: string,
     private readonly fetcher = fetch,
-  ) {}
+    options: GitHubApiOptions = {},
+  ) {
+    this.retryBudgetMs = options.retryBudgetMs ?? 30_000;
+
+    this.sleep = options.sleep ?? ((ms) =>
+      new Promise((resolve) => {
+        setTimeout(resolve, ms);
+      }));
+
+    this.now = options.now ?? Date.now;
+  }
 
   async json<T>(path: string): Promise<T> {
     const response = await this.request(path);
@@ -54,17 +74,15 @@ export class GitHubApi {
 
   async pages<T>(path: string, key?: string): Promise<T[]> {
     const result: T[] = [];
+    let nextPath: string | null = withPagination(path, 1);
 
-    for (let page = 1; ; page += 1) {
+    for (let page = 1; nextPath; page += 1) {
       if (page > 1000) {
         throw new Error(`Pagination bound exceeded: ${path}`);
       }
 
-      const separator = path.includes('?') ? '&' : '?';
-
-      const data = await this.json<T[] | Record<string, unknown>>(
-        `${path}${separator}per_page=100&page=${page}`,
-      );
+      const response = await this.request(nextPath);
+      const data = await response.json() as T[] | Record<string, unknown>;
 
       if (
         !Array.isArray(data)
@@ -87,10 +105,10 @@ export class GitHubApi {
 
       result.push(...entries);
 
-      if (entries.length < 100) {
-        return result;
-      }
+      nextPath = nextPagePath(response.headers.get('link'));
     }
+
+    return result;
   }
 
   repository(fullName: string): Promise<GitHubRepository> {
@@ -140,7 +158,7 @@ export class GitHubApi {
   ): Promise<PublicSummary | null> {
     const tag = summaryTransportTag(repositoryId, runId, attempt);
     const url = `https://raw.githubusercontent.com/${fullName}/${tag}/reviewer-summary.json`;
-    const response = await this.fetcher(url, { redirect: 'follow' });
+    const response = await this.fetchWithRetry(url, { redirect: 'follow' });
 
     if (response.status === 404 || response.status === 410) {
       return null;
@@ -163,19 +181,55 @@ export class GitHubApi {
     path: string,
     accept = 'application/vnd.github+json',
   ): Promise<Response> {
-    const response = await this.fetcher(`https://api.github.com${path}`, {
-      headers: {
-        Accept: accept,
-        Authorization: `Bearer ${this.token}`,
-        'X-GitHub-Api-Version': '2022-11-28',
+    const response = await this.fetchWithRetry(
+      `https://api.github.com${path}`,
+      {
+        headers: {
+          Accept: accept,
+          Authorization: `Bearer ${this.token}`,
+          'X-GitHub-Api-Version': '2022-11-28',
+        },
       },
-    });
+    );
 
     if (!response.ok) {
-      throw new GitHubHttpError(path, response.status);
+      throw new GitHubHttpError(path, response.status, response);
     }
 
     return response;
+  }
+
+  private async fetchWithRetry(
+    input: string,
+    init: RequestInit,
+  ): Promise<Response> {
+    const started = this.now();
+    let delayedMs = 0;
+
+    for (;;) {
+      const response = await this.fetcher(input, init);
+
+      if (!isRetryableStatus(response.status)) {
+        return response;
+      }
+
+      const elapsed = this.now() - started;
+      const remaining = this.retryBudgetMs - elapsed - delayedMs;
+      const delay = retryDelayMs(response, remaining, this.now());
+
+      if (delay === null) {
+        return response;
+      }
+
+      if (process.env.SHOAL_SCAN_DIAGNOSTICS === '1') {
+        console.info(
+          `Retrying GitHub request after ${delay}ms: ${response.status} ${input}`,
+        );
+      }
+
+      await this.sleep(delay);
+      delayedMs += delay;
+    }
   }
 }
 
@@ -183,7 +237,90 @@ export class GitHubHttpError extends Error {
   constructor(
     path: string,
     readonly status: number,
+    readonly response?: Response,
   ) {
     super(`GitHub API returned ${status} for ${path}`);
   }
+}
+
+function withPagination(path: string, page: number): string {
+  const separator = path.includes('?') ? '&' : '?';
+
+  return `${path}${separator}per_page=100&page=${page}`;
+}
+
+function nextPagePath(linkHeader: string | null): string | null {
+  if (!linkHeader) {
+    return null;
+  }
+
+  let next: string | null = null;
+
+  for (const part of linkHeader.split(',')) {
+    const match = /^\s*<([^>]+)>;\s*rel="([^"]+)"\s*$/.exec(part);
+
+    if (!match) {
+      throw new Error('Malformed GitHub pagination Link header.');
+    }
+
+    if (match[2] === 'next') {
+      const url = new URL(match[1]);
+
+      if (url.origin !== 'https://api.github.com') {
+        throw new Error('Malformed GitHub pagination next URL.');
+      }
+
+      next = `${url.pathname}${url.search}`;
+    }
+  }
+
+  return next;
+}
+
+function isRetryableStatus(status: number): boolean {
+  return status === 429 || [500, 502, 503, 504].includes(status);
+}
+
+function retryDelayMs(
+  response: Response,
+  remainingMs: number,
+  now: number,
+): number | null {
+  const retryAfter = response.headers.get('retry-after');
+  const reset = response.headers.get('x-ratelimit-reset');
+  const delay = retryAfterDelayMs(retryAfter, now) ?? resetDelayMs(reset, now);
+
+  if (delay === null) {
+    return remainingMs >= 100 ? 100 : null;
+  }
+
+  return delay <= remainingMs ? delay : null;
+}
+
+function retryAfterDelayMs(value: string | null, now: number): number | null {
+  if (!value) {
+    return null;
+  }
+
+  const seconds = Number(value);
+
+  if (Number.isFinite(seconds) && seconds >= 0) {
+    return Math.ceil(seconds * 1000);
+  }
+
+  const date = Date.parse(value);
+
+  return Number.isNaN(date) ? null : Math.max(0, date - now);
+}
+
+function resetDelayMs(value: string | null, now: number): number | null {
+  if (!value) {
+    return null;
+  }
+
+  const seconds = Number(value);
+
+  return Number.isFinite(seconds) && seconds >= 0
+    ? Math.max(0, (seconds * 1000) - now)
+    : null;
 }

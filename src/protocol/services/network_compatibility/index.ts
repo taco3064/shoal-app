@@ -8,6 +8,25 @@ export const networkRoot = {
 export const summaryWorkflowPath = '.github/workflows/reviewer-summary.yml';
 export const requestFormPath = '.github/ISSUE_TEMPLATE/review-request.yml';
 
+export type ReviewerSummaryContract = {
+  protocolVersion: number;
+  summarySchemaVersion: number;
+};
+
+export type SummaryWorkflowTrust = {
+  actionCommit: string;
+  reviewerSummary: ReviewerSummaryContract;
+};
+
+export const currentReviewerSummaryContract = {
+  protocolVersion: 1,
+  summarySchemaVersion: 1,
+} as const satisfies ReviewerSummaryContract;
+
+export const supportedReviewerSummaryContracts = [
+  currentReviewerSummaryContract,
+] as const satisfies readonly ReviewerSummaryContract[];
+
 // Public Git transport: one attempt-addressable tag per Summary Attempt.
 export function summaryTransportTag(
   repositoryId: number,
@@ -21,15 +40,33 @@ export const allowedCanonicalReviewRequestFormDigests = new Set([
   '6f5dad1fd33ec1ea077eb30e866ef8dcf4d9d840239701b997781418da6c7f2c',
 ]);
 
-// Each trusted workflow's exact bytes bind to a pinned official Action.
-export const allowedSummaryWorkflows = new Map([
+// Each trusted workflow's exact bytes bind to a pinned official Action and an
+// explicit Reviewer Summary Protocol/schema contract.
+export const allowedSummaryWorkflows = new Map<string, SummaryWorkflowTrust>([
   [
     '616eea6f7ce06c0991f0023768c02c79a99d53aeb2f845c0934461720546a999',
-    'b4d72405ebc03afc35d29093302b5593e1ddff1b',
+    {
+      actionCommit: 'b4d72405ebc03afc35d29093302b5593e1ddff1b',
+      reviewerSummary: currentReviewerSummaryContract,
+    },
   ],
   [
     // shoal-station 1d329860: attempt-addressable public transport, same pinned Action.
     'd586ab618c894d9729e21d7105becb0ca805df576198353293b1f77818927e99',
-    'b4d72405ebc03afc35d29093302b5593e1ddff1b',
+    {
+      actionCommit: 'b4d72405ebc03afc35d29093302b5593e1ddff1b',
+      reviewerSummary: currentReviewerSummaryContract,
+    },
   ],
 ]);
+
+export function isSupportedReviewerSummaryContract(
+  candidate: ReviewerSummaryContract,
+  supported: readonly ReviewerSummaryContract[] = supportedReviewerSummaryContracts,
+): boolean {
+  return supported.some(
+    (contract) =>
+      contract.protocolVersion === candidate.protocolVersion
+      && contract.summarySchemaVersion === candidate.summarySchemaVersion,
+  );
+}

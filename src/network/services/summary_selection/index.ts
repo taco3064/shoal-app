@@ -38,6 +38,26 @@ export type SelectedSummary
       };
     };
 
+type SummaryRejectionReason
+  = | 'execution-not-success'
+    | 'invalid-head-sha'
+    | 'head-repository-mismatch'
+    | 'workflow-missing'
+    | 'workflow-digest-unsupported'
+    | 'public-transport-missing'
+    | 'attestation-rejected'
+    | 'summary-invalid-or-incompatible'
+    | 'reviewer-node-id-mismatch';
+
+type AcceptedAttempt = Extract<
+  SelectedSummary,
+  { status: 'current' | 'fallback' }
+>;
+
+type AttemptAcceptance
+  = | { accepted: true; selected: AcceptedAttempt }
+    | { accepted: false; reason: SummaryRejectionReason };
+
 export interface SummarySource {
   runAttempt(
     fullName: string,
@@ -204,13 +224,25 @@ export async function selectSummary(
   for (const [index, attempt] of completed.entries()) {
     const accepted = await acceptAttempt(node, attempt, source, verifier);
 
-    if (accepted) {
+    if (accepted.accepted) {
+      logSummaryDecision(
+        node,
+        attempt,
+        index === 0 ? 'selected-current' : 'selected-fallback',
+      );
+
       return {
-        ...accepted,
+        ...accepted.selected,
         status: index === 0 ? 'current' : 'fallback',
         stale: index !== 0,
       };
     }
+
+    logSummaryDecision(node, attempt, accepted.reason);
+  }
+
+  if (completed.length > 0) {
+    logSummaryDecision(node, completed[0], 'selected-unavailable');
   }
 
   return { status: 'unavailable', stale: false };
@@ -221,16 +253,17 @@ async function acceptAttempt(
   attempt: Attempt,
   source: SummarySource,
   verifier: AttestationVerifier,
-): Promise<Extract<
-  SelectedSummary,
-  { status: 'current' | 'fallback' }
-> | null> {
-  if (
-    attempt.conclusion !== 'success'
-    || !/^[a-f0-9]{40}$/.test(attempt.head_sha)
-    || attempt.head_repository?.id !== node.id
-  ) {
-    return null;
+): Promise<AttemptAcceptance> {
+  if (attempt.conclusion !== 'success') {
+    return rejectAttempt('execution-not-success');
+  }
+
+  if (!/^[a-f0-9]{40}$/.test(attempt.head_sha)) {
+    return rejectAttempt('invalid-head-sha');
+  }
+
+  if (attempt.head_repository?.id !== node.id) {
+    return rejectAttempt('head-repository-mismatch');
   }
 
   const workflowBytes = await source.committedBytes(
@@ -240,14 +273,14 @@ async function acceptAttempt(
   );
 
   if (!workflowBytes) {
-    return null;
+    return rejectAttempt('workflow-missing');
   }
 
   const workflowDigest = hash(workflowBytes);
-  const actionCommit = allowedSummaryWorkflows.get(workflowDigest);
+  const trust = allowedSummaryWorkflows.get(workflowDigest);
 
-  if (!actionCommit) {
-    return null;
+  if (!trust) {
+    return rejectAttempt('workflow-digest-unsupported');
   }
 
   const transport = await source.publicSummary(
@@ -258,7 +291,7 @@ async function acceptAttempt(
   );
 
   if (!transport) {
-    return null;
+    return rejectAttempt('public-transport-missing');
   }
 
   const { bytes } = transport;
@@ -273,7 +306,7 @@ async function acceptAttempt(
       attempt.attempt,
     ))
   ) {
-    return null;
+    return rejectAttempt('attestation-rejected');
   }
 
   let summary: ReviewerSummary;
@@ -281,34 +314,66 @@ async function acceptAttempt(
   try {
     summary = validateReviewerSummary(
       JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes)),
+      trust.reviewerSummary,
     );
   } catch (error) {
     // Invalid public data rejects the Attempt; required API failures remain fatal.
     if (error instanceof Error) {
-      return null;
+      return rejectAttempt('summary-invalid-or-incompatible');
     }
 
     throw error;
   }
 
   if (summary.reviewerNode.repositoryId !== node.id) {
-    return null;
+    return rejectAttempt('reviewer-node-id-mismatch');
   }
 
   return {
-    status: 'current',
-    stale: false,
-    summary,
-    source: {
-      runId: attempt.id,
-      runAttempt: attempt.attempt,
-      runStartedAt: attempt.run_started_at,
-      workflowCommit: attempt.head_sha,
-      workflowDigest,
-      actionCommit,
-      transportUrl: transport.url,
-      summaryDigest,
-      runUrl: attempt.html_url,
+    accepted: true,
+    selected: {
+      status: 'current',
+      stale: false,
+      summary,
+      source: {
+        runId: attempt.id,
+        runAttempt: attempt.attempt,
+        runStartedAt: attempt.run_started_at,
+        workflowCommit: attempt.head_sha,
+        workflowDigest,
+        actionCommit: trust.actionCommit,
+        transportUrl: transport.url,
+        summaryDigest,
+        runUrl: attempt.html_url,
+      },
     },
   };
+}
+
+function rejectAttempt(reason: SummaryRejectionReason): AttemptAcceptance {
+  return { accepted: false, reason };
+}
+
+function logSummaryDecision(
+  node: GitHubRepository,
+  attempt: Attempt,
+  reason: SummaryRejectionReason
+    | 'selected-current'
+    | 'selected-fallback'
+    | 'selected-unavailable',
+): void {
+  if (process.env.SHOAL_SCAN_DIAGNOSTICS !== '1') {
+    return;
+  }
+
+  console.info(
+    [
+      'Reviewer Summary decision',
+      `reviewer=${node.full_name}`,
+      `repositoryId=${node.id}`,
+      `run=${attempt.id}`,
+      `attempt=${attempt.attempt}`,
+      `reason=${reason}`,
+    ].join(' '),
+  );
 }

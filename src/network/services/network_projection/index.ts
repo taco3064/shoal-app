@@ -36,6 +36,13 @@ export type NetworkProjection = {
   reviewers: ReviewerEntry[];
 };
 
+type DirectoryExclusionReason
+  = | 'not-unique-personal-root-or-direct-fork'
+    | 'issues-disabled'
+    | 'managed-files-missing'
+    | 'request-form-digest-unsupported'
+    | 'summary-workflow-digest-unsupported';
+
 export interface NetworkSource extends SummarySource {
   repository(fullName: string): Promise<GitHubRepository>;
   pages<T>(path: string, key?: string): Promise<T[]>;
@@ -77,7 +84,7 @@ export async function buildNetworkProjection(
       : await source.repository(candidate.full_name);
 
     if (!isMember(node) || seen.has(node.id)) {
-      logSkip(node, 'not a unique personal Root or direct fork');
+      logSkip(node, 'not-unique-personal-root-or-direct-fork');
 
       continue;
     }
@@ -85,7 +92,7 @@ export async function buildNetworkProjection(
     seen.add(node.id);
 
     if (!node.has_issues) {
-      logSkip(node, 'Issues disabled');
+      logSkip(node, 'issues-disabled');
 
       continue;
     }
@@ -104,19 +111,19 @@ export async function buildNetworkProjection(
     ]);
 
     if (!form || !workflow) {
-      logSkip(node, 'canonical Request Form or Summary Workflow missing');
+      logSkip(node, 'managed-files-missing');
 
       continue;
     }
 
     if (!allowedCanonicalReviewRequestFormDigests.has(hash(form))) {
-      logSkip(node, 'Request Form digest not supported');
+      logSkip(node, 'request-form-digest-unsupported');
 
       continue;
     }
 
     if (!allowedSummaryWorkflows.has(hash(workflow))) {
-      logSkip(node, 'Summary Workflow digest not allowed');
+      logSkip(node, 'summary-workflow-digest-unsupported');
 
       continue;
     }
@@ -155,9 +162,19 @@ export async function buildNetworkProjection(
   return projection;
 }
 
-function logSkip(node: GitHubRepository, reason: string): void {
+function logSkip(
+  node: GitHubRepository,
+  reason: DirectoryExclusionReason,
+): void {
   if (process.env.SHOAL_SCAN_DIAGNOSTICS === '1') {
-    console.info(`Excluded ${node.full_name}: ${reason}`);
+    console.info(
+      [
+        'Directory decision',
+        `reviewer=${node.full_name}`,
+        `repositoryId=${node.id}`,
+        `reason=${reason}`,
+      ].join(' '),
+    );
   }
 }
 

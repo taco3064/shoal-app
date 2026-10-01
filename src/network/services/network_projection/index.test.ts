@@ -2,9 +2,13 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import type { GitHubRepository, WorkflowRun } from '../github_api';
+import { hash } from '../summary_selection';
 import { buildNetworkProjection, sortByJoinedAt } from './index';
 import type { NetworkSource } from './index';
 import {
+  allowedSummaryWorkflows,
+  currentReviewerSummaryContract,
+  isSupportedReviewerSummaryContract,
   networkRoot,
   requestFormPath,
   summaryWorkflowPath,
@@ -131,6 +135,8 @@ function source(
   };
 }
 
+const workflowTrust = allowedSummaryWorkflows.get(hash(workflow));
+
 test('flat membership and observable eligibility exclude invalid nodes', async () => {
   const disabled = { ...later, has_issues: false };
 
@@ -191,6 +197,12 @@ test('eligible personal Root joins with its own identity and Summary', async () 
   if (rootReviewer?.summary.status === 'current') {
     assert.equal(rootReviewer.summary.summary.reviewerNode.repositoryId, root.id);
     assert.equal(rootReviewer.summary.source.runId, rootRun.id);
+    assert.equal(rootReviewer.summary.source.actionCommit, workflowTrust?.actionCommit);
+
+    assert.deepEqual(
+      workflowTrust?.reviewerSummary,
+      currentReviewerSummaryContract,
+    );
   }
 });
 
@@ -251,6 +263,89 @@ test('latest rejected attempt keeps a verified stale fallback', async () => {
     reviewBackedStarCount: 1,
     validReviewRequestIssueCount: 2,
   });
+});
+
+test('unsupported Summary contract falls back without mutating evidence', async () => {
+  const newest = makeRun(20, '2026-09-29T10:00:00Z');
+  const prior = makeRun(19, '2026-09-28T10:00:00Z');
+  const api = source([current], [prior, newest]);
+  const originalTransport = api.publicSummary.bind(api);
+
+  api.publicSummary = async (fullName, repositoryId, runId, attempt) => {
+    if (runId !== newest.id) {
+      return originalTransport(fullName, repositoryId, runId, attempt);
+    }
+
+    return {
+      bytes: new TextEncoder().encode(
+        JSON.stringify({
+          protocolVersion: 999,
+          summarySchemaVersion: 1,
+          reviewerNode: { repositoryId },
+          metrics: {
+            reviewBackedStarCount: 0,
+            validReviewRequestIssueCount: 0,
+            reReviewRequestIssueCount: 0,
+            invalidReviewCommentCount: 0,
+          },
+        }),
+      ),
+      url: `https://raw.githubusercontent.com/${fullName}/shoal-summary-${repositoryId}-${runId}-${attempt}/reviewer-summary.json`,
+    };
+  };
+
+  const projection = await buildNetworkProjection(
+    api,
+    '2026-09-29T00:00:00Z',
+    async () => true,
+  );
+
+  const selected = projection.reviewers[0].summary;
+
+  assert.equal(selected.status, 'fallback');
+  assert.equal(selected.source.runId, prior.id);
+  assert.equal(selected.source.runAttempt, 1);
+
+  assert.deepEqual(selected.summary.metrics, {
+    invalidReviewCommentCount: 3,
+    reReviewRequestIssueCount: 1,
+    reviewBackedStarCount: 1,
+    validReviewRequestIssueCount: 2,
+  });
+});
+
+test('Reviewer Summary compatibility is explicit and evolvable', () => {
+  assert.equal(
+    isSupportedReviewerSummaryContract(currentReviewerSummaryContract),
+    true,
+  );
+
+  assert.equal(
+    isSupportedReviewerSummaryContract({
+      protocolVersion: 999,
+      summarySchemaVersion: 1,
+    }),
+    false,
+  );
+
+  assert.equal(
+    isSupportedReviewerSummaryContract({
+      protocolVersion: 1,
+      summarySchemaVersion: 999,
+    }),
+    false,
+  );
+
+  assert.equal(
+    isSupportedReviewerSummaryContract(
+      { protocolVersion: 1, summarySchemaVersion: 2 },
+      [
+        currentReviewerSummaryContract,
+        { protocolVersion: 1, summarySchemaVersion: 2 },
+      ],
+    ),
+    true,
+  );
 });
 
 test('attestation rejection and incomplete reads have distinct outcomes', async () => {
@@ -330,4 +425,59 @@ test('managed-file byte drift removes directory eligibility', async () => {
   const projection = await buildNetworkProjection(api);
 
   assert.deepEqual(projection.reviewers, []);
+});
+
+test('scan diagnostics expose stable reason categories when enabled', async () => {
+  const previous = process.env.SHOAL_SCAN_DIAGNOSTICS;
+  const logs: string[] = [];
+  const originalInfo = console.info;
+
+  process.env.SHOAL_SCAN_DIAGNOSTICS = '1';
+
+  console.info = (message?: unknown) => {
+    logs.push(String(message));
+  };
+
+  try {
+    await buildNetworkProjection(
+      source(
+        [
+          { ...current, has_issues: false },
+          later,
+        ],
+        [
+          {
+            ...makeRun(19, '2026-09-28T10:00:00Z', 'failure'),
+            repository: { id: later.id },
+            head_repository: { id: later.id },
+          },
+        ],
+      ),
+      '2026-09-29T00:00:00Z',
+      async () => true,
+    );
+  } finally {
+    console.info = originalInfo;
+
+    if (previous === undefined) {
+      delete process.env.SHOAL_SCAN_DIAGNOSTICS;
+    } else {
+      process.env.SHOAL_SCAN_DIAGNOSTICS = previous;
+    }
+  }
+
+  assert.equal(
+    logs.some((line) => line.includes('reason=issues-disabled')),
+    true,
+  );
+
+  assert.equal(
+    logs.some((line) => line.includes('reason=execution-not-success')),
+    true,
+  );
+
+  assert.equal(
+    logs.some((line) => line.includes('reason=selected-unavailable')),
+    true,
+  );
 });
