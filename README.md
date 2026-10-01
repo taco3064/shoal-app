@@ -8,6 +8,11 @@ Shoal makes a GitHub Star explainable: a reviewer publishes their own policy, re
 
 This repository owns the platform website, shared protocol and schemas, Marketplace Action source, Network Aggregator, and Network Scan. It is one npm package. It does not own the [`gh-shoal`](https://github.com/taco3064/gh-shoal) extension runtime, the [`shoal-station`](https://github.com/taco3064/shoal-station) Network Root and reviewer policy, or the [`shoal-action`](https://github.com/taco3064/shoal-action) distribution surface.
 
+Product delivery records are published through
+[GitHub Releases](https://github.com/taco3064/shoal-app/releases). They reconstruct
+the delivered system and its evidence; the Product BR remains current product
+authority.
+
 ## Local development
 
 Use Node.js 24 and npm:
@@ -27,14 +32,24 @@ Husky installs with `npm ci`. Pre-commit uses ESLint to fix staged source and ch
 
 ## Joining Shoal
 
-Use the [Join page](https://taco3064.github.io/shoal-app/join/) to choose the Root-owner or direct-fork path. The personal-account Root owner uses the Network Root itself as the Reviewer Node; no fork or `gh shoal init` is needed. Other Reviewers directly fork the [Network Root](https://github.com/taco3064/shoal-station), manually enable Actions in the fork, then use `gh shoal init` for the managed station setup. Each Reviewer authors their own `README.md` Review Policy. `gh shoal init` cannot replace the manual Actions step for a new fork.
+The [Join page](https://taco3064.github.io/shoal-app/join/) guides public Reviewers
+through the direct-fork path: directly fork the
+[Network Root](https://github.com/taco3064/shoal-station), manually enable Actions
+in the fork, then use `gh shoal init` for the managed station setup. Each Reviewer
+authors their own `README.md` Review Policy. `gh shoal init` cannot replace the
+manual Actions step for a new fork. The Personal Account-owned Network Root is
+also its owner's valid Reviewer Node; Root bootstrap and maintenance are an
+internal maintainer path, separate from public onboarding.
 
 ## Network Scan and publication
 
 The scheduled, manually dispatched, and successful `main` Verify-triggered
 `Network Scan` workflow evaluates the personal-account Network Root and its
-direct personal-account forks, checks Directory eligibility, and verifies each
-eligible node's Reviewer Summary attempts. The selected state is `current`, stale
+direct personal-account forks. Every Membership-valid node remains in the
+Directory. Station readiness is evaluated independently as `ready` or
+`setup_required`; setup requirements do not remove a valid participant. The scan
+also verifies each participant's Reviewer Summary attempts independently of
+readiness. The selected Summary state is `current`, stale
 `fallback`, or `unavailable`. A successful production scan uses that complete
 validated projection to build and deploy GitHub Pages. A failed scan or build
 does not replace the previous good website. Pull request Verify performs a scan
