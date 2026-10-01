@@ -44,6 +44,14 @@ export const allowedCanonicalReviewRequestFormDigests = new Set([
 // explicit Reviewer Summary Protocol/schema contract.
 export const allowedSummaryWorkflows = new Map<string, SummaryWorkflowTrust>([
   [
+    // shoal-station#9, b93d42c0: integrity checks and deterministic recovery.
+    '3b66f6c4afb545bbf1ad847aed96d0dd8c336e6df100c6b898250a0bddf58fd6',
+    {
+      actionCommit: 'b4d72405ebc03afc35d29093302b5593e1ddff1b',
+      reviewerSummary: currentReviewerSummaryContract,
+    },
+  ],
+  [
     '616eea6f7ce06c0991f0023768c02c79a99d53aeb2f845c0934461720546a999',
     {
       actionCommit: 'b4d72405ebc03afc35d29093302b5593e1ddff1b',
