@@ -45,7 +45,7 @@ export function toRequesterNode(
     id: repository.id,
     isFork: repository.fork,
     owner: toUser(repository.owner),
-    parentRepositoryId: repository.parent?.id ?? 0,
+    parentRepositoryId: repository.parent?.id ?? null,
   };
 }
 
@@ -55,20 +55,6 @@ export function toUser(user: GitHubUserResponse): GitHubUser {
     login: user.login,
     type: user.type,
   };
-}
-
-export function isDirectFork(
-  repository: RepositoryResponse | null,
-  ownerId: number,
-  networkRootRepositoryId: number,
-): repository is RepositoryResponse {
-  return Boolean(
-    repository
-    && repository.fork
-    && repository.owner.type === 'User'
-    && repository.owner.id === ownerId
-    && repository.parent?.id === networkRootRepositoryId,
-  );
 }
 
 export function isIssueResponse(value: unknown): value is IssueResponse {

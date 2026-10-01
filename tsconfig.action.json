@@ -10,5 +10,6 @@
     "rootDir": ".",
     "noEmit": false
   },
-  "include": ["protocol/review-v1.json", "src/action/**/*", "src/protocol/**/*"]
+  "include": ["protocol/review-v1.json", "src/action/**/*", "src/protocol/**/*"],
+  "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx"]
 }
