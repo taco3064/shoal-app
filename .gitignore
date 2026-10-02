@@ -1,3 +1,9 @@
 node_modules/
 dist/
 .astro/
+playwright-report/
+test-results/
+.wrangler/
+.worker-build/
+.dev.vars
+.dev.vars.*

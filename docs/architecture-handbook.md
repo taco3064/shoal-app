@@ -29,7 +29,7 @@ flowchart TD
     m2_l1 --> m2_l3
     m2_l2 --> m2_l3
   end
-  subgraph m3["network"]
+  subgraph m3["join"]
     m3_l0["components"]
     m3_l1["hooks"]
     m3_l2["contexts"]
@@ -39,7 +39,7 @@ flowchart TD
     m3_l1 --> m3_l3
     m3_l2 --> m3_l3
   end
-  subgraph m4["protocol"]
+  subgraph m4["network"]
     m4_l0["components"]
     m4_l1["hooks"]
     m4_l2["contexts"]
@@ -48,6 +48,16 @@ flowchart TD
     m4_l1 -->|Context only · selfOnly| m4_l2
     m4_l1 --> m4_l3
     m4_l2 --> m4_l3
+  end
+  subgraph m5["protocol"]
+    m5_l0["components"]
+    m5_l1["hooks"]
+    m5_l2["contexts"]
+    m5_l3["services"]
+    m5_l0 -.-> m5_l1
+    m5_l1 -->|Context only · selfOnly| m5_l2
+    m5_l1 --> m5_l3
+    m5_l2 --> m5_l3
   end
 ```
 
@@ -59,7 +69,8 @@ flowchart TD
 | --- | --- | --- |
 | `action` | Compute and package the Reviewer Summary Marketplace Action source. | `protocol` |
 | `app` | Compose Astro routes, layouts, and page metadata. | `guide` |
-| `guide` | Render the public Reviewer Directory and explain Shoal endorsements and onboarding. | `network` |
+| `guide` | Render the public Reviewer Directory and explain Shoal endorsements and onboarding. | `network`, `join` |
+| `join` | Authenticate Reviewers and converge explicitly confirmed station setup and Policy changes. | `protocol` |
 | `network` | Discover eligible Reviewer Nodes, verify Summary provenance, and compile the flat Network Projection. | `protocol` |
 | `protocol` | Own Shoal protocol parsing, validation, schemas, and versioned contracts. | — |
 
@@ -106,7 +117,7 @@ A unit is the code item inside a layer. Folder units expose only their entry; fi
 
 ## Import discipline
 
-These boundaries are emitted for ESLint, but their effective project-lint wiring remains unverified until `blueprint doctor` proves it:
+These boundaries are verified alive in the project ESLint run — one blueprint drives both:
 
 - **Module reachability** — a module may import only itself and modules reachable through its declared `dependsOn` edges. The inner layer flow must also allow the import.
 - **One-way only** — a layer imports only from the layers below it; upstream imports are errors.
