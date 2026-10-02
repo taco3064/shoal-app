@@ -4,12 +4,6 @@ on:
   schedule:
     - cron: '35 4 * * 1'
   workflow_dispatch:
-    inputs:
-      deploy_ref:
-        description: 'Branch, tag, or SHA to publish with GitHub Pages'
-        required: false
-        default: 'main'
-        type: string
   workflow_run:
     workflows: [Verify]
     types: [completed]
@@ -33,24 +27,18 @@ jobs:
       contents: read
       pages: write
       id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Checkout accepted main head
-        if: ${{ github.event_name == 'workflow_run' }}
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.workflow_run.head_sha }}
-          persist-credentials: false
-      - name: Checkout manual publish ref
-        if: ${{ github.event_name != 'workflow_run' }}
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.inputs.deploy_ref }}
+          ref: ${{ github.event.workflow_run.head_sha || 'main' }}
           persist-credentials: false
       - name: Verify accepted main head
-        if: ${{ github.event_name == 'workflow_run' }}
         shell: bash
         env:
-          EXPECTED_SHA: ${{ github.event.workflow_run.head_sha }}
+          EXPECTED_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
         run: |
           test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
           git fetch --no-tags origin main
