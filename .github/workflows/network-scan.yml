@@ -37,9 +37,17 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout accepted main head
+        if: ${{ github.event_name == 'workflow_run' }}
+        uses: actions/checkout@v4
         with:
-          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.event.inputs.deploy_ref || 'main' }}
+          ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: false
+      - name: Checkout manual publish ref
+        if: ${{ github.event_name != 'workflow_run' }}
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.deploy_ref }}
           persist-credentials: false
       - name: Verify accepted main head
         if: ${{ github.event_name == 'workflow_run' }}
