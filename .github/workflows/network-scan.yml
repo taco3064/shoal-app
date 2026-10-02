@@ -33,12 +33,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.workflow_run.head_sha || 'main' }}
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
           persist-credentials: false
       - name: Verify accepted main head
+        if: ${{ github.event_name == 'workflow_run' }}
         shell: bash
         env:
-          EXPECTED_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+          EXPECTED_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
           test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
           git fetch --no-tags origin main
