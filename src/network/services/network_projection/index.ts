@@ -2,9 +2,9 @@ import {
   networkRoot,
   requestFormPath,
   summaryWorkflowPath,
-  allowedCanonicalReviewRequestFormDigests,
-  allowedSummaryWorkflows,
 } from '~app/protocol/services/network_compatibility';
+import { stationReadiness } from '~app/protocol/services/station_readiness';
+import type { StationReadinessReason } from '~app/protocol/services/station_readiness';
 import type { GitHubRepository, WorkflowRun } from '../github_api';
 import {
   hash,
@@ -44,10 +44,7 @@ type DirectoryExclusionReason
 
 export type StationStatus = 'ready' | 'setup_required';
 
-export type StationReadinessReason
-  = | 'issues_disabled'
-    | 'review_request_surface_missing_or_unsupported'
-    | 'summary_workflow_missing_or_unsupported';
+export type { StationReadinessReason } from '~app/protocol/services/station_readiness';
 
 const stationReadinessReasons = new Set<StationReadinessReason>([
   'issues_disabled',
@@ -116,7 +113,11 @@ export async function buildNetworkProjection(
       source.committedBytes(node.full_name, summaryWorkflowPath, commit.sha),
     ]);
 
-    const reasons = readinessReasons(node, form, workflow);
+    const { reasons } = stationReadiness({
+      hasIssues: node.has_issues,
+      formDigest: form ? hash(form) : null,
+      workflowDigest: workflow ? hash(workflow) : null,
+    });
 
     const stationStatus: StationStatus = reasons.length === 0
       ? 'ready'
@@ -159,34 +160,6 @@ export async function buildNetworkProjection(
   validateProjection(projection);
 
   return projection;
-}
-
-function readinessReasons(
-  node: GitHubRepository,
-  form: Uint8Array | null,
-  workflow: Uint8Array | null,
-): StationReadinessReason[] {
-  const reasons: StationReadinessReason[] = [];
-
-  if (!node.has_issues) {
-    reasons.push('issues_disabled');
-  }
-
-  if (
-    !form
-    || !allowedCanonicalReviewRequestFormDigests.has(hash(form))
-  ) {
-    reasons.push('review_request_surface_missing_or_unsupported');
-  }
-
-  if (
-    !workflow
-    || !allowedSummaryWorkflows.has(hash(workflow))
-  ) {
-    reasons.push('summary_workflow_missing_or_unsupported');
-  }
-
-  return reasons;
 }
 
 function logSkip(

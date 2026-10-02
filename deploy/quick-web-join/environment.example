@@ -1,0 +1,11 @@
+# Public Worker variables: configure wrangler.jsonc vars before deployment.
+GITHUB_APP_SLUG=
+GITHUB_APP_ID=
+GITHUB_APP_CLIENT_ID=
+JOIN_SERVICE_ORIGIN=https://shoal-quick-web-join.YOUR-SUBDOMAIN.workers.dev
+JOIN_WEBSITE_RETURN_URL=https://taco3064.github.io/shoal-app/join/
+# Required Workers Secrets (wrangler secret put NAME). Never use vars for these.
+GITHUB_APP_CLIENT_SECRET=
+GITHUB_APP_PRIVATE_KEY=
+# Static Pages build variable (public, never a credential).
+PUBLIC_SHOAL_JOIN_SERVICE_URL=https://shoal-quick-web-join.YOUR-SUBDOMAIN.workers.dev

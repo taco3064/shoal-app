@@ -1,10 +1,11 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import SetupPrompt from "~app/guide/components/SetupPrompt";
+import Join from "~app/join";
 
 const title = "Join Shoal — Set up your station";
 const description =
-  "Directly fork the Shoal station template, complete four setup stages, and write your own Review Policy.";
+  "Choose optional Quick Web Join or Local / CLI Join to set up your own station and Review Policy.";
 ---
 
 <BaseLayout title={title} description={description}>
@@ -22,7 +23,7 @@ const description =
         join.
       </p>
       <p class="join-reassurance">
-        No website account · No approval form · Your standard
+        Public browsing · Optional GitHub authorization · Your standard
       </p>
     </header>
 
@@ -59,9 +60,10 @@ const description =
       </ol>
     </section>
 
+    <Join serviceUrl={import.meta.env.PUBLIC_SHOAL_JOIN_SERVICE_URL ?? ""} client:load />
     <div class="join-section-heading">
-      <p class="section-kicker">START HERE</p>
-      <h2>Set up your station</h2>
+      <p class="section-kicker">SET UP LOCALLY WITHOUT WEBSITE AUTHORIZATION</p>
+      <h2>Local / CLI Join</h2>
     </div>
     <section id="direct-fork" class="journey" data-journey aria-label="Your station in four steps">
       <section
@@ -233,7 +235,7 @@ const description =
         </section>
         <section>
           <h3>Shoal-managed station surfaces</h3>
-          <p><code>.github/ISSUE_TEMPLATE/review-request.yml</code> and <code>.github/workflows/reviewer-summary.yml</code> are Shoal-managed. Even whitespace or comments change the workflow’s exact digest; a Summary outside the allowed canonical digest set is rejected. Run <code>gh shoal init</code> to repair managed-file drift. A fresh fork’s Actions confirmation remains yours to complete.</p>
+          <p><code>.github/ISSUE_TEMPLATE/review-request.yml</code> and <code>.github/workflows/reviewer-summary.yml</code> are Shoal-managed. Even whitespace or comments change the workflow’s exact digest; a Summary outside the allowed canonical digest set is rejected. Run <code>gh shoal init</code> to repair managed-file drift. For Local / CLI Join, a fresh fork’s Actions confirmation remains yours to complete. Quick Web Join can enable the required Actions state after your explicit authorization.</p>
         </section>
         <section>
           <h3>Automated Review stays local</h3>

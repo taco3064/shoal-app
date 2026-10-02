@@ -32,8 +32,17 @@ Husky installs with `npm ci`. Pre-commit uses ESLint to fix staged source and ch
 
 ## Joining Shoal
 
-The [Join page](https://taco3064.github.io/shoal-app/join/) guides public Reviewers
-through the direct-fork path: directly fork the
+The [Join page](https://taco3064.github.io/shoal-app/join/) keeps public browsing
+unauthenticated and offers optional Quick Web Join alongside Local / CLI Join.
+Quick Web Join uses a Cloudflare Worker with SQLite Durable Object state and a
+GitHub App to inspect the
+Reviewer's direct fork and execute only explicitly confirmed remaining setup.
+Policy changes require their own confirmation. Configure and deploy the service
+using [the operating guide](docs/quick-web-join.md); the static Pages site never
+holds GitHub mutation credentials. Until that external bootstrap is complete,
+the Local / CLI path remains available.
+
+For Local / CLI Join, directly fork the
 [Network Root](https://github.com/taco3064/shoal-station), manually enable Actions
 in the fork, then use `gh shoal init` for the managed station setup. Each Reviewer
 authors their own `README.md` Review Policy. `gh shoal init` cannot replace the
