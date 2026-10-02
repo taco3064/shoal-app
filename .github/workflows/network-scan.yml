@@ -33,9 +33,6 @@ jobs:
       contents: read
       pages: write
       id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout accepted main head
         if: ${{ github.event_name == 'workflow_run' }}
