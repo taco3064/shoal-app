@@ -3,6 +3,7 @@ import test from 'node:test';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import type useQuickJoin from '~app/join/hooks/useQuickJoin';
+import type { Stage } from '~app/join/services/join_client';
 import QuickJoin from './index';
 
 function state(): ReturnType<typeof useQuickJoin> {
@@ -31,6 +32,50 @@ function state(): ReturnType<typeof useQuickJoin> {
     choosePolicy: () => {},
     editPolicy: () => {},
   };
+}
+
+function stages(overrides: Partial<Record<string, Partial<Stage>>> = {}): Stage[] {
+  const base: Stage[] = [
+    {
+      id: 'identity',
+      label: 'GitHub identity',
+      state: 'complete',
+      detail: 'reviewer',
+    },
+    {
+      id: 'node',
+      label: 'Reviewer Node / direct fork',
+      state: 'complete',
+      detail: 'reviewer/station',
+    },
+    {
+      id: 'access',
+      label: 'GitHub App repository access',
+      state: 'complete',
+      detail: 'Installed',
+    },
+    {
+      id: 'station',
+      label: 'Station setup',
+      state: 'complete',
+      detail: 'Station facts are verified.',
+    },
+    {
+      id: 'policy',
+      label: 'Review Policy',
+      state: 'available',
+      detail: 'Review your Policy.',
+      action: 'policy',
+    },
+    {
+      id: 'ready',
+      label: 'Station ready / publication waiting',
+      state: 'complete',
+      detail: 'Station readiness is verified.',
+    },
+  ];
+
+  return base.map((stage) => ({ ...stage, ...overrides[stage.id] }));
 }
 
 test('public Join does not require authentication or replace the local path', () => {
@@ -80,7 +125,7 @@ test('readiness publication lag and Policy confirmation remain separate', () => 
     },
     rootHead: 'root',
     rootOwner: false,
-    stages: [],
+    stages: stages(),
     operations: [],
     ready: true,
     policy: { current: '# Mine', default: '# Default', isDefault: false },
@@ -98,8 +143,8 @@ test('readiness publication lag and Policy confirmation remain separate', () => 
 
   const html = renderToStaticMarkup(createElement(QuickJoin, { join }));
 
-  assert.match(html, /Your station is ready/);
-  assert.match(html, /Directory publication is waiting/);
+  assert.match(html, /Station ready \/ publication waiting/);
+  assert.match(html, /Directory publication waits/);
   assert.match(html, /Confirm Policy choice/);
   assert.match(html, /Exact confirmed Markdown/);
   assert.doesNotMatch(html, /<script|href="javascript:/);
@@ -113,7 +158,15 @@ test('ready station still shows pending Web activation setup', () => {
     identity: { id: 1, login: 'reviewer' },
     rootHead: 'root',
     rootOwner: false,
-    stages: [],
+    stages: stages({
+      station: {
+        state: 'current',
+        action: 'execute',
+        detail: 'Shoal can complete the remaining station setup.',
+      },
+      policy: { state: 'waiting', action: undefined },
+      ready: { state: 'waiting' },
+    }),
     operations: [
       { id: 'enable_actions', label: 'Enable repository Actions' },
       { id: 'enable_workflow', label: 'Activate canonical Reviewer Summary Workflow' },
@@ -123,11 +176,11 @@ test('ready station still shows pending Web activation setup', () => {
 
   const html = renderToStaticMarkup(createElement(QuickJoin, { join }));
 
-  assert.match(html, /Your station is ready/);
-  assert.match(html, /Quick Web Join setup is still pending/);
-  assert.match(html, /Complete remaining setup automatically/);
-  assert.match(html, /does not prove Workflow executability/);
-  assert.doesNotMatch(html, /No setup commit or settings mutation is needed/);
+  assert.match(html, /Station setup/);
+  assert.match(html, /Complete setup automatically/);
+  assert.match(html, /Technical readback for this setup plan/);
+  assert.doesNotMatch(html, /Confirm Policy choice/);
+  assert.match(html, /Station ready \/ publication waiting/);
 });
 
 test('Root owner receives inline short-circuit without fork action', () => {

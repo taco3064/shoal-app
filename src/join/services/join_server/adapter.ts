@@ -18,7 +18,8 @@ export function productionJoinAdapter(
 
   const adapter: JoinAdapter = {
     identity: (token) => client.identity(token),
-    inspect: (identity) => service.inspect(identity),
+    inspect: (identity, previous) =>
+      service.inspect(identity, previous as Inspection | undefined),
     publicInspection: (value) => ({
       ...publicInspection(value as Inspection),
       installationUrl:

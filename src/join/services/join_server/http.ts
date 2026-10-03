@@ -12,7 +12,7 @@ import {
 
 export interface JoinAdapter {
   identity(token: string): Promise<AuthIdentity>;
-  inspect(identity: AuthIdentity): Promise<unknown>;
+  inspect(identity: AuthIdentity, previous?: unknown): Promise<unknown>;
   publicInspection(inspection: unknown): object;
   startExecution(inspection: unknown): unknown;
   executeStep(
@@ -190,8 +190,18 @@ export class JoinHttp {
     if (url.pathname === '/api/inspect') {
       exactFields(body, []);
 
-      const inspection = await adapter.inspect(session.identity);
+      const previous = session.plan?.kind === 'station'
+        ? session.plan.value
+        : session.plan?.kind === 'policy'
+          ? (session.plan.value as { inspection?: unknown }).inspection
+          : undefined;
+
+      const inspection = await adapter.inspect(session.identity, previous);
       const planId = savePlan(session, 'station', inspection);
+
+      delete session.job;
+      delete session.execution;
+      session.busy = false;
 
       await this.persist();
 

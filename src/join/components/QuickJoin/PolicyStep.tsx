@@ -102,11 +102,14 @@ export default function PolicyStep({ join }: { join: JoinState }) {
               ? 'Confirm a separate README.md commit using the exact content below.'
               : 'This choice preserves the current README.md without a commit.'}
           </p>
-          <p>
-            Inspected branch head:
-            {' '}
-            <code>{join.policyPlan.head}</code>
-          </p>
+          <details className="quick-readback">
+            <summary>Technical readback for this Policy plan</summary>
+            <p>
+              Inspected branch head:
+              {' '}
+              <code>{join.policyPlan.head}</code>
+            </p>
+          </details>
           <details>
             <summary>Exact confirmed Markdown</summary>
             <pre>{join.policyPlan.content}</pre>

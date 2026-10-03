@@ -350,3 +350,83 @@ test('Worker authenticates and converges through alarms using PKCS1', async () =
     await mf.dispose();
   }
 });
+
+test('Worker refresh invalidates deleted-node authority', async () => {
+  const { mf, fixture } = await runtime();
+
+  try {
+    const { session } = await authorize(mf);
+    const inspected = await api(mf, session, '/api/inspect', {});
+    const plan = await inspected.json() as Plan;
+
+    assert.equal(plan.operations.length, 4);
+
+    const launched = await api(
+      mf,
+      session,
+      '/api/execute',
+      { planId: plan.planId },
+    );
+
+    const jobId = (await launched.json() as { jobId: string }).jobId;
+    const job = await finish(mf, session, jobId);
+
+    assert.equal(job.status, 'complete');
+
+    const readyResponse = await api(mf, session, '/api/inspect', {});
+    const ready = await readyResponse.json() as Plan;
+
+    assert.equal(ready.ready, true);
+
+    const policyPlan = await api(mf, session, '/api/policy/plan', {
+      planId: ready.planId,
+      choice: 'keep',
+    });
+
+    assert.equal(policyPlan.status, 200);
+
+    const policyPlanId = ((await policyPlan.json()) as { planId: string }).planId;
+    const beforeDeletion = fixture.state.requests.length;
+
+    fixture.state.deletedRepositoryIds = [fixture.state.node.id];
+    fixture.state.repoGone = true;
+
+    const refreshed = await api(mf, session, '/api/inspect', {});
+
+    const replacement = await refreshed.json() as Plan & {
+      waiting: string;
+      repository: unknown;
+    };
+
+    assert.equal(refreshed.status, 200);
+    assert.equal(replacement.waiting, 'fork');
+    assert.equal(replacement.repository, null);
+
+    const staleStation = await api(mf, session, '/api/execute', {
+      planId: ready.planId,
+    });
+
+    assert.equal(staleStation.status, 400);
+
+    const stalePolicy = await api(mf, session, '/api/policy/confirm', {
+      planId: policyPlanId,
+    });
+
+    assert.equal(stalePolicy.status, 400);
+
+    assert.ok(
+      !fixture.state.requests.slice(beforeDeletion).some((request) =>
+        request.method !== 'GET'
+        && request.path.includes(`/repositories/${fixture.state.deletedRepositoryIds[0]}`),
+      ),
+    );
+
+    assert.ok(
+      fixture.state.requests.slice(beforeDeletion).some((request) =>
+        request.path === `/repositories/${fixture.state.deletedRepositoryIds[0]}`,
+      ),
+    );
+  } finally {
+    await mf.dispose();
+  }
+});
