@@ -81,7 +81,7 @@ export default function QuickJoin({ join }: { join: JoinState }) {
       {join.busy && !join.job && (
         <p role="status">Inspecting current GitHub state…</p>
       )}
-      {join.inspection && <StationStatus join={join} />}
+      <StationStatus join={join} />
       {join.job && <Progress join={join} />}
       {join.session && (
         <div className="actions">

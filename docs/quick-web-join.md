@@ -56,6 +56,44 @@ pages and Local / CLI Join remain available without it.
 names. It contains no credentials. Local secrets, when needed for authorized
 local work, belong only in ignored `.dev.vars`; production uses Workers Secrets.
 
+## Local manual authorization check
+
+For UX work, localhost must exercise the real authorization handoff rather than
+only the Playwright fixture. Use an explicit local origin pair:
+
+1. Create or edit a non-production GitHub App used only for development. Set its
+   callback URL to the exact local service callback, for example
+   `http://127.0.0.1:8787/auth/callback`. Keep the same minimal permissions as
+   production and install it only on controlled test repositories.
+2. Put development-only values in ignored `.dev.vars`:
+
+   ```bash
+   GITHUB_APP_ID=...
+   GITHUB_APP_SLUG=...
+   GITHUB_APP_CLIENT_ID=...
+   GITHUB_APP_CLIENT_SECRET=...
+   GITHUB_APP_PRIVATE_KEY="-----BEGIN RSA PRIVATE KEY-----\n...\n-----END RSA PRIVATE KEY-----"
+   JOIN_SERVICE_ORIGIN=http://127.0.0.1:8787
+   JOIN_WEBSITE_RETURN_URL=http://localhost:4321/join/
+   ```
+
+3. Start the Worker locally with `npx wrangler dev --local --port 8787`.
+   Start the Website with:
+
+   ```bash
+   PUBLIC_SHOAL_JOIN_SERVICE_URL=http://127.0.0.1:8787 npm run dev -- --host localhost --port 4321
+   ```
+
+4. Open `http://localhost:4321/join/`, choose **Sign in with GitHub**, complete
+   GitHub authorization, and verify the popup returns to the same Join page with
+   an authenticated inline journey.
+
+Local HTTP is accepted only for `localhost`, `127.0.0.1`, or `[::1]` origins.
+Any non-local authenticated origin still requires HTTPS. The Worker still checks
+the exact Website origin; do not use wildcard authenticated CORS. Never reuse a
+production App client secret, private key, or installed production repository
+for local verification.
+
 ## Session and credential boundary
 
 Authorization starts in a popup. The temporary OAuth binding cookie is Secure,

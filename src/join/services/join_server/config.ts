@@ -21,6 +21,17 @@ export interface JoinEnvironment {
   JOIN_WEBSITE_RETURN_URL: string;
 }
 
+function isLocalHttp(url: URL): boolean {
+  return (
+    url.protocol === 'http:'
+    && (
+      url.hostname === 'localhost'
+      || url.hostname === '127.0.0.1'
+      || url.hostname === '[::1]'
+    )
+  );
+}
+
 export function loadJoinConfig(
   env: Omit<JoinEnvironment, 'JOIN_FLOWS'>,
 ): JoinConfig {
@@ -39,9 +50,12 @@ export function loadJoinConfig(
   const service = new URL(required('JOIN_SERVICE_ORIGIN'));
   const returnUrl = new URL(required('JOIN_WEBSITE_RETURN_URL'));
 
+  const secureService = service.protocol === 'https:' || isLocalHttp(service);
+  const secureReturn = returnUrl.protocol === 'https:' || isLocalHttp(returnUrl);
+
   if (
-    service.protocol !== 'https:'
-    || returnUrl.protocol !== 'https:'
+    !secureService
+    || !secureReturn
     || service.username
     || service.password
     || returnUrl.username
