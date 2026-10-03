@@ -154,6 +154,28 @@ export class GitHubJoinClient {
     throw new Error('Repository discovery pagination limit exceeded.');
   }
 
+  async ownerRepositories(
+    token: string,
+    identity: GitHubUser,
+  ): Promise<Repository[]> {
+    const items: Repository[] = [];
+
+    for (let page = 1; page <= 100; page += 1) {
+      const result = await this.request<Repository[]>(
+        token,
+        `/users/${encodeURIComponent(identity.login)}/repos?type=owner&per_page=100&page=${page}`,
+      );
+
+      items.push(...result);
+
+      if (result.length < 100) {
+        return items;
+      }
+    }
+
+    throw new Error('Repository discovery pagination limit exceeded.');
+  }
+
   repository(token: string, locator: string): Promise<Repository> {
     return this.request(token, `/repos/${encodeLocator(locator)}`);
   }

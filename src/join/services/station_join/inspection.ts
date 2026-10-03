@@ -93,6 +93,10 @@ async function discoverReviewerNodeCandidates(
     `${identity.login}/${repositoryName(root)}`,
   ));
 
+  for (const repository of await client.ownerRepositories(token, identity)) {
+    add(repository);
+  }
+
   for (const repository of await client.rootForks(token, root)) {
     add(repository);
   }
@@ -159,7 +163,7 @@ export async function inspectStation(
     }
   }
 
-  if (!ownsRoot && !candidates.some((candidate) => validNode(candidate, identity))) {
+  if (!ownsRoot) {
     candidates.push(...await discoverReviewerNodeCandidates(
       client,
       userToken,
@@ -169,19 +173,35 @@ export async function inspectStation(
   }
 
   let repository: Repository | null = null;
+  const inspectedIds = new Set<number>();
 
   for (const candidate of candidates) {
     if (
-      !candidate.fork
+      inspectedIds.has(candidate.id)
+      || !candidate.fork
       || candidate.owner.id !== identity.id
       || candidate.owner.type !== 'User'
     ) {
       continue;
     }
 
-    const detail = previous?.repository?.id === candidate.id
-      ? candidate
-      : await client.repository(userToken, candidate.full_name);
+    inspectedIds.add(candidate.id);
+
+    let detail: Repository;
+
+    try {
+      detail = await client.repositoryById(userToken, candidate.id);
+    } catch (error) {
+      if (error instanceof GitHubError && error.status === 404) {
+        continue;
+      }
+
+      throw error;
+    }
+
+    if (detail.id !== candidate.id) {
+      throw new Error('Reviewer Node repository identity mismatch.');
+    }
 
     if (validNode(detail, identity)) {
       if (repository) {
