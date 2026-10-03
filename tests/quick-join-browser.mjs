@@ -205,7 +205,11 @@ test('Quick Web Join renders one inline journey and verifies recovery and Policy
   }
 
   await page.goto('join/');
-  await expect(page.getByText('Prefer local setup? Use Local / CLI Join')).toBeVisible();
+  await testInfo.attach('unauthenticated-desktop-journey', {
+    body: await page.screenshot({ fullPage: true }),
+    contentType: 'image/png',
+  });
+  await expect(page.locator('summary', { hasText: 'Prefer local setup? Use Local / CLI Join' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Local / CLI Join', exact: true })).toHaveCount(0);
   await expect(page.getByRole('heading', { name: 'Join Shoal', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Sign in with GitHub', exact: true }).click();
@@ -217,39 +221,66 @@ test('Quick Web Join renders one inline journey and verifies recovery and Policy
 
   cancel = false;
   await page.getByRole('button', { name: 'Sign in with GitHub', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'Create your direct fork on GitHub' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Create direct fork' })).toBeVisible();
+  await testInfo.attach('waiting-for-fork-desktop', {
+    body: await page.screenshot({ fullPage: true }),
+    contentType: 'image/png',
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.getByRole('button', { name: 'Create direct fork' })).toBeVisible();
+  await testInfo.attach('waiting-for-fork-mobile', {
+    body: await page.screenshot({ fullPage: true }),
+    contentType: 'image/png',
+  });
+  await page.setViewportSize({ width: 1280, height: 900 });
 
   phase = 'access';
   const forkPopup = page.waitForEvent('popup');
-  await page.getByRole('button', { name: 'Create your direct fork on GitHub' }).click();
+  await page.getByRole('button', { name: 'Create direct fork' }).click();
   await (await forkPopup).close();
-  await expect(page.getByRole('button', { name: 'Grant App access to this Reviewer Node' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Grant App access' })).toBeVisible();
+  await testInfo.attach('app-access-current-step', {
+    body: await page.screenshot({ fullPage: true }),
+    contentType: 'image/png',
+  });
 
   phase = 'setup';
   await page.getByRole('button', { name: 'Refresh status', exact: true }).click();
-  await page.getByRole('button', { name: 'Complete remaining setup automatically' }).click();
+  await testInfo.attach('station-setup-mixed-diagnostics', {
+    body: await page.screenshot({ fullPage: true }),
+    contentType: 'image/png',
+  });
+  await page.getByRole('button', { name: 'Complete setup automatically' }).click();
   await expect(page.getByRole('alert')).toContainText('Concurrent branch change');
   await expect(page.getByText('The confirmed plan is stale.', { exact: false })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Complete remaining setup automatically' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Complete setup automatically' })).toHaveCount(0);
 
   await page.getByRole('button', { name: 'Refresh and retry remaining work' }).click();
-  await page.getByRole('button', { name: 'Complete remaining setup automatically' }).click();
+  await page.getByRole('button', { name: 'Complete setup automatically' }).click();
   await expect(page.locator('progress')).toHaveAttribute('value', '0');
   await expect(page.locator('progress')).toHaveAttribute('max', '2');
+  await testInfo.attach('automatic-execution-in-progress', {
+    body: await page.screenshot({ fullPage: true }),
+    contentType: 'image/png',
+  });
   await expect(page.getByRole('alert')).toHaveText('Controlled failure');
   await expect(page.locator('progress')).toHaveAttribute('value', '1');
   await expect(page.locator('progress')).toHaveAttribute('max', '2');
-  await testInfo.attach('partial-failure', {
+  await testInfo.attach('controlled-failure-retry', {
     body: await page.screenshot({ fullPage: true }),
     contentType: 'image/png',
   });
 
   await page.getByRole('button', { name: 'Refresh and retry remaining work' }).click();
-  await page.getByRole('button', { name: 'Complete remaining setup automatically' }).click();
-  await expect(page.getByRole('heading', { name: 'Your station is ready' })).toBeVisible();
+  await page.getByRole('button', { name: 'Complete setup automatically' }).click();
+  await expect(page.getByText('Station ready / publication waiting')).toBeVisible();
   await expect(page.locator('progress')).toHaveAttribute('max', '1');
   await expect(page.getByText('Directory publication is waiting', { exact: false })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Refresh status', exact: true })).toBeEnabled();
+  await testInfo.attach('policy-step', {
+    body: await page.screenshot({ fullPage: true }),
+    contentType: 'image/png',
+  });
 
   await page.getByRole('button', { name: 'Review Policy choice' }).click();
   await expect(page.getByRole('button', { name: 'Confirm Policy choice' })).toBeVisible();
@@ -290,8 +321,8 @@ test('Quick Web Join renders one inline journey and verifies recovery and Policy
   expect(policyInputs.at(-1).choice).toBe('default');
 
   await page.getByRole('button', { name: 'Refresh status', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Your station is ready' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Complete remaining setup automatically' })).toHaveCount(0);
+  await expect(page.getByText('Station ready / publication waiting')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Complete setup automatically' })).toHaveCount(0);
   expect(executes).toBe(3);
   expect(plansExecuted).toEqual(['fresh-setup', 'fresh-setup', 'fresh-failed']);
   expect(errors).toEqual([]);
@@ -299,7 +330,7 @@ test('Quick Web Join renders one inline journey and verifies recovery and Policy
     local: localStorage.length,
     session: sessionStorage.length,
   }))).toEqual({ local: 0, session: 0 });
-  await testInfo.attach('ready', {
+  await testInfo.attach('final-completed-publication-waiting', {
     body: await page.screenshot({ fullPage: true }),
     contentType: 'image/png',
   });
@@ -311,13 +342,13 @@ test('Quick Web Join renders one inline journey and verifies recovery and Policy
   expect(await page.evaluate(() =>
     document.documentElement.scrollWidth <= window.innerWidth,
   )).toBe(true);
-  await testInfo.attach('ready-mobile', {
+  await testInfo.attach('final-completed-mobile', {
     body: await page.screenshot({ fullPage: true }),
     contentType: 'image/png',
   });
 });
 
-test('Quick Web Join short-circuits the Network Root owner inline', async ({ page, context }) => {
+test('Quick Web Join short-circuits the Network Root owner inline', async ({ page, context }, testInfo) => {
   await context.route('https://join.example/**', async (route) => {
     const request = route.request();
     const url = new URL(request.url());
@@ -377,6 +408,10 @@ test('Quick Web Join short-circuits the Network Root owner inline', async ({ pag
   await page.getByRole('button', { name: 'Sign in with GitHub' }).click();
   await expect(page.getByRole('heading', { name: 'Network Root owner' })).toBeVisible();
   await expect(page.getByText('Quick Web Join is not required')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Create your direct fork on GitHub' })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Complete remaining setup automatically' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Create direct fork' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Complete setup automatically' })).toHaveCount(0);
+  await testInfo.attach('root-owner-short-circuit', {
+    body: await page.screenshot({ fullPage: true }),
+    contentType: 'image/png',
+  });
 });

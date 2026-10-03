@@ -128,6 +128,8 @@ function inspectionView(snapshot: Snapshot): Inspection {
   ];
 
   const stationComplete = stationFacts.every((item) => item.state === 'complete');
+  const stationActionable = snapshot.appAccess && snapshot.operations.length > 0;
+  const policyAvailable = stationComplete && !!snapshot.policy?.content;
 
   const stages: Stage[] = [
     {
@@ -176,30 +178,35 @@ function inspectionView(snapshot: Snapshot): Inspection {
         label: 'Station setup',
         state: stationComplete
           ? 'complete'
-          : snapshot.appAccess ? 'current' : 'waiting',
+          : stationActionable ? 'current' : snapshot.appAccess ? 'blocked' : 'waiting',
         detail: stationComplete
           ? 'Issues, Actions, managed files, Workflow and platform support are verified.'
-          : 'Complete the visible station facts in order; '
-            + 'non-actionable trust facts remain diagnostics.',
+          : stationActionable
+            ? 'Shoal can complete the remaining station setup after your confirmation.'
+            : snapshot.appAccess
+              ? 'Station setup needs attention before the Policy step can open.'
+              : 'Available after the GitHub App can inspect your Reviewer Node.',
         facts: stationFacts,
         action:
-          snapshot.appAccess && snapshot.operations.length > 0
+          stationActionable
             ? 'execute'
             : undefined,
       },
       {
         id: 'policy',
         label: 'Review Policy',
-        state: snapshot.policy?.content ? 'available' : 'waiting',
-        detail: snapshot.policy?.matchesDefault
-          ? 'Current Policy equals the default; adoption needs no commit.'
-          : 'Your existing README.md is preserved unless separately confirmed.',
-        action: snapshot.policy?.content ? 'policy' : undefined,
+        state: policyAvailable ? 'available' : 'waiting',
+        detail: !stationComplete
+          ? 'Available after Station setup is verified.'
+          : snapshot.policy?.matchesDefault
+            ? 'Current Policy equals the default; adoption needs no commit.'
+            : 'Your existing README.md is preserved unless separately confirmed.',
+        action: policyAvailable ? 'policy' : undefined,
       },
       {
         id: 'ready',
         label: 'Station ready / publication waiting',
-        state: snapshot.ready ? 'complete' : 'waiting',
+        state: snapshot.ready && policyAvailable ? 'complete' : 'waiting',
         detail: snapshot.ready
           ? 'Station readiness is verified. Directory publication waits for '
           + 'a later Network Scan.'

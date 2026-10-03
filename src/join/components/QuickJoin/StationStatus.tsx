@@ -2,13 +2,35 @@ import type useQuickJoin from '~app/join/hooks/useQuickJoin';
 import PolicyStep from './PolicyStep';
 
 type JoinState = ReturnType<typeof useQuickJoin>;
+type Stage = NonNullable<JoinState['inspection']>['stages'][number];
+
+const stateLabels: Record<Stage['state'], string> = {
+  available: 'Ready for you',
+  blocked: 'Blocked',
+  complete: 'Verified',
+  current: 'Current step',
+  executing: 'In progress',
+  failed: 'Needs retry',
+  waiting: 'Locked',
+};
+
+const stateGlyphs: Record<Stage['state'], string> = {
+  available: '↗',
+  blocked: '!',
+  complete: '✓',
+  current: '•',
+  executing: '…',
+  failed: '×',
+  waiting: '⌁',
+};
 
 export default function StationStatus({ join }: { join: JoinState }) {
   const inspection = join.inspection!;
 
   if (inspection.rootOwner) {
     return (
-      <section className="quick-ready" aria-labelledby="root-owner-title">
+      <section className="quick-root-owner" aria-labelledby="root-owner-title">
+        <span className="quick-root-mark" aria-hidden="true">✓</span>
         <h3 id="root-owner-title">Network Root owner</h3>
         <p>You’re signed in as the Network Root owner.</p>
         <p>
@@ -21,87 +43,95 @@ export default function StationStatus({ join }: { join: JoinState }) {
 
   return (
     <>
-      {inspection.node && (
-        <p>
-          Reviewer Node:
-          {' '}
+      <div className="quick-journey-heading">
+        <div>
+          <p className="section-kicker">GUIDED JOIN JOURNEY</p>
+          <h3>Current onboarding journey</h3>
+        </div>
+        {inspection.node && (
           <a
+            className="quick-node-link"
             href={inspection.node.url}
             target="_blank"
             rel="noopener noreferrer"
           >
             {inspection.node.fullName}
           </a>
-          {' '}
-          · Repository ID
-          {' '}
-          {inspection.node.id}
-        </p>
-      )}
-      <h3>Current onboarding journey</h3>
+        )}
+      </div>
       <ul className="quick-stages">
-        {(join.executionStages ?? inspection.stages).map((stage) => (
-          <li key={stage.id} data-state={stage.state}>
-            <strong>{stage.label}</strong>
-            <span>
-              {stage.state === 'complete' ? 'Verified' : stage.state}
-            </span>
-            <p>{stage.detail}</p>
-            {stage.facts && (
-              <ul className="quick-facts">
-                {stage.facts.map((fact) => (
-                  <li key={fact.label} data-state={fact.state}>
-                    <strong>{fact.label}</strong>
-                    <span>{fact.state}</span>
-                    <p>{fact.detail}</p>
-                  </li>
-                ))}
-              </ul>
-            )}
+        {(join.executionStages ?? inspection.stages).map((stage, index) => (
+          <li
+            key={stage.id}
+            className="quick-stage"
+            data-state={stage.state}
+            data-action={stage.action ?? 'none'}
+          >
+            <div className="quick-stage-marker" aria-hidden="true">
+              <span>{stateGlyphs[stage.state]}</span>
+            </div>
+            <div className="quick-stage-body">
+              <div className="quick-stage-topline">
+                <span className="quick-stage-step">
+                  {String(index + 1).padStart(2, '0')}
+                </span>
+                <span className="quick-stage-state">{stateLabels[stage.state]}</span>
+              </div>
+              <strong className="quick-stage-title">{stage.label}</strong>
+              <p>{stage.detail}</p>
+              <StageAction join={join} stage={stage} />
+              {stage.id === 'station' && inspection.operations.length > 0 && (
+                <div className="quick-stage-plan">
+                  <p>Automatic completion will verify:</p>
+                  <ol>
+                    {inspection.operations.map((operation) => (
+                      <li key={operation.id}>{operation.label}</li>
+                    ))}
+                  </ol>
+                </div>
+              )}
+              {stage.id === 'policy' && stage.action === 'policy' && (
+                <PolicyStep join={join} />
+              )}
+              {stage.id === 'ready' && inspection.ready && (
+                <div className="quick-publication">
+                  <p>
+                    Directory publication waits for a separate successful
+                    Network Scan and publication. Readiness does not guarantee
+                    a publication deadline.
+                  </p>
+                </div>
+              )}
+              {stage.facts && (
+                <ul className="quick-facts">
+                  {stage.facts.map((fact) => (
+                    <li key={fact.label} data-state={fact.state}>
+                      <span className="quick-fact-mark" aria-hidden="true">
+                        {stateGlyphs[fact.state]}
+                      </span>
+                      <strong>{fact.label}</strong>
+                      <span>{stateLabels[fact.state]}</span>
+                      <p>{fact.detail}</p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </li>
         ))}
       </ul>
       {inspection.blockedReason && (
         <p className="quick-warning">{inspection.blockedReason}</p>
       )}
-      {inspection.forkUrl && (
-        <p>
-          <button
-            className="button external"
-            onClick={() => join.openExternal(inspection.forkUrl!)}
-          >
-            Create your direct fork on GitHub
-          </button>
-        </p>
-      )}
-      {inspection.installationUrl && (
-        <p>
-          <button
-            className="button external"
-            onClick={() => join.openExternal(inspection.installationUrl!)}
-          >
-            Grant App access to this Reviewer Node
-          </button>
-        </p>
-      )}
       {(inspection.forkUrl || inspection.installationUrl) && (
-        <p>
+        <p className="quick-return-note">
           Waiting for you on GitHub. Returning to this page refreshes
           authoritative state; Refresh status remains available.
         </p>
       )}
       {inspection.operations.length > 0 && (
-        <section aria-labelledby="quick-plan-title">
-          <h3 id="quick-plan-title">Remaining setup operations</h3>
-          <p>
-            Only this plan is authorized by your confirmation. README.md is
-            preserved.
-          </p>
-          <ol>
-            {inspection.operations.map((operation) => (
-              <li key={operation.id}>{operation.label}</li>
-            ))}
-          </ol>
+        <details className="quick-readback">
+          <summary>Technical readback for this setup plan</summary>
           <p>
             Network Root generation:
             {' '}
@@ -114,46 +144,52 @@ export default function StationStatus({ join }: { join: JoinState }) {
               <code>{inspection.node.head}</code>
             </p>
           )}
-          <button
-            className="button primary"
-            disabled={
-              join.busy
-              || Boolean(inspection.blockedReason)
-              || Boolean(join.job && join.job.status !== 'complete')
-            }
-            onClick={join.execute}
-          >
-            Complete remaining setup automatically
-          </button>
-        </section>
-      )}
-      {inspection.ready && (
-        <section className="quick-ready" aria-labelledby="quick-ready-title">
-          <h3 id="quick-ready-title">Your station is ready</h3>
-          <p>
-            Issues and admitted form/Workflow digests are verified. Readiness
-            does not prove Workflow executability.
-            {inspection.operations.length === 0 && !join.job
-              ? 'No setup commit or settings mutation is needed.'
-              : ''}
-          </p>
-          {inspection.operations.length > 0 && (
-            <p>
-              Quick Web Join setup is still pending. Review and confirm the
-              remaining operations above, including any Actions or Workflow
-              activation.
-            </p>
-          )}
-          <p>
-            Directory publication is waiting for a separate successful Network
-            Scan and publication. Readiness does not guarantee a publication
-            deadline.
-          </p>
-        </section>
-      )}
-      {inspection.ready && !inspection.blockedReason && (
-        <PolicyStep join={join} />
+        </details>
       )}
     </>
   );
+}
+
+function StageAction({ join, stage }: { join: JoinState; stage: Stage }) {
+  const inspection = join.inspection!;
+
+  if (stage.action === 'fork' && inspection.forkUrl) {
+    return (
+      <button
+        className="button primary quick-stage-action"
+        onClick={() => join.openExternal(inspection.forkUrl!)}
+      >
+        Create direct fork
+      </button>
+    );
+  }
+
+  if (stage.action === 'app_access' && inspection.installationUrl) {
+    return (
+      <button
+        className="button primary quick-stage-action"
+        onClick={() => join.openExternal(inspection.installationUrl!)}
+      >
+        Grant App access
+      </button>
+    );
+  }
+
+  if (stage.action === 'execute') {
+    return (
+      <button
+        className="button primary quick-stage-action"
+        disabled={
+          join.busy
+          || Boolean(inspection.blockedReason)
+          || Boolean(join.job && join.job.status !== 'complete')
+        }
+        onClick={join.execute}
+      >
+        Complete setup automatically
+      </button>
+    );
+  }
+
+  return null;
 }

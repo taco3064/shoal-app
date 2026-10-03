@@ -261,12 +261,18 @@ export default function useQuickJoin(serviceUrl: string) {
 
   const openExternal = (url: string) => {
     externalPending.current = true;
-    external.current = window.open(url, '_blank', 'noopener,noreferrer');
+    external.current = window.open(url, 'shoal-external-step');
 
     if (!external.current) {
       setError('Open the external GitHub step, then use Refresh status.');
 
       return;
+    }
+
+    try {
+      external.current.opener = null;
+    } catch {
+      // Some browsers expose a restricted WindowProxy for external tabs.
     }
 
     const timer = setInterval(() => {
@@ -287,7 +293,13 @@ export default function useQuickJoin(serviceUrl: string) {
     setBusy(true);
     setError('');
 
-    setExecutionStages(inspection?.stages);
+    setExecutionStages(
+      inspection?.stages.map((stage) =>
+        stage.id === (policy ? 'policy' : 'station')
+          ? { ...stage, state: 'executing' }
+          : stage,
+      ),
+    );
 
     setJob({
       status: 'queued',

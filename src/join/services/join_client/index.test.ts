@@ -60,8 +60,11 @@ test('client sends opaque session and exact confirmed plan', async (context) => 
   );
 
   const station = inspection.stages.find((stage) => stage.id === 'station');
+  const policy = inspection.stages.find((stage) => stage.id === 'policy');
 
   assert.equal(station?.state, 'current');
+  assert.equal(policy?.state, 'waiting');
+  assert.equal(policy?.action, undefined);
 
   assert.equal(
     station?.facts?.find((fact) => fact.label === 'Repository Actions')?.state,
@@ -82,6 +85,36 @@ test('client sends opaque session and exact confirmed plan', async (context) => 
     Authorization: 'Session opaque-session',
     'X-CSRF-Token': 'csrf',
   });
+});
+
+test('client opens Policy only after station setup is verified', async (context) => {
+  context.mock.method(globalThis, 'fetch', async () =>
+    Response.json({
+      ...snapshot,
+      issuesEnabled: true,
+      actionsEnabled: true,
+      workflowActive: true,
+      operations: [],
+      ready: true,
+    }),
+  );
+
+  const client = joinClient('https://join.example/');
+
+  const inspection = await client.inspect({
+    session: 'session',
+    csrfToken: 'csrf',
+    identity: snapshot.identity,
+  });
+
+  const station = inspection.stages.find((stage) => stage.id === 'station');
+  const policy = inspection.stages.find((stage) => stage.id === 'policy');
+  const ready = inspection.stages.find((stage) => stage.id === 'ready');
+
+  assert.equal(station?.state, 'complete');
+  assert.equal(policy?.state, 'available');
+  assert.equal(policy?.action, 'policy');
+  assert.equal(ready?.state, 'complete');
 });
 
 test('client preserves partial verified progress and stale errors', async (context) => {
