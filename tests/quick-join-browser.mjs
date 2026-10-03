@@ -233,7 +233,7 @@ test('Quick Web Join renders one inline journey and verifies recovery and Policy
   await expect(page.getByRole('heading', { name: 'Join Shoal', exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Current onboarding journey' })).toBeVisible();
   await expect(page.getByText('Reviewer Node / direct fork')).toBeVisible();
-  await expect(page.getByText('Local / CLI: gh shoal init')).toBeVisible();
+  await expect(page.locator('.quick-map-local')).toHaveCount(6);
   await expect(page.getByText('Station ready / publication waiting')).toBeVisible();
   await expect(page.getByText('Verified')).toHaveCount(0);
   await attachViewport('unauthenticated-journey', 1024);
@@ -274,6 +274,7 @@ test('Quick Web Join renders one inline journey and verifies recovery and Policy
 
   phase = 'setup';
   await page.getByRole('button', { name: 'Refresh status', exact: true }).click();
+  await expect(page.getByText('gh shoal init')).toBeVisible();
   await testInfo.attach('station-setup-mixed-diagnostics', {
     body: await page.screenshot({ fullPage: true }),
     contentType: 'image/png',

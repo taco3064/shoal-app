@@ -113,12 +113,7 @@ export default function StationStatus({ join }: { join: JoinState }) {
                   : (
                       <div>{content}</div>
                     )}
-                <div className="quick-map-local">
-                  <span>{localCue(stage)}</span>
-                  {stage.id !== activeStage.id && (
-                    <LocalStageGuidance stage={stage} />
-                  )}
-                </div>
+                <span className="quick-map-local">Local / CLI</span>
               </li>
             );
           })}
@@ -370,23 +365,4 @@ function getMapAction(join: JoinState, stage: Stage) {
   }
 
   return undefined;
-}
-
-function localCue(stage: Stage) {
-  switch (stage.id) {
-    case 'identity':
-      return 'Local / CLI: Website authorization optional';
-    case 'node':
-      return 'Local / CLI: direct personal fork';
-    case 'access':
-      return 'Local / CLI: Website mutation access optional';
-    case 'station':
-      return 'Local / CLI: gh shoal init';
-    case 'policy':
-      return 'Local / CLI: edit README.md';
-    case 'ready':
-      return 'Local / CLI: same readiness facts';
-    default:
-      return 'Local / CLI available';
-  }
 }
