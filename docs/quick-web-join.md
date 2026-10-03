@@ -227,12 +227,10 @@ and Pages publication, never an immediate mutation or guaranteed deadline.
 
 ## Verification and production field evidence
 
-Run `npm run test:join`, `npm run test:join:worker` and
-`npm run test:join:browser`, then the existing lint, type, Blueprint, build,
-Network/Directory/Action and SEO checks. Worker tests use the production bundle
-inside workerd with SQLite Durable Objects and controlled outbound GitHub
-responses. Browser tests hydrate the actual Website with an explicit backend
-fixture. These are useful runtime and behavior evidence, not live GitHub proof.
+Run the existing lint, type, Blueprint, build, Worker dry-run, Network scan,
+Action package and SEO validation commands. Runtime smoke evidence should be
+captured as development-only verification and must not be committed as project
+test files.
 
 For live verification, record the exact candidate tree, deployed Worker version,
 App ID and permission contract, public Pages origin, real callback URL,

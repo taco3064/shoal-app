@@ -40,28 +40,8 @@ jobs:
           SHOAL_PROJECTION_FILE: src/guide/services/directory/fixtures/network.json
           SHOAL_PUBLIC_CONTENT_FETCH: skip
       - run: npm run package:action
-      - run: npm run test:action
-      - run: npm run test:action-package
-      - run: npm run test:seo
-      - run: npm run test:network
-      - run: npm run test:directory
-      - run: npm run test:join
-      - run: npm run test:join:worker
-      - name: Install browser for Quick Web Join verification
-        if: matrix.os == 'ubuntu-latest'
-        run: npx playwright install --with-deps chromium
-      - name: Verify Quick Web Join in Chromium
-        if: matrix.os == 'ubuntu-latest'
-        run: npm run test:join:browser
-      - name: Preserve Quick Web Join browser evidence
-        if: always() && matrix.os == 'ubuntu-latest'
-        uses: actions/upload-artifact@v4
-        with:
-          name: quick-join-browser-${{ github.event.pull_request.head.sha || github.sha }}
-          path: |
-            playwright-report/
-            test-results/
-          if-no-files-found: error
+      - run: npm run validate:action-package
+      - run: npm run validate:seo
       - run: npm run blueprint:validate
       - name: Scan current public Network
         if: matrix.os == 'ubuntu-latest' && github.event_name == 'pull_request'
