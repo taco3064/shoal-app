@@ -28,7 +28,7 @@ npm run blueprint:validate
 
 Astro owns static routing, layouts, metadata, and HTML composition under `src/app/`. The `guide` Blueprint module owns product explanation, joining guidance, and directory presentation. Blueprint's Module First topology governs supported TS/TSX source; `.astro` files are framework composition and checked by ESLint with the Astro parser, not claimed as Blueprint-governed source. Domain and protocol logic belongs in governed modules, not in `.astro` files. The `network` module builds the Network Projection candidate.
 
-Husky installs with `npm ci`. Pre-commit uses ESLint to fix staged source and checks types; pre-push builds the site. Pull request CI runs lint, type checking, build, tests, and Blueprint checks on Ubuntu and Windows; Ubuntu also scans the public Network and preserves the resulting projection artifact for review. A successful `main` verification triggers Network Scan and Pages publication. GitHub Pages must be configured with **GitHub Actions** as its build and deployment source in repository settings.
+Husky installs with `npm ci`. Pre-commit uses ESLint to fix staged source and checks types; pre-push builds the site. Pull request CI runs lint, type checking, build, tests, and Blueprint checks on Ubuntu and Windows; Ubuntu also scans the public Network and preserves the resulting projection artifact for review. A successful `main` verification deploys the Quick Web Join Worker, then a successful Worker deployment triggers Network Scan and Pages publication for the same `main` SHA. GitHub Pages must be configured with **GitHub Actions** as its build and deployment source in repository settings.
 
 ## Joining Shoal
 
@@ -56,7 +56,7 @@ maintainer path, separate from public onboarding.
 
 ## Network Scan and publication
 
-The scheduled, manually dispatched, and successful `main` Verify-triggered
+The scheduled, manually dispatched, and successful `main` Worker-deploy-triggered
 `Network Scan` workflow evaluates the personal-account Network Root and its
 direct personal-account forks. Every Membership-valid node remains in the
 Directory. Station readiness is evaluated independently as `ready` or

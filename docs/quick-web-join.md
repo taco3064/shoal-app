@@ -18,18 +18,19 @@ the same staged Join journey.
    Request no account/organization permissions, webhooks or API fork authority.
    Prefer **Only select repositories** when installing it on a Reviewer's direct
    Personal Account fork. Do not require access to unrelated repositories.
-3. In `wrangler.jsonc`, set the public `GITHUB_APP_ID`, `GITHUB_APP_SLUG`,
-   `GITHUB_APP_CLIENT_ID`, the actual `JOIN_SERVICE_ORIGIN` and
-   `JOIN_WEBSITE_RETURN_URL`. The latter is
-   `https://taco3064.github.io/shoal-app/join/` in production. The service origin
-   is the exact Worker HTTPS origin, without a path. The configuration declares
-   the entry `src/join/worker.ts`, `nodejs_compat`, the compatibility date,
-   `JOIN_FLOWS` binding and the `JoinFlow` SQLite migration. Preserve the binding
-   and migration identity on subsequent deployments; do not recreate sessions by
-   renaming the binding or class.
+3. Configure the public Worker values as GitHub Actions repository variables:
+   `GITHUB_APP_ID`, `GITHUB_APP_SLUG`, `GITHUB_APP_CLIENT_ID`,
+   `PUBLIC_SHOAL_JOIN_SERVICE_URL` and `JOIN_WEBSITE_RETURN_URL`. The return URL
+   is `https://taco3064.github.io/shoal-app/join/` in production. The service
+   URL is the exact Worker HTTPS origin, without a path. The committed
+   `wrangler.jsonc` preserves the entry `src/join/worker.ts`, `nodejs_compat`,
+   compatibility date, `JOIN_FLOWS` binding and `JoinFlow` SQLite migration.
+   Preserve the binding and migration identity on subsequent deployments; do not
+   recreate sessions by renaming the binding or class.
 4. Install using Node 24 and the lockfile: `npm ci`. Authenticate the authorized
-   Cloudflare operator with `npx wrangler login`. Generate a GitHub App private
-   key and client secret; provide them via interactive Workers Secrets input:
+   Cloudflare operator once with `npx wrangler login`. Generate a GitHub App
+   private key and client secret; provide them via interactive Workers Secrets
+   input:
 
    ```bash
    npx wrangler secret put GITHUB_APP_PRIVATE_KEY
@@ -40,22 +41,32 @@ the same staged Join journey.
    `vars`, publish it to Pages, paste it in a ticket, or log it. No additional
    cryptographic signing secret is required: session/CSRF/OAuth identifiers use
    cryptographically random 256-bit values rather than self-signed browser data.
-5. Set the GitHub App callback URL to the **real** Worker URL
-   `https://<worker>.<subdomain>.workers.dev/auth/callback`. Build and inspect the
-   deployable Worker with `npm run build:join`, then deploy using
-   `npm run deploy:join`. Confirm `/health` on that exact endpoint. A successful
-   dry-run proves packaging only; it is not production deployment evidence.
-6. Set GitHub repository Actions variable `PUBLIC_SHOAL_JOIN_SERVICE_URL` to that
-   exact verified Worker origin. The existing Network Scan / Pages build consumes
-   this one public variable. Publish Pages through its normal successful scan and
-   build workflow. The variable is a public service URL, never a secret.
-7. Exercise the actual Pages → Worker → Durable Object → GitHub flow below before
-   claiming production-complete delivery. The external registration, installation
-   and secret steps may be owner-operated; they remain required live evidence.
+5. Add GitHub Actions deployment credentials as protected repository or
+   environment secrets: `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`. The
+   API token must be scoped no broader than needed to deploy
+   `shoal-quick-web-join` and its existing Durable Object configuration. Do not
+   copy the GitHub App private key or GitHub App client secret into GitHub
+   Actions; those remain Cloudflare Worker runtime secrets.
+6. Set the GitHub App callback URL to the **real** Worker URL
+   `https://<worker>.<subdomain>.workers.dev/auth/callback`. Build and inspect
+   the deployable Worker with `npm run build:join`. Ordinary production delivery
+   after bootstrap is automatic: successful `main` Verify triggers
+   `Deploy Quick Web Join Worker`, which checks out the exact verified `main`
+   SHA, deploys the Worker with Wrangler, and verifies production `/health`.
+   A successful dry-run proves packaging only; it is not production deployment
+   evidence.
+7. GitHub Pages publication waits for the successful Worker deployment workflow
+   for the same `main` SHA, then Network Scan builds Pages with
+   `PUBLIC_SHOAL_JOIN_SERVICE_URL`. The variable is a public service URL, never a
+   secret. Exercise the actual Pages → Worker → Durable Object → GitHub flow
+   below before claiming production-complete delivery. The external
+   registration, installation and secret steps may be owner-operated; they remain
+   required live evidence.
 
-`deploy/quick-web-join/environment.example` lists public variables and secret
-names. It contains no credentials. Local secrets, when needed for authorized
-local work, belong only in ignored `.dev.vars`; production uses Workers Secrets.
+`deploy/quick-web-join/environment.example` lists public variables, GitHub
+Actions deployment secrets and Worker runtime secret names. It contains no
+credentials. Local secrets, when needed for authorized local work, belong only in
+ignored `.dev.vars`; production runtime secrets use Workers Secrets.
 
 ## Local manual authorization check
 
@@ -253,6 +264,13 @@ authenticated GitHub user ID and controlled direct-fork Repository ID. Redact
 all secret, cookie, handoff, session and CSRF values. Record authoritative
 before/after branch heads, governed bytes, Policy bytes and relevant repository
 settings, plus the complete changed-path/setting comparison.
+
+For production delivery verification, record the exact successful `main` Verify
+SHA, the `Deploy Quick Web Join Worker` run, Wrangler deployment success for
+`shoal-quick-web-join`, production `/health` success, and the subsequent Network
+Scan / Pages deployment run for the same SHA. A PR-only Verify, failed `main`
+Verify, Worker dry-run, or local `npm run deploy:join` is not production-complete
+deployment evidence.
 
 Exercise real authorization start/cancel; native fork and selected-repository
 App access; already-forked incomplete setup; confirmed Issues/Actions/managed

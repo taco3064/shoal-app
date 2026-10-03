@@ -5,7 +5,7 @@ on:
     - cron: '35 4 * * 1'
   workflow_dispatch:
   workflow_run:
-    workflows: [Verify]
+    workflows: [Deploy Quick Web Join Worker]
     types: [completed]
 
 permissions:
@@ -16,7 +16,6 @@ jobs:
     if: >-
       github.event_name != 'workflow_run' ||
       (github.event.workflow_run.conclusion == 'success' &&
-       github.event.workflow_run.event == 'push' &&
        github.event.workflow_run.head_branch == 'main' &&
        github.event.workflow_run.head_repository.full_name == github.repository)
     runs-on: ubuntu-latest
