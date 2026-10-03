@@ -1,3 +1,4 @@
+import { githubFailure } from '../github_join';
 import type { DurableSession, HeldPlan } from './sessions';
 import { opaqueId } from './sessions';
 
@@ -46,7 +47,7 @@ export function stoppedJob(job: Job, error?: unknown): void {
       ? 'blocked'
       : 'failed';
 
-  job.error = {
+  job.error = githubFailure(error)?.error ?? {
     code:
       error instanceof Error && error.message === 'STALE_PLAN'
         ? 'STALE_PLAN'
@@ -54,4 +55,12 @@ export function stoppedJob(job: Job, error?: unknown): void {
     message:
       'Execution stopped. Inspect again for verified progress and a fresh plan.',
   };
+}
+
+export function clearRepositoryState(session: DurableSession): void {
+  delete session.plan;
+  delete session.job;
+  delete session.execution;
+  delete session.policyDecision;
+  session.busy = false;
 }

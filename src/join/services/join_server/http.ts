@@ -2,7 +2,7 @@ import { readBody } from './body';
 import type { AuthIdentity } from './auth';
 import { handleAuth } from './auth';
 import type { JoinConfig } from './config';
-import { plan, savePlan, stoppedJob } from './execution';
+import { plan, savePlan, stoppedJob, clearRepositoryState } from './execution';
 import { acceptPolicyResult, applyPolicyCompletion } from './policy_completion';
 import { sessionRestoreMatches } from './session_restore';
 import {
@@ -283,10 +283,18 @@ export class JoinHttp {
         ? repositoryId(adapter.publicInspection(previous))
         : null;
 
-      const inspection = await adapter.inspect(
-        authContext(session, userToken),
-        previous,
-      );
+      let inspection: unknown;
+
+      try {
+        inspection = await adapter.inspect(authContext(session, userToken), previous);
+      } catch (error) {
+        // A failed inspection cannot leave a previously confirmed repository
+        // plan usable, including when deletion was proven before discovery failed.
+        clearRepositoryState(session);
+        await this.persist();
+
+        throw error;
+      }
 
       const nextRepositoryId = repositoryId(adapter.publicInspection(inspection));
 
@@ -294,11 +302,7 @@ export class JoinHttp {
         previousRepositoryId !== null
         && previousRepositoryId !== nextRepositoryId
       ) {
-        delete session.plan;
-        delete session.job;
-        delete session.execution;
-        delete session.policyDecision;
-        session.busy = false;
+        clearRepositoryState(session);
       }
 
       const publicInspection = applyPolicyCompletion(

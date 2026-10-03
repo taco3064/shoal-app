@@ -7,6 +7,8 @@ import {
 } from './content_write';
 import { encodeLocator, encodePath } from './locators';
 import { appJwt } from './auth';
+import { GitHubError } from './errors';
+import { githubRequest } from './request';
 import type {
   ActionsPolicy,
   AppConfig,
@@ -32,19 +34,6 @@ const operationPermissions: Record<
   policy: { metadata: 'read', contents: 'write' },
 };
 
-export class GitHubError extends Error {
-  constructor(
-    public readonly status: number,
-    public readonly details: {
-      pathClass: string;
-      rateLimitRemaining: string | null;
-      rateLimitReset: string | null;
-    },
-  ) {
-    super(`GitHub request failed (${status}).`);
-  }
-}
-
 export class GitHubJoinClient {
   constructor(
     private readonly config: AppConfig,
@@ -57,47 +46,7 @@ export class GitHubJoinClient {
     method = 'GET',
     body?: unknown,
   ): Promise<T> {
-    if (!path.startsWith('/') || path.includes('://')) {
-      throw new Error('Invalid internal GitHub operation.');
-    }
-
-    let response: Response;
-
-    try {
-      response = await this.fetcher(`https://api.github.com${path}`, {
-        method,
-        redirect: 'manual',
-        signal: AbortSignal.timeout(15_000),
-        headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          'User-Agent': 'Shoal-Quick-Web-Join',
-          Accept: 'application/vnd.github+json',
-          'X-GitHub-Api-Version': '2022-11-28',
-          'Content-Type': 'application/json',
-        },
-        body: body === undefined ? undefined : JSON.stringify(body),
-      });
-    } catch {
-      throw new Error('GitHub request unavailable or timed out.');
-    }
-
-    if (!response.ok) {
-      throw new GitHubError(response.status, {
-        pathClass: pathClass(path),
-        rateLimitRemaining: response.headers.get('x-ratelimit-remaining'),
-        rateLimitReset: response.headers.get('x-ratelimit-reset'),
-      });
-    }
-
-    if (response.status === 204) {
-      return undefined as T;
-    }
-
-    try {
-      return (await response.json()) as T;
-    } catch {
-      throw new Error('GitHub response is unavailable or invalid.');
-    }
+    return githubRequest<T>(this.fetcher, { token, path, method, body });
   }
 
   async identity(context: GitHubAuthContext): Promise<GitHubUser> {
@@ -132,48 +81,64 @@ export class GitHubJoinClient {
     return identity;
   }
 
-  async rootForks(
+  async* rootForks(
     token: string,
     verifiedRoot: Repository,
-  ): Promise<Repository[]> {
-    const items: Repository[] = [];
-
+  ): AsyncGenerator<Repository[]> {
     for (let page = 1; page <= 100; page += 1) {
       const result = await this.request<Repository[]>(
         token,
         `/repos/${encodeLocator(verifiedRoot.full_name)}/forks?per_page=100&page=${page}`,
       );
 
-      items.push(...result);
+      if (!Array.isArray(result)) {
+        throw new GitHubError(200, {
+          pathClass: 'root_fork_discovery',
+          failure: 'invalid_response',
+        });
+      }
+
+      yield result;
 
       if (result.length < 100) {
-        return items;
+        return;
       }
     }
 
-    throw new Error('Repository discovery pagination limit exceeded.');
+    throw new GitHubError(0, {
+      pathClass: 'root_fork_discovery',
+      failure: 'pagination',
+    });
   }
 
-  async ownerRepositories(
+  async* ownerRepositories(
     token: string,
     identity: GitHubUser,
-  ): Promise<Repository[]> {
-    const items: Repository[] = [];
-
+  ): AsyncGenerator<Repository[]> {
     for (let page = 1; page <= 100; page += 1) {
       const result = await this.request<Repository[]>(
         token,
         `/users/${encodeURIComponent(identity.login)}/repos?type=owner&per_page=100&page=${page}`,
       );
 
-      items.push(...result);
+      if (!Array.isArray(result)) {
+        throw new GitHubError(200, {
+          pathClass: 'owner_repository_discovery',
+          failure: 'invalid_response',
+        });
+      }
+
+      yield result;
 
       if (result.length < 100) {
-        return items;
+        return;
       }
     }
 
-    throw new Error('Repository discovery pagination limit exceeded.');
+    throw new GitHubError(0, {
+      pathClass: 'owner_repository_discovery',
+      failure: 'pagination',
+    });
   }
 
   repository(token: string, locator: string): Promise<Repository> {
@@ -435,40 +400,4 @@ export class GitHubJoinClient {
       verifyRoot,
     });
   }
-}
-
-function pathClass(path: string): string {
-  if (path === '/user' || /^\/user\/\d+$/.test(path)) {
-    return 'user_identity';
-  }
-
-  if (path.includes('/forks')) {
-    return 'root_fork_discovery';
-  }
-
-  if (path.includes('/contents/')) {
-    return 'repository_content_read';
-  }
-
-  if (path.includes('/actions/')) {
-    return 'repository_actions';
-  }
-
-  if (path.includes('/installation')) {
-    return 'app_installation_binding';
-  }
-
-  if (path.includes('/git/')) {
-    return 'git_data';
-  }
-
-  if (path.startsWith('/repos/') || path.startsWith('/repositories/')) {
-    return 'repository_metadata';
-  }
-
-  if (path.includes('/access_tokens')) {
-    return 'installation_token';
-  }
-
-  return 'github_api';
 }

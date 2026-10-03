@@ -1,4 +1,5 @@
 import { readBody, readBytes } from './body';
+import { requestError } from './request_error';
 import type {
   DurableObjectState,
   Request as WorkerRequest,
@@ -63,36 +64,7 @@ export class JoinFlow extends DurableObject<JoinEnvironment> {
 
         return await handler.handle(request);
       } catch (cause) {
-        if (cause instanceof Error && isConfigurationError(cause.message)) {
-          return json(503, {
-            error: {
-              code: 'CONFIGURATION_REQUIRED',
-              message: cause.message,
-            },
-          });
-        }
-
-        const githubRateLimit = githubRateLimitError(cause);
-
-        if (githubRateLimit) {
-          return json(429, {
-            error: {
-              code: 'GITHUB_RATE_LIMITED',
-              message:
-                'GitHub rate limit is temporarily exhausted. Retry after reset.',
-              status: githubRateLimit.status,
-              pathClass: githubRateLimit.pathClass,
-              rateLimitReset: githubRateLimit.rateLimitReset,
-            },
-          });
-        }
-
-        return json(400, {
-          error: {
-            code: 'REQUEST_REJECTED',
-            message: 'Request rejected. Refresh inspection or authorize again.',
-          },
-        });
+        return requestError(cause);
       }
     });
 
@@ -216,47 +188,6 @@ export class JoinFlow extends DurableObject<JoinEnvironment> {
 
     return held.token;
   }
-}
-
-function isConfigurationError(message: string): boolean {
-  return (
-    message.endsWith(' is required')
-    || message === 'Production authentication requires HTTPS'
-  );
-}
-
-function githubRateLimitError(cause: unknown): null | {
-  status: number;
-  pathClass: string;
-  rateLimitReset: string | null;
-} {
-  const value = cause as {
-    status?: unknown;
-    details?: {
-      pathClass?: unknown;
-      rateLimitRemaining?: unknown;
-      rateLimitReset?: unknown;
-    };
-  };
-
-  if (
-    (value.status !== 403 && value.status !== 429)
-    || value.details?.rateLimitRemaining !== '0'
-  ) {
-    return null;
-  }
-
-  return {
-    status: value.status,
-    pathClass:
-      typeof value.details.pathClass === 'string'
-        ? value.details.pathClass
-        : 'github_api',
-    rateLimitReset:
-      typeof value.details.rateLimitReset === 'string'
-        ? value.details.rateLimitReset
-        : null,
-  };
 }
 
 export async function workerFetch(
