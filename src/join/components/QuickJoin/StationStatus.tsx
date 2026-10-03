@@ -20,9 +20,7 @@ const stateLabels: Record<Stage['state'], string> = {
 };
 
 export default function StationStatus({ join }: { join: JoinState }) {
-  const [localStageId, setLocalStageId] = useState<string | null>(
-    readLocalStageId,
-  );
+  const [localStageId, setLocalStageId] = useState<string | null>(null);
 
   const inspection = join.inspection ?? previewInspection();
   const preview = !join.inspection;
@@ -73,6 +71,7 @@ export default function StationStatus({ join }: { join: JoinState }) {
   useEffect(() => {
     const syncFromUrl = () => setLocalStageId(readLocalStageId());
 
+    syncFromUrl();
     window.addEventListener('popstate', syncFromUrl);
 
     return () => window.removeEventListener('popstate', syncFromUrl);
