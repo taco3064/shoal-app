@@ -79,6 +79,11 @@ type Snapshot = {
   installationUrl?: string;
 };
 
+type ServerJob = Omit<Job, 'result'> & {
+  id?: string;
+  result?: { inspection: Snapshot };
+};
+
 const operationLabels: Record<string, string> = {
   enable_issues: 'Enable Issues',
   enable_actions: 'Enable repository Actions',
@@ -270,6 +275,16 @@ export class JoinError extends Error {
   }
 }
 
+function publicJob(value: ServerJob): Job & { id?: string } {
+  return {
+    id: value.id,
+    status: value.status,
+    progress: value.progress,
+    error: value.error,
+    result: value.result ? inspectionView(value.result.inspection) : undefined,
+  };
+}
+
 function opaqueId(): string {
   const bytes = crypto.getRandomValues(new Uint8Array(32));
 
@@ -340,18 +355,15 @@ export function joinClient(serviceUrl: string) {
       inspectionView(await request<Snapshot>('/api/inspect', session, {})),
     execute: (session: Session, planId: string) =>
       request<{ jobId: string }>('/api/execute', session, { planId }),
-    status: async (session: Session, jobId: string): Promise<Job> => {
-      const value = await request<
-        Omit<Job, 'result'> & { result?: { inspection: Snapshot } }
-      >(`/api/status?jobId=${encodeURIComponent(jobId)}`, session);
-
-      return {
-        status: value.status,
-        progress: value.progress,
-        error: value.error,
-        result: value.result ? inspectionView(value.result.inspection) : undefined,
-      };
-    },
+    status: async (session: Session, jobId: string): Promise<Job> =>
+      publicJob(
+        await request<ServerJob>(
+          `/api/status?jobId=${encodeURIComponent(jobId)}`,
+          session,
+        ),
+      ),
+    currentStatus: async (session: Session): Promise<Job & { id?: string }> =>
+      publicJob(await request<ServerJob>('/api/status/current', session)),
     policy: async (
       session: Session,
       planId: string,

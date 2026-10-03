@@ -1,6 +1,8 @@
 import type useQuickJoin from '~app/join/hooks/useQuickJoin';
 
 type Inspection = NonNullable<ReturnType<typeof useQuickJoin>['inspection']>;
+type Session = NonNullable<ReturnType<typeof useQuickJoin>['session']>;
+type Stage = Inspection['stages'][number];
 
 export function previewInspection(): Inspection {
   return {
@@ -44,6 +46,66 @@ export function previewInspection(): Inspection {
         label: 'Station ready / publication waiting',
         state: 'waiting',
         detail: 'Readiness and Directory publication appear after verification.',
+      },
+    ],
+    operations: [],
+    ready: false,
+  };
+}
+
+export function authenticatedPlaceholderInspection(
+  session: Session,
+  mode: 'verifying' | 'failed' | 'executing',
+): Inspection {
+  const downstreamState: Stage['state'] = mode === 'failed' ? 'failed' : 'waiting';
+
+  const nodeDetail = mode === 'failed'
+    ? 'Shoal could not verify current GitHub repository state. Refresh to retry.'
+    : 'Shoal is checking your current Reviewer Node state from GitHub.';
+
+  return {
+    planId: '',
+    identity: session.identity,
+    rootHead: '',
+    rootOwner: false,
+    stages: [
+      {
+        id: 'identity',
+        label: 'GitHub identity',
+        state: 'complete',
+        detail: `Signed in as ${session.identity.login}.`,
+      },
+      {
+        id: 'node',
+        label: 'Reviewer Node / direct fork',
+        state: mode === 'executing' ? 'waiting' : downstreamState,
+        detail: nodeDetail,
+      },
+      {
+        id: 'access',
+        label: 'GitHub App repository access',
+        state: 'waiting',
+        detail: 'Waiting for the latest authoritative inspection.',
+      },
+      {
+        id: 'station',
+        label: 'Station setup',
+        state: mode === 'executing' ? 'executing' : 'waiting',
+        detail: mode === 'executing'
+          ? 'Shoal is recovering the active server-side execution.'
+          : 'Station setup remains locked until inspection succeeds.',
+      },
+      {
+        id: 'policy',
+        label: 'Review Policy',
+        state: 'waiting',
+        detail: 'Policy state remains unverified until inspection succeeds.',
+      },
+      {
+        id: 'ready',
+        label: 'Station ready / publication waiting',
+        state: 'waiting',
+        detail: 'Readiness is shown only after verified inspection.',
       },
     ],
     operations: [],

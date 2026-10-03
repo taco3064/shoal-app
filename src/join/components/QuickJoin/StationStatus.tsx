@@ -3,7 +3,10 @@ import type useQuickJoin from '~app/join/hooks/useQuickJoin';
 import LocalStageGuidance from './LocalStageGuidance';
 import PolicyStep from './PolicyStep';
 import StatusIcon from './StatusIcon';
-import { previewInspection } from './preview_inspection';
+import {
+  authenticatedPlaceholderInspection,
+  previewInspection,
+} from './preview_inspection';
 
 type JoinState = ReturnType<typeof useQuickJoin>;
 type Stage = NonNullable<JoinState['inspection']>['stages'][number];
@@ -30,8 +33,20 @@ const rootOwnerStage: Stage = {
 export default function StationStatus({ join }: { join: JoinState }) {
   const [localStageId, setLocalStageId] = useState<string | null>(null);
 
-  const inspection = join.inspection ?? previewInspection();
-  const preview = !join.inspection;
+  const preview = !join.session && !join.inspection;
+  const recoveringExecution = !join.inspection && Boolean(join.session && join.job);
+
+  const inspection = join.inspection
+    ?? (
+      join.session
+        ? authenticatedPlaceholderInspection(
+            join.session,
+            recoveringExecution
+              ? 'executing'
+              : join.inspectionState === 'failed' ? 'failed' : 'verifying',
+          )
+        : previewInspection()
+    );
 
   const stages = join.executionStages
     ?? (
@@ -97,6 +112,12 @@ export default function StationStatus({ join }: { join: JoinState }) {
             <p>
               Sign in with GitHub to hydrate these stages with authoritative
               station state.
+            </p>
+          )}
+          {!preview && !join.inspection && (
+            <p>
+              GitHub identity is verified. Repository state is being checked
+              before any setup action is enabled.
             </p>
           )}
         </div>

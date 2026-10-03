@@ -13,12 +13,23 @@ import type {
   Stage,
 } from '~app/join/services/join_client';
 import { writeStoredSession } from '~app/join/services/session_storage';
+import { useAuthFlow } from './auth_flow';
+import { useExternalRefresh } from './external_refresh';
+import type { AuthState, ExecutionState, InspectionState } from './state';
 
 export default function useQuickJoin(serviceUrl: string) {
   const [hydrated, setHydrated] = useState(false);
   const [session, setSession] = useState<Session>();
+
+  const [authState, setAuthState] = useState<AuthState>('unknown');
+
+  const [inspectionState, setInspectionState] = useState<InspectionState>('idle');
+
   const [inspection, setInspection] = useState<Inspection>();
   const [executionStages, setExecutionStages] = useState<Stage[]>();
+
+  const [executionState, setExecutionState] = useState<ExecutionState>('none');
+
   const [job, setJob] = useState<Job>();
   const [jobId, setJobId] = useState<string>();
   const [policyPlan, setPolicyPlan] = useState<PolicyPlan>();
@@ -26,13 +37,9 @@ export default function useQuickJoin(serviceUrl: string) {
   const [content, setContent] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
-  const [authenticating, setAuthenticating] = useState(false);
   const [stale, setStale] = useState(false);
-  const popup = useRef<Window | null>(null);
-  const external = useRef<Window | null>(null);
-  const externalTimer = useRef<ReturnType<typeof setInterval> | null>(null);
-  const externalPending = useRef(false);
   const busyRef = useRef(false);
+  const refreshGeneration = useRef(0);
 
   const resolvedServiceUrl = resolveJoinServiceUrl(serviceUrl);
 
@@ -44,21 +51,13 @@ export default function useQuickJoin(serviceUrl: string) {
     setHydrated(true);
   }, []);
 
-  useStoredQuickJoinSession({
-    authenticating,
-    client,
-    hydrated,
-    session,
-    setError,
-    setSession,
-  });
-
   useEffect(() => {
     busyRef.current = busy;
   }, [busy]);
 
   const acceptInspection = useCallback((value: Inspection) => {
     setInspection(value);
+    setInspectionState('verified');
     setExecutionStages(undefined);
     setContent(value.policy?.current ?? '');
     setPolicyChoice(value.policy?.isDefault ? 'default' : 'keep');
@@ -73,6 +72,9 @@ export default function useQuickJoin(serviceUrl: string) {
     ) {
       writeStoredSession(undefined);
       setSession(undefined);
+      setAuthState(cause.code === 'SESSION_EXPIRED' ? 'expired' : 'unauthenticated');
+      setInspectionState('idle');
+      setExecutionState('none');
       setInspection(undefined);
       setPolicyPlan(undefined);
       setJob(undefined);
@@ -88,47 +90,102 @@ export default function useQuickJoin(serviceUrl: string) {
     if (cause instanceof JoinError && /stale|concurrent/i.test(cause.code)) {
       setStale(true);
       setPolicyPlan(undefined);
+      setInspectionState('stale');
       setInspection(undefined);
+    } else if (session) {
+      setInspectionState('failed');
     }
-  }, []);
+  }, [session]);
+
+  const { authenticating, authenticate, cancelAuth } = useAuthFlow({
+    client,
+    handleError,
+    setAuthState,
+    setError,
+    setSession,
+  });
+
+  useStoredQuickJoinSession({
+    authenticating,
+    client,
+    hydrated,
+    session,
+    setAuthState,
+    setError,
+    setSession,
+  });
+
+  const recoverCurrentJob = useCallback(async () => {
+    if (!client || !session) {
+      return false;
+    }
+
+    try {
+      const current = await client.currentStatus(session);
+
+      setJob(current);
+      setJobId(current.id);
+      setExecutionState(current.status);
+      setBusy(current.status === 'queued' || current.status === 'running');
+
+      return true;
+    } catch {
+      return false;
+    }
+  }, [client, session]);
 
   const refresh = useCallback(async () => {
     if (!client || !session || busyRef.current) {
       return;
     }
 
+    const generation = refreshGeneration.current + 1;
+
+    refreshGeneration.current = generation;
     busyRef.current = true;
     setBusy(true);
+    setInspectionState('verifying');
     setError('');
     setJobId(undefined);
     setJob(undefined);
+    setExecutionState('none');
     setExecutionStages(undefined);
+    let recoveredJob = false;
 
     try {
-      acceptInspection(await client.inspect(session));
+      const nextInspection = await client.inspect(session);
+
+      if (refreshGeneration.current === generation) {
+        acceptInspection(nextInspection);
+      }
     } catch (cause) {
-      handleError(cause);
+      if (
+        cause instanceof JoinError
+        && cause.code === 'OPERATION_RUNNING'
+        && await recoverCurrentJob()
+      ) {
+        recoveredJob = true;
+        setInspectionState('stale');
+
+        return;
+      }
+
+      if (refreshGeneration.current === generation) {
+        handleError(cause);
+      }
     } finally {
-      busyRef.current = false;
-      setBusy(false);
+      if (refreshGeneration.current === generation) {
+        busyRef.current = recoveredJob;
+        setBusy(recoveredJob);
+      }
     }
-  }, [client, session, acceptInspection, handleError]);
+  }, [client, session, acceptInspection, handleError, recoverCurrentJob]);
 
-  const refreshAfterExternal = useCallback(() => {
-    if (!externalPending.current) {
-      return;
-    }
-
-    externalPending.current = false;
-    external.current = null;
-
-    if (externalTimer.current) {
-      clearInterval(externalTimer.current);
-      externalTimer.current = null;
-    }
-
-    void refresh();
-  }, [refresh]);
+  const openExternal = useExternalRefresh({
+    refresh,
+    session,
+    setError,
+  });
 
   useEffect(() => {
     if (session) {
@@ -153,6 +210,7 @@ export default function useQuickJoin(serviceUrl: string) {
         }
 
         setJob(value);
+        setExecutionState(value.status);
 
         if (value.result) {
           acceptInspection(value.result);
@@ -166,6 +224,7 @@ export default function useQuickJoin(serviceUrl: string) {
           }
 
           setBusy(false);
+          busyRef.current = false;
 
           if (value.error) {
             handleError(new JoinError(value.error.message, value.error.code));
@@ -187,150 +246,6 @@ export default function useQuickJoin(serviceUrl: string) {
     };
   }, [client, session, jobId, acceptInspection, handleError]);
 
-  useEffect(() => {
-    if (!client) {
-      return;
-    }
-
-    const receive = async (event: MessageEvent) => {
-      if (
-        event.origin !== client.origin
-        || !popup.current
-        || event.source !== popup.current
-      ) {
-        return;
-      }
-
-      if (event.data?.type === 'shoal-auth-cancelled') {
-        setAuthenticating(false);
-
-        setError(
-          'GitHub authorization was cancelled. You can retry or continue '
-          + 'with the Local / CLI guidance in the staged journey.',
-        );
-
-        popup.current.close();
-        popup.current = null;
-      } else if (
-        event.data?.type === 'shoal-auth'
-        && typeof event.data.code === 'string'
-      ) {
-        popup.current.close();
-        popup.current = null;
-
-        try {
-          const nextSession = await client.session(event.data.code);
-
-          writeStoredSession(nextSession);
-          setSession(nextSession);
-          setError('');
-        } catch (cause) {
-          handleError(cause);
-        } finally {
-          setAuthenticating(false);
-        }
-      }
-    };
-
-    window.addEventListener('message', receive);
-
-    return () => window.removeEventListener('message', receive);
-  }, [client, handleError]);
-
-  useEffect(() => {
-    if (!authenticating) {
-      return;
-    }
-
-    const timer = setInterval(() => {
-      if (popup.current?.closed) {
-        popup.current = null;
-        setAuthenticating(false);
-
-        setError(
-          'GitHub authorization was cancelled. Your public access is unchanged.',
-        );
-      }
-    }, 500);
-
-    return () => clearInterval(timer);
-  }, [authenticating]);
-
-  useEffect(() => {
-    if (!session) {
-      return;
-    }
-
-    const onReturn = () => {
-      if (document.visibilityState === 'visible') {
-        refreshAfterExternal();
-      }
-    };
-
-    window.addEventListener('focus', onReturn);
-    document.addEventListener('visibilitychange', onReturn);
-
-    return () => {
-      window.removeEventListener('focus', onReturn);
-      document.removeEventListener('visibilitychange', onReturn);
-    };
-  }, [session, refreshAfterExternal]);
-
-  useEffect(() => () => {
-    if (externalTimer.current) {
-      clearInterval(externalTimer.current);
-      externalTimer.current = null;
-    }
-  }, []);
-
-  const authenticate = () => {
-    setError('');
-
-    if (!client) {
-      return;
-    }
-
-    popup.current = window.open(
-      client.authUrl,
-      'shoal-github-authorization',
-      'popup,width=680,height=760',
-    );
-
-    setAuthenticating(Boolean(popup.current));
-
-    if (!popup.current) {
-      setError('Allow the GitHub authorization popup, then try again.');
-    }
-  };
-
-  const openExternal = (url: string) => {
-    if (externalTimer.current) {
-      clearInterval(externalTimer.current);
-      externalTimer.current = null;
-    }
-
-    externalPending.current = true;
-    external.current = window.open(url, 'shoal-external-step');
-
-    if (!external.current) {
-      setError('Open the external GitHub step, then use Refresh status.');
-
-      return;
-    }
-
-    try {
-      external.current.opener = null;
-    } catch {
-      // Some browsers expose a restricted WindowProxy for external tabs.
-    }
-
-    externalTimer.current = setInterval(() => {
-      if (external.current?.closed) {
-        refreshAfterExternal();
-      }
-    }, 500);
-  };
-
   const run = async (policy = false) => {
     const planId = policy ? policyPlan?.planId : inspection?.planId;
 
@@ -339,6 +254,8 @@ export default function useQuickJoin(serviceUrl: string) {
     }
 
     setBusy(true);
+    busyRef.current = true;
+    setExecutionState('queued');
     setError('');
 
     setExecutionStages(
@@ -370,9 +287,11 @@ export default function useQuickJoin(serviceUrl: string) {
         : await client.execute(session, planId);
 
       setJobId(value.jobId);
+      setExecutionState('queued');
     } catch (cause) {
       handleError(cause);
       setBusy(false);
+      busyRef.current = false;
     }
   };
 
@@ -387,7 +306,7 @@ export default function useQuickJoin(serviceUrl: string) {
     try {
       const fresh = await client.inspect(session);
 
-      setInspection(fresh);
+      acceptInspection(fresh);
 
       setPolicyPlan(
         await client.policy(
@@ -414,12 +333,16 @@ export default function useQuickJoin(serviceUrl: string) {
     }
 
     setSession(undefined);
+    setAuthState('unauthenticated');
     writeStoredSession(undefined);
     setInspection(undefined);
+    setInspectionState('idle');
     setJob(undefined);
     setJobId(undefined);
     setPolicyPlan(undefined);
+    setExecutionState('none');
     setBusy(false);
+    busyRef.current = false;
   };
 
   return {
@@ -427,6 +350,9 @@ export default function useQuickJoin(serviceUrl: string) {
     inspection,
     executionStages,
     job,
+    authState,
+    inspectionState,
+    executionState,
     policyPlan,
     policyChoice,
     content,
@@ -443,11 +369,7 @@ export default function useQuickJoin(serviceUrl: string) {
     openExternal,
     execute: () => void run(),
     confirmPolicy: () => void run(true),
-    cancelAuth: () => {
-      popup.current?.close();
-      popup.current = null;
-      setAuthenticating(false);
-    },
+    cancelAuth,
     choosePolicy: (choice: 'keep' | 'default' | 'custom') => {
       setPolicyChoice(choice);
       setPolicyPlan(undefined);
