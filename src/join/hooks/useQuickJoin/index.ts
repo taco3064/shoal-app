@@ -94,6 +94,11 @@ export default function useQuickJoin(serviceUrl: string) {
       setInspection(undefined);
     } else if (session) {
       setInspectionState('failed');
+      setInspection(cause instanceof JoinError ? cause.inspection : undefined);
+      setExecutionStages(undefined);
+      setPolicyPlan(undefined);
+      setContent('');
+      setStale(false);
     }
   }, [session]);
 
@@ -227,7 +232,13 @@ export default function useQuickJoin(serviceUrl: string) {
           busyRef.current = false;
 
           if (value.error) {
-            handleError(new JoinError(value.error.message, value.error.code));
+            handleError(new JoinError(
+              value.error.message, value.error.code, value.error,
+            ));
+
+            if (value.result) {
+              setInspection(value.result);
+            }
           }
         }
       } catch (cause) {

@@ -1,4 +1,5 @@
 import { verified } from './verification';
+import { InspectionFailure } from './inspection_failure';
 import { executeStep, fingerprint } from './execute_step';
 import {
   requestFormPath,
@@ -105,6 +106,12 @@ export class StationJoinService {
         operation.error
           = error instanceof Error ? error.message : 'Operation failed.';
 
+        if (error instanceof InspectionFailure) {
+          await notify();
+
+          throw error;
+        }
+
         // Preserve prior verified state. Refresh for retry without replaying mutations.
         try {
           inspection = await this.inspect(userToken, inspection);
@@ -139,7 +146,10 @@ export class StationJoinService {
   ): Promise<number | undefined> {
     const binding = inspection.binding;
 
-    if (!binding || !inspection.nodeHead) {
+    if (
+      !binding || !inspection.nodeHead
+      || !inspection.rootFiles?.form || !inspection.rootFiles.workflow
+    ) {
       throw new Error('Reviewer Node authorization unavailable.');
     }
 
@@ -255,6 +265,7 @@ export class StationJoinService {
     if (
       !inspection.binding
       || !inspection.nodeHead
+      || !inspection.rootFiles?.policy
       || fingerprint(displayed) !== fingerprint(inspection)
     ) {
       throw new Error('STALE_PLAN');
@@ -343,6 +354,14 @@ export class StationJoinService {
 
       operations[0].error
         = error instanceof Error ? error.message : 'Policy write failed.';
+
+      if (error instanceof InspectionFailure) {
+        await progress?.({
+          operations, completed: 0, total: 1, ready: false,
+        });
+
+        throw error;
+      }
     }
 
     const result = {

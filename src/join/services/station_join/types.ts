@@ -22,7 +22,11 @@ export type Inspection = {
   root: Repository;
   rootHead: string;
   nodeHead: string | null;
-  rootFiles: { form: GitFile; workflow: GitFile; policy: GitFile };
+  rootFiles: {
+    form: GitFile | null;
+    workflow: GitFile | null;
+    policy: GitFile | null;
+  } | null;
   files: {
     form: GitFile | null;
     workflow: GitFile | null;

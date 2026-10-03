@@ -3,6 +3,7 @@ export {
   createStationJoinService,
   publicInspection,
 } from './station_join';
+export { InspectionFailure } from './inspection_failure';
 export type {
   Inspection,
   PublicInspection,

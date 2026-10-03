@@ -1,7 +1,15 @@
 import { githubFailure } from '../github_join';
+import { InspectionFailure } from '../station_join';
 import { json } from './http';
 
 export function requestError(cause: unknown): Response {
+  if (cause instanceof InspectionFailure) {
+    return json(cause.httpStatus, {
+      error: cause.error,
+      ...(cause.inspection ? { inspection: cause.inspection } : {}),
+    });
+  }
+
   if (cause instanceof Error && isConfigurationError(cause.message)) {
     return json(503, {
       error: {

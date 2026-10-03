@@ -252,7 +252,8 @@ export class GitHubJoinClient {
         `/repos/${encodeLocator(repository.full_name)}/contents/${encodePath(path)}?ref=${encodeURIComponent(head)}`,
       );
 
-      if (file.type !== 'file' || file.encoding !== 'base64') {
+      if (!file || file.type !== 'file' || file.encoding !== 'base64'
+        || typeof file.sha !== 'string' || typeof file.content !== 'string') {
         throw new Error('Expected a regular GitHub file.');
       }
 

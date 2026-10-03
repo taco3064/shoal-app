@@ -33,7 +33,8 @@ export function verified(
       );
     case 'sync_managed_files':
       return (
-        next.files.form?.content === plan.rootFiles.form.content
+        !!plan.rootFiles?.form && !!plan.rootFiles.workflow
+        && next.files.form?.content === plan.rootFiles.form.content
         && next.files.workflow?.content === plan.rootFiles.workflow.content
       );
     default:

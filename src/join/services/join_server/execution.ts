@@ -1,4 +1,5 @@
 import { githubFailure } from '../github_join';
+import { InspectionFailure } from '../station_join';
 import type { DurableSession, HeldPlan } from './sessions';
 import { opaqueId } from './sessions';
 
@@ -46,6 +47,13 @@ export function stoppedJob(job: Job, error?: unknown): void {
     = error instanceof Error && error.message === 'STALE_PLAN'
       ? 'blocked'
       : 'failed';
+
+  if (error instanceof InspectionFailure) {
+    job.error = error.error;
+    job.result = error.inspection ? { inspection: error.inspection } : undefined;
+
+    return;
+  }
 
   job.error = githubFailure(error)?.error ?? {
     code:

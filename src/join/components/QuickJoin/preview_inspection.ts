@@ -57,7 +57,7 @@ export function authenticatedPlaceholderInspection(
   session: Session,
   mode: 'verifying' | 'failed' | 'executing',
 ): Inspection {
-  const downstreamState: Stage['state'] = mode === 'failed' ? 'failed' : 'waiting';
+  const downstreamState: Stage['state'] = 'waiting';
 
   const nodeDetail = mode === 'failed'
     ? 'Shoal could not verify current GitHub repository state. Refresh to retry.'
