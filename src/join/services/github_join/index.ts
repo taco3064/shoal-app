@@ -1,7 +1,8 @@
 import { GitHubJoinClient } from './github_join';
 import type { AppConfig } from './types';
 
-export { GitHubJoinClient, GitHubError } from './github_join';
+export { GitHubJoinClient } from './github_join';
+export { GitHubError, githubFailure } from './errors';
 
 export function createGitHubJoinClient(
   config: AppConfig,
