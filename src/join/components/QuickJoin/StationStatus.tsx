@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type useQuickJoin from '~app/join/hooks/useQuickJoin';
 import LocalStageGuidance from './LocalStageGuidance';
 import PolicyStep from './PolicyStep';
 import StatusIcon from './StatusIcon';
+import { readLocalStageId, writeLocalStageId } from './local_stage_url';
 
 type JoinState = ReturnType<typeof useQuickJoin>;
 type Inspection = NonNullable<JoinState['inspection']>;
@@ -19,7 +20,10 @@ const stateLabels: Record<Stage['state'], string> = {
 };
 
 export default function StationStatus({ join }: { join: JoinState }) {
-  const [localStageId, setLocalStageId] = useState<string | null>(null);
+  const [localStageId, setLocalStageId] = useState<string | null>(
+    readLocalStageId,
+  );
+
   const inspection = join.inspection ?? previewInspection();
   const preview = !join.inspection;
 
@@ -58,6 +62,28 @@ export default function StationStatus({ join }: { join: JoinState }) {
   );
 
   const localMode = Boolean(localStage);
+
+  useEffect(() => {
+    if (localStageId && !stages.some((stage) => stage.id === localStageId)) {
+      setLocalStageId(null);
+      writeLocalStageId(null);
+    }
+  }, [localStageId, stages]);
+
+  useEffect(() => {
+    const syncFromUrl = () => setLocalStageId(readLocalStageId());
+
+    window.addEventListener('popstate', syncFromUrl);
+
+    return () => window.removeEventListener('popstate', syncFromUrl);
+  }, []);
+
+  const selectLocalStage = (stage: Stage) => {
+    const nextStageId = stage.id === localStage?.id ? null : stage.id;
+
+    setLocalStageId(nextStageId);
+    writeLocalStageId(nextStageId);
+  };
 
   return (
     <>
@@ -129,9 +155,7 @@ export default function StationStatus({ join }: { join: JoinState }) {
                   type="button"
                   aria-pressed={stage.id === localStage?.id}
                   aria-label={`Show Local / CLI instructions for ${stage.label}`}
-                  onClick={() => setLocalStageId(
-                    stage.id === localStage?.id ? null : stage.id,
-                  )}
+                  onClick={() => selectLocalStage(stage)}
                 >
                   Local / CLI
                 </button>
