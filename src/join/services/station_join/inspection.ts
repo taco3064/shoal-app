@@ -43,6 +43,63 @@ function rootOwner(root: Repository, identity: GitHubUser): boolean {
   );
 }
 
+async function repositoryOrNull(
+  client: GitHubJoinClient,
+  token: string,
+  locator: string,
+): Promise<Repository | null> {
+  try {
+    return await client.repository(token, locator);
+  } catch (error) {
+    if (error instanceof GitHubError && error.status === 404) {
+      return null;
+    }
+
+    throw error;
+  }
+}
+
+function repositoryName(repository: Repository): string {
+  const name = repository.full_name.split('/')[1];
+
+  if (!name) {
+    throw new Error('Canonical Network Root repository name is unavailable.');
+  }
+
+  return name;
+}
+
+async function discoverReviewerNodeCandidates(
+  client: GitHubJoinClient,
+  token: string,
+  root: Repository,
+  identity: GitHubUser,
+): Promise<Repository[]> {
+  const candidates: Repository[] = [];
+  const byId = new Set<number>();
+
+  const add = (repository: Repository | null) => {
+    if (!repository || byId.has(repository.id)) {
+      return;
+    }
+
+    byId.add(repository.id);
+    candidates.push(repository);
+  };
+
+  add(await repositoryOrNull(
+    client,
+    token,
+    `${identity.login}/${repositoryName(root)}`,
+  ));
+
+  for (const repository of await client.rootForks(token, root)) {
+    add(repository);
+  }
+
+  return candidates;
+}
+
 export async function inspectStation(
   client: GitHubJoinClient,
   context: GitHubAuthContext,
@@ -99,11 +156,16 @@ export async function inspectStation(
       if (!(error instanceof GitHubError && error.status === 404)) {
         throw error;
       }
-
-      candidates.push(...await client.rootForks(userToken, root));
     }
-  } else {
-    candidates.push(...await client.rootForks(userToken, root));
+  }
+
+  if (!ownsRoot && !candidates.some((candidate) => validNode(candidate, identity))) {
+    candidates.push(...await discoverReviewerNodeCandidates(
+      client,
+      userToken,
+      root,
+      identity,
+    ));
   }
 
   let repository: Repository | null = null;
@@ -117,7 +179,7 @@ export async function inspectStation(
       continue;
     }
 
-    const detail = previous?.repository
+    const detail = previous?.repository?.id === candidate.id
       ? candidate
       : await client.repository(userToken, candidate.full_name);
 
