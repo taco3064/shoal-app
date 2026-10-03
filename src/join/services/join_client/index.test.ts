@@ -6,6 +6,7 @@ const snapshot = {
   planId: 'inspected-plan',
   identity: { id: 21, login: 'reviewer' },
   repository: { id: 90, fullName: 'reviewer/station', defaultBranch: 'main' },
+  rootOwner: false,
   rootHead: 'root-generation',
   nodeHead: 'node-generation',
   waiting: null,
@@ -58,14 +59,18 @@ test('client sends opaque session and exact confirmed plan', async (context) => 
     snapshot.operations,
   );
 
+  const station = inspection.stages.find((stage) => stage.id === 'station');
+
+  assert.equal(station?.state, 'current');
+
   assert.equal(
-    inspection.stages.find((stage) => stage.id === 'actions')?.state,
+    station?.facts?.find((fact) => fact.label === 'Repository Actions')?.state,
     'complete',
   );
 
   assert.equal(
-    inspection.stages.find((stage) => stage.id === 'issues')?.state,
-    'incomplete',
+    station?.facts?.find((fact) => fact.label === 'Issues availability')?.state,
+    'current',
   );
 
   await client.execute(session, inspection.planId);

@@ -35,6 +35,14 @@ export function validNode(
   );
 }
 
+function rootOwner(root: Repository, identity: GitHubUser): boolean {
+  return (
+    identity.type === 'User'
+    && root.owner.type === 'User'
+    && root.owner.id === identity.id
+  );
+}
+
 export async function inspectStation(
   client: GitHubJoinClient,
   context: GitHubAuthContext,
@@ -66,6 +74,7 @@ export async function inspectStation(
   }
 
   const rootFiles = { form, workflow, policy };
+  const ownsRoot = rootOwner(root, identity);
 
   const platformBlocked
     = !allowedSummaryWorkflows.has(digest(workflow))
@@ -73,7 +82,9 @@ export async function inspectStation(
 
   const candidates: Repository[] = [];
 
-  if (previous?.repository) {
+  if (ownsRoot) {
+    candidates.length = 0;
+  } else if (previous?.repository) {
     try {
       const current = await client.repositoryById(userToken, previous.repository.id);
 
@@ -86,6 +97,8 @@ export async function inspectStation(
       if (!(error instanceof GitHubError && error.status === 404)) {
         throw error;
       }
+
+      candidates.push(...await client.rootForks(userToken, root));
     }
   } else {
     candidates.push(...await client.rootForks(userToken, root));
@@ -120,6 +133,7 @@ export async function inspectStation(
   const base: Inspection = {
     identity,
     repository,
+    rootOwner: ownsRoot,
     root,
     rootHead,
     rootFiles,
@@ -130,11 +144,11 @@ export async function inspectStation(
     workflow: null,
     files: { form: null, workflow: null, policy: null },
     operations: [],
-    waiting: repository ? 'app_access' : 'fork',
+    waiting: ownsRoot ? null : repository ? 'app_access' : 'fork',
     ready: false,
   };
 
-  if (!repository) {
+  if (!repository || ownsRoot) {
     return base;
   }
 
@@ -236,6 +250,7 @@ export function publicInspection(inspection: Inspection): PublicInspection {
           defaultBranch: repository.default_branch,
         }
       : null,
+    rootOwner: inspection.rootOwner,
     rootHead: inspection.rootHead,
     nodeHead: inspection.nodeHead,
     waiting: inspection.waiting,

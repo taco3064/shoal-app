@@ -10,7 +10,6 @@ import type {
 
 export default function useQuickJoin(serviceUrl: string) {
   const [hydrated, setHydrated] = useState(false);
-  const [open, setOpen] = useState(false);
   const [session, setSession] = useState<Session>();
   const [inspection, setInspection] = useState<Inspection>();
   const [executionStages, setExecutionStages] = useState<Stage[]>();
@@ -28,7 +27,9 @@ export default function useQuickJoin(serviceUrl: string) {
   const [authenticating, setAuthenticating] = useState(false);
   const [stale, setStale] = useState(false);
   const popup = useRef<Window | null>(null);
-  const dialog = useRef<HTMLDialogElement>(null);
+  const external = useRef<Window | null>(null);
+  const externalPending = useRef(false);
+  const busyRef = useRef(false);
 
   const client = useRef(
     serviceUrl ? joinClient(serviceUrl) : undefined,
@@ -39,12 +40,8 @@ export default function useQuickJoin(serviceUrl: string) {
   }, []);
 
   useEffect(() => {
-    if (open && !dialog.current?.open) {
-      dialog.current?.showModal();
-    } else if (!open) {
-      dialog.current?.close();
-    }
-  }, [open]);
+    busyRef.current = busy;
+  }, [busy]);
 
   const acceptInspection = useCallback((value: Inspection) => {
     setInspection(value);
@@ -69,10 +66,11 @@ export default function useQuickJoin(serviceUrl: string) {
   }, []);
 
   const refresh = useCallback(async () => {
-    if (!client || !session) {
+    if (!client || !session || busyRef.current) {
       return;
     }
 
+    busyRef.current = true;
     setBusy(true);
     setError('');
     setJobId(undefined);
@@ -84,9 +82,20 @@ export default function useQuickJoin(serviceUrl: string) {
     } catch (cause) {
       handleError(cause);
     } finally {
+      busyRef.current = false;
       setBusy(false);
     }
   }, [client, session, acceptInspection, handleError]);
+
+  const refreshAfterExternal = useCallback(() => {
+    if (!externalPending.current) {
+      return;
+    }
+
+    externalPending.current = false;
+    external.current = null;
+    void refresh();
+  }, [refresh]);
 
   useEffect(() => {
     if (session) {
@@ -210,8 +219,27 @@ export default function useQuickJoin(serviceUrl: string) {
     return () => clearInterval(timer);
   }, [authenticating]);
 
+  useEffect(() => {
+    if (!session) {
+      return;
+    }
+
+    const onReturn = () => {
+      if (document.visibilityState === 'visible') {
+        refreshAfterExternal();
+      }
+    };
+
+    window.addEventListener('focus', onReturn);
+    document.addEventListener('visibilitychange', onReturn);
+
+    return () => {
+      window.removeEventListener('focus', onReturn);
+      document.removeEventListener('visibilitychange', onReturn);
+    };
+  }, [session, refreshAfterExternal]);
+
   const authenticate = () => {
-    setOpen(true);
     setError('');
 
     if (!client) {
@@ -229,6 +257,24 @@ export default function useQuickJoin(serviceUrl: string) {
     if (!popup.current) {
       setError('Allow the GitHub authorization popup, then try again.');
     }
+  };
+
+  const openExternal = (url: string) => {
+    externalPending.current = true;
+    external.current = window.open(url, '_blank', 'noopener,noreferrer');
+
+    if (!external.current) {
+      setError('Open the external GitHub step, then use Refresh status.');
+
+      return;
+    }
+
+    const timer = setInterval(() => {
+      if (external.current?.closed) {
+        clearInterval(timer);
+        refreshAfterExternal();
+      }
+    }, 500);
   };
 
   const run = async (policy = false) => {
@@ -316,8 +362,6 @@ export default function useQuickJoin(serviceUrl: string) {
   };
 
   return {
-    open,
-    dialog,
     session,
     inspection,
     executionStages,
@@ -335,14 +379,13 @@ export default function useQuickJoin(serviceUrl: string) {
     refresh,
     previewPolicy,
     logout,
+    openExternal,
     execute: () => void run(),
     confirmPolicy: () => void run(true),
-    show: () => setOpen(true),
-    close: () => {
+    cancelAuth: () => {
       popup.current?.close();
       popup.current = null;
       setAuthenticating(false);
-      setOpen(false);
     },
     choosePolicy: (choice: 'keep' | 'default' | 'custom') => {
       setPolicyChoice(choice);

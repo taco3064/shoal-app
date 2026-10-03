@@ -6,13 +6,21 @@ type JoinState = ReturnType<typeof useQuickJoin>;
 export default function StationStatus({ join }: { join: JoinState }) {
   const inspection = join.inspection!;
 
+  if (inspection.rootOwner) {
+    return (
+      <section className="quick-ready" aria-labelledby="root-owner-title">
+        <h3 id="root-owner-title">Network Root owner</h3>
+        <p>You’re signed in as the Network Root owner.</p>
+        <p>
+          The Network Root is already your Reviewer Node, so Quick Web Join is
+          not required for this account.
+        </p>
+      </section>
+    );
+  }
+
   return (
     <>
-      <p>
-        Authenticated as
-        {' '}
-        <strong>{inspection.identity.login}</strong>
-      </p>
       {inspection.node && (
         <p>
           Reviewer Node:
@@ -30,19 +38,26 @@ export default function StationStatus({ join }: { join: JoinState }) {
           {inspection.node.id}
         </p>
       )}
-      <h3>
-        {join.executionStages
-          ? 'Stages before this execution'
-          : 'Current onboarding stages'}
-      </h3>
+      <h3>Current onboarding journey</h3>
       <ul className="quick-stages">
         {(join.executionStages ?? inspection.stages).map((stage) => (
           <li key={stage.id} data-state={stage.state}>
             <strong>{stage.label}</strong>
             <span>
-              {stage.state === 'complete' ? 'Already verified' : stage.state}
+              {stage.state === 'complete' ? 'Verified' : stage.state}
             </span>
             <p>{stage.detail}</p>
+            {stage.facts && (
+              <ul className="quick-facts">
+                {stage.facts.map((fact) => (
+                  <li key={fact.label} data-state={fact.state}>
+                    <strong>{fact.label}</strong>
+                    <span>{fact.state}</span>
+                    <p>{fact.detail}</p>
+                  </li>
+                ))}
+              </ul>
+            )}
           </li>
         ))}
       </ul>
@@ -51,32 +66,28 @@ export default function StationStatus({ join }: { join: JoinState }) {
       )}
       {inspection.forkUrl && (
         <p>
-          <a
+          <button
             className="button external"
-            href={inspection.forkUrl}
-            target="_blank"
-            rel="noopener noreferrer"
+            onClick={() => join.openExternal(inspection.forkUrl!)}
           >
             Create your direct fork on GitHub
-          </a>
+          </button>
         </p>
       )}
       {inspection.installationUrl && (
         <p>
-          <a
+          <button
             className="button external"
-            href={inspection.installationUrl}
-            target="_blank"
-            rel="noopener noreferrer"
+            onClick={() => join.openExternal(inspection.installationUrl!)}
           >
             Grant App access to this Reviewer Node
-          </a>
+          </button>
         </p>
       )}
       {(inspection.forkUrl || inspection.installationUrl) && (
         <p>
-          Waiting for you on GitHub. Return here and refresh after completing
-          this step.
+          Waiting for you on GitHub. Returning to this page refreshes
+          authoritative state; Refresh status remains available.
         </p>
       )}
       {inspection.operations.length > 0 && (
@@ -112,7 +123,7 @@ export default function StationStatus({ join }: { join: JoinState }) {
             }
             onClick={join.execute}
           >
-            Confirm these setup operations
+            Complete remaining setup automatically
           </button>
         </section>
       )}

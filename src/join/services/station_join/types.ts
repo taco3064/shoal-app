@@ -17,6 +17,7 @@ export type OperationStatus = {
 export type Inspection = {
   identity: GitHubUser;
   repository: Repository | null;
+  rootOwner: boolean;
   binding: NodeBinding | null;
   root: Repository;
   rootHead: string;
@@ -37,6 +38,7 @@ export type Inspection = {
 export type PublicInspection = {
   identity: { id: number; login: string };
   repository: { id: number; fullName: string; defaultBranch: string } | null;
+  rootOwner: boolean;
   rootHead: string;
   nodeHead: string | null;
   waiting: Inspection['waiting'];
