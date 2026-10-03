@@ -75,6 +75,7 @@ export function githubFixture() {
     failActions: false,
     concurrentCommit: false,
     repoGone: false,
+    deletedRepositoryIds: [] as number[],
     requests: [] as {
       path: string;
       method: string;
@@ -114,9 +115,14 @@ export function githubFixture() {
       data = state.user;
     } else if (path === '/user/repos') {
       data = state.repoGone ? [] : [state.node, ...state.unrelatedOwnedForks];
-    } else if (path === `/repositories/${state.node.id}`) {
+    } else if (path.startsWith('/repositories/')) {
+      const id = Number(path.split('/').at(-1));
+
       data = { ...state.node };
-      status = state.repoGone ? 404 : 200;
+
+      status = state.repoGone || state.deletedRepositoryIds.includes(id)
+        ? 404
+        : 200;
     } else if (path === `/repos/${networkRoot.fullName}/forks`) {
       data = state.repoGone ? [] : [state.node, ...state.extraRootForks];
     } else if (path.endsWith('/installation')) {

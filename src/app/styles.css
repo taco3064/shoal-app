@@ -320,24 +320,24 @@ html:has(.navigation-drawer[open]){overflow:hidden}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
 .station-state{display:inline-block;padding:5px 10px;border:1px solid #688264;border-radius:4px;text-transform:uppercase;font-size:11px;letter-spacing:1px;color:#d7f387}.station-setup_required{color:#ffd17e;border-color:#8e6e36;background:#644b2235}.station-note,.request-unavailable{color:#ffd17e;font-size:13px;line-height:1.5;margin:0}.readiness-reasons{padding-left:22px;color:#c2d0ca}.readiness-reasons li{margin:8px 0}
 /* Quick Web Join preserves the public local setup journey. */
-.quick-join{padding:32px;margin:32px 0;border:1px solid #5c8376;border-radius:8px;background:#122c35}
+.quick-join{padding:32px;margin:32px 0;border:1px solid #5c8376;border-radius:8px;background:#122c35;overflow:hidden}
 .quick-join h2{margin-top:0}
-.quick-join>p{max-width:750px;line-height:1.7;color:#c2d0ca}
-.quick-dialog{width:min(850px,calc(100% - 32px));max-height:90vh;overflow-y:auto;border:1px solid #5c8376;border-radius:8px;padding:28px;color:#ecf3ed;background:#10262f}
-.quick-dialog::backdrop{background:#020a10cc}
-.quick-dialog-heading{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:22px}
-.quick-dialog-heading h2{margin:0;font:600 30px 'Space Grotesk',sans-serif}
-.quick-dialog p,.quick-dialog li{line-height:1.7;overflow-wrap:anywhere}
-.quick-dialog a{text-decoration:underline;text-underline-offset:4px}
-.quick-dialog code{font-size:12px;color:#d7f387;overflow-wrap:anywhere}
-.quick-dialog button:disabled,.quick-join button:disabled{opacity:.5;cursor:default;transform:none}
-.quick-stages{display:grid;grid-template-columns:1fr 1fr;gap:10px;list-style:none;padding:0}
-.quick-stages li{padding:16px;border:1px solid #38565b;border-radius:4px}
-.quick-stages strong,.quick-stages span{display:block}
-.quick-stages span{font-size:12px;text-transform:capitalize;color:#dbcb8d}
-.quick-stages li[data-state=complete] span{color:#d7f387}
-.quick-stages li[data-state=blocked] span,.quick-warning{color:#ffb2a2}
-.quick-stages p{font-size:13px;color:#b5c7c4;margin:6px 0 0}
+.quick-join p,.quick-join li{line-height:1.7;overflow-wrap:anywhere}
+.quick-join>p,.quick-join-heading p{max-width:750px;color:#c2d0ca}
+.quick-join code{font-size:12px;color:#d7f387;overflow-wrap:anywhere}
+.quick-join button:disabled{opacity:.5;cursor:default;transform:none}
+.quick-join-heading{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,auto);gap:24px;align-items:start}
+.quick-auth{border:1px solid #38565b;border-radius:6px;padding:18px;background:#0e2630}
+.quick-auth p{margin:0 0 14px}
+.quick-stages{display:grid;grid-template-columns:1fr;gap:12px;list-style:none;padding:0;margin:20px 0}
+.quick-stages>li{padding:18px;border:1px solid #38565b;border-radius:6px;background:#102a33}
+.quick-stages strong,.quick-stages span,.quick-facts strong,.quick-facts span{display:block}
+.quick-stages span,.quick-facts span{font-size:12px;text-transform:capitalize;color:#dbcb8d}
+.quick-stages li[data-state=complete] span,.quick-facts li[data-state=complete] span{color:#d7f387}
+.quick-stages li[data-state=blocked] span,.quick-facts li[data-state=blocked] span,.quick-warning{color:#ffb2a2}
+.quick-stages p,.quick-facts p{font-size:13px;color:#b5c7c4;margin:6px 0 0}
+.quick-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;list-style:none;margin:12px 0 0;padding:0}
+.quick-facts li{padding:12px;border:1px solid #28474f;border-radius:4px;background:#0c222b}
 .quick-ready{border:1px solid #d7f387;padding:20px;margin:24px 0;border-radius:4px}
 .quick-ready h3{color:#d7f387}
 .quick-policy{border-top:1px solid #42605b;margin-top:30px;padding-top:26px}
@@ -351,4 +351,4 @@ html:has(.navigation-drawer[open]){overflow:hidden}
 .quick-policy-confirm pre{max-height:250px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere}
 .quick-progress{padding:20px;border:1px solid #5c8376;border-radius:4px;margin-top:24px}
 .quick-progress progress{width:100%;height:20px;accent-color:#d7f387}
-@media(max-width:600px){.quick-join,.quick-dialog{padding:20px}.quick-stages{grid-template-columns:1fr}.quick-dialog-heading{align-items:flex-start}.quick-dialog .actions{flex-direction:column}.quick-dialog .button{width:100%}}
+@media(max-width:700px){.quick-join{padding:20px}.quick-join-heading,.quick-facts{grid-template-columns:1fr}.quick-auth .button,.quick-join .actions .button{width:100%}}

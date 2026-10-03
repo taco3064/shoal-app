@@ -115,6 +115,68 @@ test('broad installation discovery inspects only the owned Root fork', async () 
   );
 });
 
+test('Network Root owner short-circuits ordinary direct-fork onboarding', async () => {
+  const { client, state } = githubFixture();
+  const service = createStationJoinService(client);
+
+  state.user = { ...state.user, id: state.root.owner.id, login: 'taco3064' };
+
+  const inspection = await service.inspect('user-token');
+  const displayed = publicInspection(inspection);
+
+  assert.equal(inspection.rootOwner, true);
+  assert.equal(inspection.repository, null);
+  assert.equal(inspection.waiting, null);
+  assert.equal(inspection.binding, null);
+  assert.deepEqual(inspection.operations, []);
+  assert.equal(displayed.rootOwner, true);
+  assert.equal(displayed.repository, null);
+
+  assert.ok(
+    !state.requests.some(
+      (request) =>
+        request.path.endsWith('/forks')
+        || request.path.endsWith('/access_tokens')
+        || request.method !== 'GET',
+    ),
+  );
+});
+
+test('deleted previous Reviewer Node recovers through fresh discovery', async () => {
+  const { client, state } = githubFixture();
+  const service = createStationJoinService(client);
+  const previous = await service.inspect('user-token');
+
+  state.deletedRepositoryIds = [previous.repository!.id];
+
+  state.node = {
+    ...state.node,
+    id: 101,
+    full_name: 'reviewer/replacement-station',
+  };
+
+  const replacement = await service.inspect('user-token', previous);
+
+  assert.equal(replacement.repository?.id, 101);
+  assert.equal(replacement.repository?.full_name, 'reviewer/replacement-station');
+  assert.equal(replacement.waiting, null);
+  assert.ok(replacement.binding);
+
+  const { client: emptyClient, state: emptyState } = githubFixture();
+  const emptyService = createStationJoinService(emptyClient);
+  const emptyPrevious = await emptyService.inspect('user-token');
+
+  emptyState.deletedRepositoryIds = [emptyPrevious.repository!.id];
+  emptyState.repoGone = true;
+
+  const empty = await emptyService.inspect('user-token', emptyPrevious);
+
+  assert.equal(empty.repository, null);
+  assert.equal(empty.waiting, 'fork');
+  assert.equal(empty.binding, null);
+  assert.deepEqual(empty.operations, []);
+});
+
 test('managed token grants Workflow write only for changed workflow', async () => {
   for (const changesWorkflow of [false, true]) {
     const { client, state } = githubFixture();

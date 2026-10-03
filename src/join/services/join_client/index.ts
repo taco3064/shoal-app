@@ -7,13 +7,23 @@ export type Session = {
 export type Stage = {
   id: string;
   label: string;
-  state: 'complete' | 'incomplete' | 'blocked' | 'waiting';
+  state:
+    | 'complete'
+    | 'current'
+    | 'available'
+    | 'blocked'
+    | 'waiting'
+    | 'executing'
+    | 'failed';
   detail: string;
+  facts?: { label: string; state: Stage['state']; detail: string }[];
+  action?: 'fork' | 'app_access' | 'policy' | 'execute';
 };
 export type Inspection = {
   planId: string;
   identity: Identity;
   node?: { id: number; fullName: string; url: string; head: string };
+  rootOwner: boolean;
   rootHead: string;
   stages: Stage[];
   operations: { id: string; label: string }[];
@@ -50,6 +60,7 @@ type Snapshot = {
   planId: string;
   identity: Identity;
   repository: { id: number; fullName: string; defaultBranch: string } | null;
+  rootOwner: boolean;
   rootHead: string;
   nodeHead: string;
   waiting: 'fork' | 'app_access' | null;
@@ -77,93 +88,130 @@ const operationLabels: Record<string, string> = {
 
 function inspectionView(snapshot: Snapshot): Inspection {
   const fact = (
-    id: string,
     label: string,
     complete: boolean,
     detail: string,
-  ): Stage => ({
-    id,
+    blocked = false,
+  ): NonNullable<Stage['facts']>[number] => ({
     label,
-    state: complete ? 'complete' : snapshot.waiting ? 'waiting' : 'incomplete',
+    state: blocked ? 'blocked' : complete ? 'complete' : 'current',
     detail,
   });
 
-  const stages = [
-    fact('identity', 'GitHub identity', true, snapshot.identity.login),
+  const stationFacts = [
     fact(
-      'node',
-      'Personal Account direct fork',
-      Boolean(snapshot.repository),
-      snapshot.repository?.fullName
-      ?? 'Create a direct fork of the Network Root using your personal account.',
-    ),
-    fact(
-      'access',
-      'GitHub App access',
-      snapshot.appAccess,
-      'Select only your Reviewer Node when granting repository access.',
-    ),
-    fact(
-      'issues',
       'Issues availability',
       snapshot.issuesEnabled,
       'Canonical Review Requests use repository Issues.',
     ),
     fact(
-      'actions',
       'Repository Actions',
       snapshot.actionsEnabled,
       'Existing unrelated Actions policy settings are preserved.',
     ),
     fact(
-      'managed',
       'Canonical managed station files',
       snapshot.managedFilesMatch,
       'Review Request form and Summary Workflow match one exact Network Root generation.',
     ),
     fact(
-      'workflow-active',
       'Summary Workflow activation',
       snapshot.workflowActive,
       'The governed Summary Workflow is active.',
     ),
     fact(
-      'workflow-supported',
-      'Platform Workflow support',
+      'Platform-supported exact generation',
       snapshot.workflowSupported,
       'Exact Workflow digest support uses the same authority as Network Projection.',
-    ),
-    fact(
-      'policy',
-      'Review Policy',
-      Boolean(snapshot.policy?.content),
-      snapshot.policy?.matchesDefault
-        ? 'Current Policy equals the default; adoption needs no commit.'
-        : 'Your existing README.md is preserved unless separately confirmed.',
-    ),
-    fact(
-      'ready',
-      'Station readiness',
-      snapshot.ready,
-      snapshot.ready
-        ? 'Issues and admitted digests verified; Workflow executability is separate.'
-        : 'Required facts are not yet all verified.',
+      snapshot.platformBlocked,
     ),
   ];
 
-  if (snapshot.platformBlocked) {
+  const stationComplete = stationFacts.every((item) => item.state === 'complete');
+
+  const stages: Stage[] = [
+    {
+      id: 'identity',
+      label: 'GitHub identity',
+      state: 'complete',
+      detail: snapshot.identity.login,
+    },
+  ];
+
+  if (snapshot.rootOwner) {
     stages.push({
-      id: 'platform',
-      label: 'Canonical generation support',
-      state: 'blocked',
+      id: 'root-owner',
+      label: 'Network Root owner',
+      state: 'complete',
       detail:
-        'Waiting for Platform admission; an already-supported station is preserved.',
+        'The Network Root is already your Reviewer Node, '
+        + 'so Quick Web Join is not required for this account.',
     });
+  } else {
+    stages.push(
+      {
+        id: 'node',
+        label: 'Reviewer Node / direct fork',
+        state: snapshot.repository ? 'complete' : 'current',
+        detail: snapshot.repository?.fullName
+          ?? 'Create a direct fork of the Network Root using your personal account.',
+        action: snapshot.repository ? undefined : 'fork',
+      },
+      {
+        id: 'access',
+        label: 'GitHub App repository access',
+        state: snapshot.appAccess
+          ? 'complete'
+          : snapshot.repository ? 'current' : 'waiting',
+        detail: snapshot.repository
+          ? 'Select only your Reviewer Node when granting repository access.'
+          : 'Available after your direct fork exists.',
+        action:
+          snapshot.repository && !snapshot.appAccess
+            ? 'app_access'
+            : undefined,
+      },
+      {
+        id: 'station',
+        label: 'Station setup',
+        state: stationComplete
+          ? 'complete'
+          : snapshot.appAccess ? 'current' : 'waiting',
+        detail: stationComplete
+          ? 'Issues, Actions, managed files, Workflow and platform support are verified.'
+          : 'Complete the visible station facts in order; '
+            + 'non-actionable trust facts remain diagnostics.',
+        facts: stationFacts,
+        action:
+          snapshot.appAccess && snapshot.operations.length > 0
+            ? 'execute'
+            : undefined,
+      },
+      {
+        id: 'policy',
+        label: 'Review Policy',
+        state: snapshot.policy?.content ? 'available' : 'waiting',
+        detail: snapshot.policy?.matchesDefault
+          ? 'Current Policy equals the default; adoption needs no commit.'
+          : 'Your existing README.md is preserved unless separately confirmed.',
+        action: snapshot.policy?.content ? 'policy' : undefined,
+      },
+      {
+        id: 'ready',
+        label: 'Station ready / publication waiting',
+        state: snapshot.ready ? 'complete' : 'waiting',
+        detail: snapshot.ready
+          ? 'Station readiness is verified. Directory publication waits for '
+          + 'a later Network Scan.'
+          : 'Readiness appears after required station facts are verified.',
+      },
+    );
   }
 
   return {
     planId: snapshot.planId,
     identity: snapshot.identity,
+    rootOwner: snapshot.rootOwner,
     ...(snapshot.repository
       ? {
           node: {

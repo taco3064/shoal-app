@@ -1,14 +1,12 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { createElement, createRef } from 'react';
+import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import type useQuickJoin from '~app/join/hooks/useQuickJoin';
 import QuickJoin from './index';
 
 function state(): ReturnType<typeof useQuickJoin> {
   return {
-    open: false,
-    dialog: createRef<HTMLDialogElement>(),
     session: undefined,
     inspection: undefined,
     executionStages: undefined,
@@ -26,10 +24,10 @@ function state(): ReturnType<typeof useQuickJoin> {
     refresh: async () => {},
     previewPolicy: async () => {},
     logout: async () => {},
+    openExternal: () => {},
     execute: () => {},
     confirmPolicy: () => {},
-    show: () => {},
-    close: () => {},
+    cancelAuth: () => {},
     choosePolicy: () => {},
     editPolicy: () => {},
   };
@@ -40,10 +38,10 @@ test('public Join does not require authentication or replace the local path', ()
     createElement(QuickJoin, { join: state() }),
   );
 
-  assert.match(html, /Continue with GitHub/);
+  assert.match(html, /Sign in with GitHub/);
   assert.match(html, /Public browsing stays open/);
   assert.match(html, /Local \/ CLI Join/);
-  assert.match(html, /<dialog[^>]+aria-labelledby="quick-dialog-title"/);
+  assert.doesNotMatch(html, /<dialog|Station status/);
 });
 
 test('partial failure shows frozen verified progress rather than success', () => {
@@ -81,6 +79,7 @@ test('readiness publication lag and Policy confirmation remain separate', () => 
       url: 'https://github.com/reviewer/station',
     },
     rootHead: 'root',
+    rootOwner: false,
     stages: [],
     operations: [],
     ready: true,
@@ -113,6 +112,7 @@ test('ready station still shows pending Web activation setup', () => {
     planId: 'plan',
     identity: { id: 1, login: 'reviewer' },
     rootHead: 'root',
+    rootOwner: false,
     stages: [],
     operations: [
       { id: 'enable_actions', label: 'Enable repository Actions' },
@@ -125,7 +125,35 @@ test('ready station still shows pending Web activation setup', () => {
 
   assert.match(html, /Your station is ready/);
   assert.match(html, /Quick Web Join setup is still pending/);
-  assert.match(html, /Confirm these setup operations/);
+  assert.match(html, /Complete remaining setup automatically/);
   assert.match(html, /does not prove Workflow executability/);
   assert.doesNotMatch(html, /No setup commit or settings mutation is needed/);
+});
+
+test('Root owner receives inline short-circuit without fork action', () => {
+  const join = state();
+
+  join.session = {
+    session: 'opaque',
+    csrfToken: 'csrf',
+    identity: { id: 1, login: 'taco3064' },
+  };
+
+  join.inspection = {
+    planId: 'plan',
+    identity: { id: 1, login: 'taco3064' },
+    rootOwner: true,
+    rootHead: 'root',
+    stages: [],
+    operations: [],
+    ready: false,
+  };
+
+  const html = renderToStaticMarkup(createElement(QuickJoin, { join }));
+
+  assert.match(html, /Signed in as/);
+  assert.match(html, /Network Root owner/);
+  assert.match(html, /Quick Web Join is not required/);
+  assert.doesNotMatch(html, /Create your direct fork/);
+  assert.doesNotMatch(html, /Complete remaining setup automatically/);
 });
