@@ -53,9 +53,9 @@ jobs:
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          GITHUB_APP_ID: ${{ vars.GITHUB_APP_ID }}
-          GITHUB_APP_SLUG: ${{ vars.GITHUB_APP_SLUG }}
-          GITHUB_APP_CLIENT_ID: ${{ vars.GITHUB_APP_CLIENT_ID }}
+          SHOAL_GITHUB_APP_ID: ${{ vars.SHOAL_GITHUB_APP_ID }}
+          SHOAL_GITHUB_APP_SLUG: ${{ vars.SHOAL_GITHUB_APP_SLUG }}
+          SHOAL_GITHUB_APP_CLIENT_ID: ${{ vars.SHOAL_GITHUB_APP_CLIENT_ID }}
           JOIN_SERVICE_ORIGIN: ${{ vars.PUBLIC_SHOAL_JOIN_SERVICE_URL }}
           JOIN_WEBSITE_RETURN_URL: ${{ vars.JOIN_WEBSITE_RETURN_URL }}
         run: |
@@ -64,9 +64,9 @@ jobs:
           const required = [
             'CLOUDFLARE_ACCOUNT_ID',
             'CLOUDFLARE_API_TOKEN',
-            'GITHUB_APP_ID',
-            'GITHUB_APP_SLUG',
-            'GITHUB_APP_CLIENT_ID',
+            'SHOAL_GITHUB_APP_ID',
+            'SHOAL_GITHUB_APP_SLUG',
+            'SHOAL_GITHUB_APP_CLIENT_ID',
             'JOIN_SERVICE_ORIGIN',
             'JOIN_WEBSITE_RETURN_URL',
           ];
@@ -90,9 +90,9 @@ jobs:
             },
             migrations: [{ tag: 'v1', new_sqlite_classes: ['JoinFlow'] }],
             vars: {
-              GITHUB_APP_ID: process.env.GITHUB_APP_ID,
-              GITHUB_APP_SLUG: process.env.GITHUB_APP_SLUG,
-              GITHUB_APP_CLIENT_ID: process.env.GITHUB_APP_CLIENT_ID,
+              GITHUB_APP_ID: process.env.SHOAL_GITHUB_APP_ID,
+              GITHUB_APP_SLUG: process.env.SHOAL_GITHUB_APP_SLUG,
+              GITHUB_APP_CLIENT_ID: process.env.SHOAL_GITHUB_APP_CLIENT_ID,
               JOIN_SERVICE_ORIGIN: process.env.JOIN_SERVICE_ORIGIN,
               JOIN_WEBSITE_RETURN_URL: process.env.JOIN_WEBSITE_RETURN_URL,
             },

@@ -1,7 +1,9 @@
 # Public GitHub Actions variables used to generate production Wrangler config.
-GITHUB_APP_SLUG=
-GITHUB_APP_ID=
-GITHUB_APP_CLIENT_ID=
+# GitHub reserves the GITHUB_ prefix for repository variables, so deploy inputs
+# use SHOAL_GITHUB_* and map to Worker runtime GITHUB_APP_* vars during deploy.
+SHOAL_GITHUB_APP_SLUG=
+SHOAL_GITHUB_APP_ID=
+SHOAL_GITHUB_APP_CLIENT_ID=
 JOIN_SERVICE_ORIGIN=https://shoal-quick-web-join.YOUR-SUBDOMAIN.workers.dev
 JOIN_WEBSITE_RETURN_URL=https://taco3064.github.io/shoal-app/join/
 PUBLIC_SHOAL_JOIN_SERVICE_URL=https://shoal-quick-web-join.YOUR-SUBDOMAIN.workers.dev

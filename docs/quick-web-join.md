@@ -19,7 +19,8 @@ the same staged Join journey.
    Prefer **Only select repositories** when installing it on a Reviewer's direct
    Personal Account fork. Do not require access to unrelated repositories.
 3. Configure the public Worker values as GitHub Actions repository variables:
-   `GITHUB_APP_ID`, `GITHUB_APP_SLUG`, `GITHUB_APP_CLIENT_ID`,
+   `SHOAL_GITHUB_APP_ID`, `SHOAL_GITHUB_APP_SLUG`,
+   `SHOAL_GITHUB_APP_CLIENT_ID`,
    `PUBLIC_SHOAL_JOIN_SERVICE_URL` and `JOIN_WEBSITE_RETURN_URL`. The return URL
    is `https://taco3064.github.io/shoal-app/join/` in production. The service
    URL is the exact Worker HTTPS origin, without a path. The committed
@@ -27,6 +28,10 @@ the same staged Join journey.
    compatibility date, `JOIN_FLOWS` binding and `JoinFlow` SQLite migration.
    Preserve the binding and migration identity on subsequent deployments; do not
    recreate sessions by renaming the binding or class.
+   The `SHOAL_GITHUB_*` names are used only for GitHub Actions repository
+   variables because GitHub reserves the `GITHUB_` prefix. The Worker runtime
+   variables generated during deploy remain `GITHUB_APP_ID`, `GITHUB_APP_SLUG`
+   and `GITHUB_APP_CLIENT_ID`.
 4. Install using Node 24 and the lockfile: `npm ci`. Authenticate the authorized
    Cloudflare operator once with `npx wrangler login`. Generate a GitHub App
    private key and client secret; provide them via interactive Workers Secrets
