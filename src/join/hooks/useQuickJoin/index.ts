@@ -45,6 +45,7 @@ export default function useQuickJoin(serviceUrl: string) {
 
   const acceptInspection = useCallback((value: Inspection) => {
     setInspection(value);
+    setExecutionStages(undefined);
     setContent(value.policy?.current ?? '');
     setPolicyChoice(value.policy?.isDefault ? 'default' : 'keep');
     setPolicyPlan(undefined);
