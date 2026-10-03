@@ -6,6 +6,8 @@ import Join from "~app/join";
 const title = "Join Shoal — Set up your station";
 const description =
   "Choose optional Quick Web Join or Local / CLI Join to set up your own station and Review Policy.";
+const joinServiceUrl = import.meta.env.PUBLIC_SHOAL_JOIN_SERVICE_URL
+  ?? (import.meta.env.DEV ? "http://127.0.0.1:8787" : "");
 ---
 
 <BaseLayout title={title} description={description}>
@@ -60,7 +62,7 @@ const description =
       </ol>
     </section>
 
-    <Join serviceUrl={import.meta.env.PUBLIC_SHOAL_JOIN_SERVICE_URL ?? ""} client:load />
+    <Join serviceUrl={joinServiceUrl} client:load />
     <details class="join-reference local-cli-alternative">
       <summary>Prefer local setup? Use Local / CLI Join</summary>
       <div class="local-cli-content">
