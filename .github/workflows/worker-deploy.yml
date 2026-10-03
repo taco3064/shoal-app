@@ -1,0 +1,128 @@
+name: Deploy Quick Web Join Worker
+
+on:
+  workflow_run:
+    workflows: [Verify]
+    types: [completed]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quick-web-join-worker-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact verified main head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: false
+
+      - name: Verify deploy candidate
+        shell: bash
+        env:
+          EXPECTED_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          git fetch --no-tags origin main
+          test "$(git rev-parse FETCH_HEAD)" = "$EXPECTED_SHA"
+          echo "Deploying shoal-quick-web-join from $EXPECTED_SHA"
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+
+      - run: npm ci
+
+      - name: Verify Worker package
+        run: npm run build:join
+
+      - name: Create production Wrangler config
+        shell: bash
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          GITHUB_APP_ID: ${{ vars.GITHUB_APP_ID }}
+          GITHUB_APP_SLUG: ${{ vars.GITHUB_APP_SLUG }}
+          GITHUB_APP_CLIENT_ID: ${{ vars.GITHUB_APP_CLIENT_ID }}
+          JOIN_SERVICE_ORIGIN: ${{ vars.PUBLIC_SHOAL_JOIN_SERVICE_URL }}
+          JOIN_WEBSITE_RETURN_URL: ${{ vars.JOIN_WEBSITE_RETURN_URL }}
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const required = [
+            'CLOUDFLARE_ACCOUNT_ID',
+            'CLOUDFLARE_API_TOKEN',
+            'GITHUB_APP_ID',
+            'GITHUB_APP_SLUG',
+            'GITHUB_APP_CLIENT_ID',
+            'JOIN_SERVICE_ORIGIN',
+            'JOIN_WEBSITE_RETURN_URL',
+          ];
+
+          const missing = required.filter((name) => !process.env[name]);
+
+          if (missing.length) {
+            throw new Error(`Missing required deployment config: ${missing.join(', ')}`);
+          }
+
+          const config = {
+            $schema: 'node_modules/wrangler/config-schema.json',
+            name: 'shoal-quick-web-join',
+            main: 'src/join/worker.ts',
+            account_id: process.env.CLOUDFLARE_ACCOUNT_ID,
+            compatibility_date: '2026-10-01',
+            compatibility_flags: ['nodejs_compat'],
+            workers_dev: true,
+            durable_objects: {
+              bindings: [{ name: 'JOIN_FLOWS', class_name: 'JoinFlow' }],
+            },
+            migrations: [{ tag: 'v1', new_sqlite_classes: ['JoinFlow'] }],
+            vars: {
+              GITHUB_APP_ID: process.env.GITHUB_APP_ID,
+              GITHUB_APP_SLUG: process.env.GITHUB_APP_SLUG,
+              GITHUB_APP_CLIENT_ID: process.env.GITHUB_APP_CLIENT_ID,
+              JOIN_SERVICE_ORIGIN: process.env.JOIN_SERVICE_ORIGIN,
+              JOIN_WEBSITE_RETURN_URL: process.env.JOIN_WEBSITE_RETURN_URL,
+            },
+          };
+
+          fs.writeFileSync(
+            '.wrangler.production.json',
+            JSON.stringify(config, null, 2),
+          );
+          NODE
+
+      - name: Deploy Worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: npx wrangler deploy --config .wrangler.production.json
+
+      - name: Verify production health
+        shell: bash
+        env:
+          EXPECTED_SHA: ${{ github.event.workflow_run.head_sha }}
+          JOIN_SERVICE_ORIGIN: ${{ vars.PUBLIC_SHOAL_JOIN_SERVICE_URL }}
+        run: |
+          echo "Verifying shoal-quick-web-join /health for $EXPECTED_SHA"
+          health_url="${JOIN_SERVICE_ORIGIN%/}/health"
+          for attempt in {1..12}; do
+            if curl --fail --silent --show-error "$health_url"; then
+              echo
+              echo "Production Worker health succeeded for $EXPECTED_SHA"
+              exit 0
+            fi
+            sleep 5
+          done
+          exit 1
