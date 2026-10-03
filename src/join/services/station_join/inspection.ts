@@ -282,6 +282,7 @@ export function publicInspection(inspection: Inspection): PublicInspection {
         inspection.files.policy?.content
         === inspection.rootFiles.policy.content,
     },
+    policyComplete: false,
     operations: [...inspection.operations],
     ready: inspection.ready,
     publication: 'waiting_for_projection',

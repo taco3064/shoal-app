@@ -1,8 +1,10 @@
 import { readBody } from './body';
 import type { AuthIdentity } from './auth';
-import { cookie, handleAuth } from './auth';
+import { handleAuth } from './auth';
 import type { JoinConfig } from './config';
 import { plan, savePlan, stoppedJob } from './execution';
+import { acceptPolicyResult, applyPolicyCompletion } from './policy_completion';
+import { sessionRestoreMatches } from './session_restore';
 import {
   equalSecret,
   opaqueId,
@@ -175,13 +177,10 @@ export class JoinHttp {
     const session = flow.session;
 
     if (url.pathname === '/api/session/current' && request.method === 'GET') {
-      const current = cookie(request, '__Host-shoal-session');
-
       if (
         !session
         || session.expires <= Date.now()
-        || !current
-        || !equalSecret(current, session.id)
+        || !sessionRestoreMatches(request, session, authorization)
       ) {
         return sessionExpired();
       }
@@ -298,8 +297,14 @@ export class JoinHttp {
         delete session.plan;
         delete session.job;
         delete session.execution;
+        delete session.policyDecision;
         session.busy = false;
       }
+
+      const publicInspection = applyPolicyCompletion(
+        session,
+        adapter.publicInspection(inspection),
+      );
 
       const planId = savePlan(session, 'station', inspection);
 
@@ -309,7 +314,7 @@ export class JoinHttp {
 
       await this.persist();
 
-      return json(200, { ...adapter.publicInspection(inspection), planId });
+      return json(200, { ...publicInspection, planId });
     }
 
     if (url.pathname === '/api/policy/plan') {
@@ -465,6 +470,10 @@ export class JoinHttp {
         : operations.some((operation) => operation.state === 'blocked')
           ? 'blocked'
           : 'complete';
+
+      if (kind === 'policy' && job.status === 'complete') {
+        result = acceptPolicyResult(session, result);
+      }
 
       job.result = result;
     } catch (error) {

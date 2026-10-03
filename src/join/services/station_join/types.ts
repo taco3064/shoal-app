@@ -50,6 +50,7 @@ export type PublicInspection = {
   workflowSupported: boolean;
   platformBlocked: boolean;
   policy: { content: string; defaultContent: string; matchesDefault: boolean };
+  policyComplete: boolean;
   operations: OperationName[];
   ready: boolean;
   publication: 'waiting_for_projection';
