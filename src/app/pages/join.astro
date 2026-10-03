@@ -68,11 +68,10 @@ const description =
           <p class="section-kicker">SET UP LOCALLY WITHOUT WEBSITE AUTHORIZATION</p>
           <h2>Local / CLI Join</h2>
         </div>
-        <section id="direct-fork" class="journey" data-journey aria-label="Your station in four steps">
+        <section id="direct-fork" class="journey" aria-label="Your station in four steps">
           <section
             id="join-fork"
             class="journey-step"
-            data-journey-step
             aria-labelledby="join-fork-title"
           >
             <p class="section-kicker">01 / 04 · CREATE YOUR STATION</p>
@@ -91,17 +90,11 @@ const description =
             >
               Fork shoal-station
             </a>
-            <div class="journey-step-actions">
-              <a class="text-link" href="#join-actions" data-step-to="1" data-step-forward>
-                Next: enable Actions →
-              </a>
-            </div>
           </section>
 
           <section
             id="join-actions"
             class="journey-step"
-            data-journey-step
             aria-labelledby="join-actions-title"
           >
             <p class="section-kicker">02 / 04 · YOU COMPLETE THIS IN GITHUB</p>
@@ -115,20 +108,11 @@ const description =
               Init cannot replace this UI step. Repository-level Actions permissions
               or an active workflow do not prove you completed it.
             </p>
-            <div class="journey-step-actions">
-              <a class="text-link" href="#join-fork" data-step-to="0">
-                ← Back
-              </a>
-              <a class="text-link" href="#join-setup" data-step-to="2" data-step-forward>
-                Next: set up station →
-              </a>
-            </div>
           </section>
 
           <section
             id="join-setup"
             class="journey-step"
-            data-journey-step
             aria-labelledby="join-setup-title"
           >
             <p class="section-kicker">
@@ -183,20 +167,11 @@ const description =
               This setup agent is separate from the agent later selected for{" "}
               <code>gh shoal review --agent &lt;agent&gt;</code>.
             </p>
-            <div class="journey-step-actions">
-              <a class="text-link" href="#join-actions" data-step-to="1">
-                ← Back
-              </a>
-              <a class="text-link" href="#join-policy" data-step-to="3" data-step-forward>
-                Next: write your Policy →
-              </a>
-            </div>
           </section>
 
           <section
             id="join-policy"
             class="journey-step"
-            data-journey-step
             aria-labelledby="join-policy-title"
           >
             <p class="section-kicker">04 / 04 · YOUR DECISION</p>
@@ -218,14 +193,6 @@ const description =
             >
               Explore the Reviewer Directory
             </a>
-            <div class="journey-step-actions">
-              <a class="text-link" href="#join-setup" data-step-to="2">
-                ← Back
-              </a>
-              <a class="text-link" href="#join-fork" data-step-to="0">
-                Start again
-              </a>
-            </div>
           </section>
         </section>
       </div>
@@ -250,63 +217,3 @@ const description =
     </section>
   </main>
 </BaseLayout>
-
-<script>
-  const journey = document.querySelector<HTMLElement>('[data-journey]');
-
-  const steps = Array.from(
-    journey?.querySelectorAll<HTMLElement>('[data-journey-step]') ?? [],
-  );
-
-  const controls = Array.from(
-    journey?.querySelectorAll<HTMLAnchorElement>('[data-step-to]') ?? [],
-  );
-
-  if (journey && steps.length) {
-    journey.classList.add('is-enhanced');
-
-    const show = (index: number, scroll = false) => {
-      steps.forEach((step, position) => {
-        step.hidden = position !== index;
-      });
-
-      if (scroll) {
-        const heading = steps[index]?.querySelector<HTMLElement>('h2');
-
-        const behavior = window.matchMedia('(prefers-reduced-motion: reduce)')
-          .matches
-          ? 'auto'
-          : 'smooth';
-
-        heading?.setAttribute('tabindex', '-1');
-        heading?.focus({ preventScroll: true });
-        steps[index]?.scrollIntoView({ behavior, block: 'start' });
-      }
-    };
-
-    controls.forEach((control) =>
-      control.addEventListener('click', (event) => {
-        event.preventDefault();
-        history.pushState(null, '', control.hash);
-        show(Number(control.dataset.stepTo), true);
-      }),
-    );
-
-    const restore = () => {
-      const index = steps.findIndex(
-        (step) => `#${step.id}` === window.location.hash,
-      );
-
-      if (index >= 0) {
-        show(index);
-      } else if (!window.location.hash || window.location.hash === '#direct-fork') {
-        show(0);
-      }
-    };
-
-    show(0);
-    window.addEventListener('popstate', restore);
-    window.addEventListener('hashchange', restore);
-    restore();
-  }
-</script>
