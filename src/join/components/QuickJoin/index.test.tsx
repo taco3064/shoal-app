@@ -86,6 +86,13 @@ test('public Join does not require authentication or replace the local path', ()
   assert.match(html, /Sign in with GitHub/);
   assert.match(html, /Public browsing stays open/);
   assert.match(html, /Local \/ CLI Join/);
+  assert.match(html, /GitHub identity/);
+  assert.match(html, /Reviewer Node \/ direct fork/);
+  assert.match(html, /GitHub App repository access/);
+  assert.match(html, /Station setup/);
+  assert.match(html, /Review Policy/);
+  assert.match(html, /Station ready \/ publication waiting/);
+  assert.doesNotMatch(html, /Verified/);
   assert.doesNotMatch(html, /<dialog|Station status/);
 });
 

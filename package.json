@@ -25,7 +25,7 @@
     "typecheck": "astro check && tsc --noEmit",
     "blueprint:validate": "blueprint doctor && blueprint inspect --baseline",
     "prepare": "husky",
-    "test:join": "node --import tsx --test src/join/services/github_join/*.test.ts src/join/services/station_join/index.test.ts src/join/services/station_join/inspection.test.ts src/join/services/station_join/execute_step.test.ts src/join/services/join_client/*.test.ts src/join/components/**/*.test.tsx",
+    "test:join": "node --import tsx --test src/join/services/github_join/*.test.ts src/join/services/station_join/index.test.ts src/join/services/station_join/inspection.test.ts src/join/services/station_join/execute_step.test.ts src/join/services/join_client/*.test.ts src/join/services/join_server/config.test.ts src/join/components/**/*.test.tsx",
     "serve:join": "wrangler dev",
     "test:join:browser": "playwright test --config tests/quick-join-browser.config.mjs",
     "build:join": "wrangler deploy --dry-run --outdir .worker-build",

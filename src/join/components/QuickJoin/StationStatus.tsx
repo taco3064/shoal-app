@@ -2,6 +2,7 @@ import type useQuickJoin from '~app/join/hooks/useQuickJoin';
 import PolicyStep from './PolicyStep';
 
 type JoinState = ReturnType<typeof useQuickJoin>;
+type Inspection = NonNullable<JoinState['inspection']>;
 type Stage = NonNullable<JoinState['inspection']>['stages'][number];
 
 const stateLabels: Record<Stage['state'], string> = {
@@ -25,7 +26,8 @@ const stateGlyphs: Record<Stage['state'], string> = {
 };
 
 export default function StationStatus({ join }: { join: JoinState }) {
-  const inspection = join.inspection!;
+  const inspection = join.inspection ?? previewInspection();
+  const preview = !join.inspection;
 
   if (inspection.rootOwner) {
     return (
@@ -59,6 +61,12 @@ export default function StationStatus({ join }: { join: JoinState }) {
         <div>
           <p className="section-kicker">GUIDED JOIN JOURNEY</p>
           <h3>Current onboarding journey</h3>
+          {preview && (
+            <p>
+              Sign in with GitHub to hydrate these stages with authoritative
+              station state.
+            </p>
+          )}
         </div>
         {inspection.node && (
           <a
@@ -74,6 +82,7 @@ export default function StationStatus({ join }: { join: JoinState }) {
       <section
         className="quick-current-step"
         data-state={activeStage.state}
+        data-preview={preview ? 'true' : 'false'}
         aria-labelledby="quick-current-step-title"
       >
         <div className="quick-current-index" aria-hidden="true">
@@ -87,7 +96,7 @@ export default function StationStatus({ join }: { join: JoinState }) {
           </div>
           <h4 id="quick-current-step-title">{activeStage.label}</h4>
           <p>{activeStage.detail}</p>
-          <StageAction join={join} stage={activeStage} />
+          {!preview && <StageAction join={join} stage={activeStage} />}
           {activeStage.id === 'station' && inspection.operations.length > 0 && (
             <div className="quick-stage-plan">
               <p>Automatic completion will verify:</p>
@@ -98,9 +107,9 @@ export default function StationStatus({ join }: { join: JoinState }) {
               </ol>
             </div>
           )}
-          {activeStage.id === 'policy' && activeStage.action === 'policy' && (
-            <PolicyStep join={join} />
-          )}
+          {!preview
+            && activeStage.id === 'policy'
+            && activeStage.action === 'policy' && <PolicyStep join={join} />}
           {activeStage.id === 'ready' && inspection.ready && (
             <div className="quick-publication">
               <p>
@@ -131,7 +140,7 @@ export default function StationStatus({ join }: { join: JoinState }) {
           </li>
         ))}
       </ol>
-      {inspection.ready && activeStage.id !== 'ready' && (
+      {!preview && inspection.ready && activeStage.id !== 'ready' && (
         <div className="quick-publication">
           <p>
             Directory publication waits for a separate successful Network Scan
@@ -168,6 +177,55 @@ export default function StationStatus({ join }: { join: JoinState }) {
       )}
     </>
   );
+}
+
+function previewInspection(): Inspection {
+  return {
+    planId: '',
+    identity: { id: 0, login: '' },
+    rootHead: '',
+    rootOwner: false,
+    stages: [
+      {
+        id: 'identity',
+        label: 'GitHub identity',
+        state: 'current',
+        detail: 'Sign in with GitHub to begin the authoritative join journey.',
+      },
+      {
+        id: 'node',
+        label: 'Reviewer Node / direct fork',
+        state: 'waiting',
+        detail: 'Shoal checks for your direct Personal Account fork after sign-in.',
+      },
+      {
+        id: 'access',
+        label: 'GitHub App repository access',
+        state: 'waiting',
+        detail: 'If needed, you grant the App access only to your Reviewer Node.',
+      },
+      {
+        id: 'station',
+        label: 'Station setup',
+        state: 'waiting',
+        detail: 'Shoal shows remaining setup only after inspecting GitHub state.',
+      },
+      {
+        id: 'policy',
+        label: 'Review Policy',
+        state: 'waiting',
+        detail: 'Policy authorship remains yours and is confirmed separately.',
+      },
+      {
+        id: 'ready',
+        label: 'Station ready / publication waiting',
+        state: 'waiting',
+        detail: 'Readiness and Directory publication appear after verification.',
+      },
+    ],
+    operations: [],
+    ready: false,
+  };
 }
 
 function selectActiveStage(stages: Stage[]) {
