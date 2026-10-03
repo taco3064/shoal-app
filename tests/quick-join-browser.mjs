@@ -246,8 +246,8 @@ test('Quick Web Join renders one inline journey and verifies recovery and Policy
   await expect(page.getByRole('heading', {
     name: 'Reviewer Node / direct fork',
   })).toBeVisible();
-  await expect(page.getByText('Directly fork')).toBeVisible();
-  await expect(page.getByText('not qualify')).toBeVisible();
+  await expect(page.locator('.quick-current-step').getByText('Directly fork')).toBeVisible();
+  await expect(page.locator('.quick-current-step').getByText('not qualify')).toBeVisible();
   await page
     .getByRole('button', {
       name: 'Show Local / CLI instructions for Station setup',
@@ -458,6 +458,7 @@ test('Quick Web Join short-circuits the Network Root owner inline', async ({ pag
   });
 
   await page.goto('join/');
+  await expect(page.getByRole('button', { name: 'Sign in with GitHub' })).toBeEnabled();
   await page.getByRole('button', { name: 'Sign in with GitHub' }).click();
   await expect(page.getByRole('heading', { name: 'Network Root owner' })).toBeVisible();
   await expect(page.getByText('Quick Web Join is not required')).toBeVisible();
