@@ -99,7 +99,7 @@ test('Quick Web Join renders one inline journey and verifies recovery and Policy
 
       await route.fulfill({
         contentType: 'text/html',
-        body: `<script>window.opener.postMessage(${JSON.stringify(message)},'http://127.0.0.1:4322')</script>`,
+        body: `<script>setTimeout(()=>window.opener.postMessage(${JSON.stringify(message)},'http://127.0.0.1:4322'),50)</script>`,
       });
       return;
     }
@@ -255,7 +255,7 @@ test('Quick Web Join renders one inline journey and verifies recovery and Policy
     .click();
   await expect(page).toHaveURL(/localStage=station/);
   await expect(page.getByRole('heading', { name: 'Station setup' })).toBeVisible();
-  await expect(page.getByText('gh shoal init')).toBeVisible();
+  await expect(page.locator('.quick-current-step').getByText('gh shoal init')).toBeVisible();
   await page.goto('how-it-works/');
   await expect(page.locator('main h1')).toBeVisible();
   await page.goto('join/?localStage=station');
@@ -411,7 +411,7 @@ test('Quick Web Join short-circuits the Network Root owner inline', async ({ pag
     } else if (url.pathname === '/auth/start') {
       await route.fulfill({
         contentType: 'text/html',
-        body: '<script>window.opener.postMessage({type:"shoal-auth",code:"handoff"},"http://127.0.0.1:4322")</script>',
+        body: '<script>setTimeout(()=>window.opener.postMessage({type:"shoal-auth",code:"handoff"},"http://127.0.0.1:4322"),50)</script>',
       });
     } else if (url.pathname === '/api/session') {
       await route.fulfill({
