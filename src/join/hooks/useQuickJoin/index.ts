@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { JoinError, joinClient } from '~app/join/services/join_client';
+import {
+  JoinError,
+  joinClient,
+  resolveJoinServiceUrl,
+} from '~app/join/services/join_client';
 import type {
   Inspection,
   Job,
@@ -31,8 +35,10 @@ export default function useQuickJoin(serviceUrl: string) {
   const externalPending = useRef(false);
   const busyRef = useRef(false);
 
+  const resolvedServiceUrl = resolveJoinServiceUrl(serviceUrl);
+
   const client = useRef(
-    serviceUrl ? joinClient(serviceUrl) : undefined,
+    resolvedServiceUrl ? joinClient(resolvedServiceUrl) : undefined,
   ).current;
 
   useEffect(() => {
@@ -173,7 +179,8 @@ export default function useQuickJoin(serviceUrl: string) {
         setAuthenticating(false);
 
         setError(
-          'GitHub authorization was cancelled. You can retry or use Local / CLI Join.',
+          'GitHub authorization was cancelled. You can retry or continue '
+          + 'with the Local / CLI guidance in the staged journey.',
         );
 
         popup.current.close();

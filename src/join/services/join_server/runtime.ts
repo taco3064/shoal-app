@@ -54,7 +54,16 @@ export class JoinFlow extends DurableObject<JoinEnvironment> {
         });
 
         return await handler.handle(request);
-      } catch {
+      } catch (cause) {
+        if (cause instanceof Error && isConfigurationError(cause.message)) {
+          return json(503, {
+            error: {
+              code: 'CONFIGURATION_REQUIRED',
+              message: cause.message,
+            },
+          });
+        }
+
         return json(400, {
           error: {
             code: 'REQUEST_REJECTED',
@@ -114,6 +123,13 @@ export class JoinFlow extends DurableObject<JoinEnvironment> {
       await this.state.storage.setAlarm(expires);
     }
   }
+}
+
+function isConfigurationError(message: string): boolean {
+  return (
+    message.endsWith(' is required')
+    || message === 'Production authentication requires HTTPS'
+  );
 }
 
 export async function workerFetch(

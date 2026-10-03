@@ -1,5 +1,7 @@
 import type useQuickJoin from '~app/join/hooks/useQuickJoin';
+import LocalStageGuidance from './LocalStageGuidance';
 import PolicyStep from './PolicyStep';
+import StatusIcon from './StatusIcon';
 
 type JoinState = ReturnType<typeof useQuickJoin>;
 type Inspection = NonNullable<JoinState['inspection']>;
@@ -13,16 +15,6 @@ const stateLabels: Record<Stage['state'], string> = {
   executing: 'In progress',
   failed: 'Needs retry',
   waiting: 'Locked',
-};
-
-const stateGlyphs: Record<Stage['state'], string> = {
-  available: '↗',
-  blocked: '!',
-  complete: '✓',
-  current: '•',
-  executing: '…',
-  failed: '×',
-  waiting: '⌁',
 };
 
 export default function StationStatus({ join }: { join: JoinState }) {
@@ -96,6 +88,7 @@ export default function StationStatus({ join }: { join: JoinState }) {
           </div>
           <h4 id="quick-current-step-title">{activeStage.label}</h4>
           <p>{activeStage.detail}</p>
+          <LocalStageGuidance stage={activeStage} />
           {!preview && <StageAction join={join} stage={activeStage} />}
           {activeStage.id === 'station' && inspection.operations.length > 0 && (
             <div className="quick-stage-plan">
@@ -123,22 +116,46 @@ export default function StationStatus({ join }: { join: JoinState }) {
         </div>
       </section>
       <ol className="quick-progress-map" aria-label="Join progress">
-        {stages.map((stage, index) => (
-          <li
-            key={stage.id}
-            data-state={stage.state}
-            data-active={stage.id === activeStage.id ? 'true' : 'false'}
-          >
-            <span className="quick-map-marker" aria-hidden="true">
-              {stateGlyphs[stage.state]}
-            </span>
-            <span className="quick-map-step">
-              {String(index + 1).padStart(2, '0')}
-            </span>
-            <strong>{stage.label}</strong>
-            <span>{stateLabels[stage.state]}</span>
-          </li>
-        ))}
+        {stages.map((stage, index) => {
+          const actionable = getMapAction(join, stage);
+
+          const content = (
+            <>
+              <span className="quick-map-marker" aria-hidden="true">
+                <StatusIcon state={stage.state} />
+              </span>
+              <span className="quick-map-step">
+                {String(index + 1).padStart(2, '0')}
+              </span>
+              <strong>{stage.label}</strong>
+              <span className="quick-map-state">{stateLabels[stage.state]}</span>
+              <small>{localCue(stage)}</small>
+            </>
+          );
+
+          return (
+            <li
+              key={stage.id}
+              data-state={stage.state}
+              data-active={stage.id === activeStage.id ? 'true' : 'false'}
+              data-actionable={actionable ? 'true' : 'false'}
+            >
+              {actionable
+                ? (
+                    <button
+                      type="button"
+                      onClick={actionable.onClick}
+                      disabled={actionable.disabled}
+                    >
+                      {content}
+                    </button>
+                  )
+                : (
+                    <div>{content}</div>
+                  )}
+            </li>
+          );
+        })}
       </ol>
       {!preview && inspection.ready && activeStage.id !== 'ready' && (
         <div className="quick-publication">
@@ -246,7 +263,7 @@ function StageFacts({ facts }: { facts: NonNullable<Stage['facts']> }) {
       {facts.map((fact) => (
         <li key={fact.label} data-state={fact.state}>
           <span className="quick-fact-mark" aria-hidden="true">
-            {stateGlyphs[fact.state]}
+            <StatusIcon state={fact.state} />
           </span>
           <strong>{fact.label}</strong>
           <span>{stateLabels[fact.state]}</span>
@@ -258,45 +275,106 @@ function StageFacts({ facts }: { facts: NonNullable<Stage['facts']> }) {
 }
 
 function StageAction({ join, stage }: { join: JoinState; stage: Stage }) {
+  const action = getStageAction(join, stage);
+
+  if (!action) {
+    return null;
+  }
+
+  return (
+    <button
+      className="button primary quick-stage-action"
+      disabled={action.disabled}
+      onClick={action.onClick}
+    >
+      {action.label}
+    </button>
+  );
+}
+
+function getStageAction(join: JoinState, stage: Stage) {
+  if (stage.id === 'identity' && !join.session) {
+    return {
+      label: join.authenticating ? 'Waiting for GitHub' : 'Sign in with GitHub',
+      disabled: !join.enabled || join.authenticating,
+      onClick: join.authenticate,
+    };
+  }
+
+  if (!join.inspection) {
+    return undefined;
+  }
+
   const inspection = join.inspection!;
 
   if (stage.action === 'fork' && inspection.forkUrl) {
-    return (
-      <button
-        className="button primary quick-stage-action"
-        onClick={() => join.openExternal(inspection.forkUrl!)}
-      >
-        Create direct fork
-      </button>
-    );
+    return {
+      label: 'Create direct fork',
+      disabled: false,
+      onClick: () => join.openExternal(inspection.forkUrl!),
+    };
   }
 
   if (stage.action === 'app_access' && inspection.installationUrl) {
-    return (
-      <button
-        className="button primary quick-stage-action"
-        onClick={() => join.openExternal(inspection.installationUrl!)}
-      >
-        Grant App access
-      </button>
-    );
+    return {
+      label: 'Grant App access',
+      disabled: false,
+      onClick: () => join.openExternal(inspection.installationUrl!),
+    };
   }
 
   if (stage.action === 'execute') {
-    return (
-      <button
-        className="button primary quick-stage-action"
-        disabled={
-          join.busy
-          || Boolean(inspection.blockedReason)
-          || Boolean(join.job && join.job.status !== 'complete')
-        }
-        onClick={join.execute}
-      >
-        Complete setup automatically
-      </button>
-    );
+    return {
+      label: 'Complete setup automatically',
+      disabled:
+        join.busy
+        || Boolean(inspection.blockedReason)
+        || Boolean(join.job && join.job.status !== 'complete'),
+      onClick: join.execute,
+    };
   }
 
-  return null;
+  return undefined;
+}
+
+function getMapAction(join: JoinState, stage: Stage) {
+  const action = getStageAction(join, stage);
+
+  if (action) {
+    return action;
+  }
+
+  if (stage.action === 'policy') {
+    return {
+      label: 'Review Policy',
+      disabled: false,
+      onClick: () => {
+        document.getElementById('quick-policy-title')?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start',
+        });
+      },
+    };
+  }
+
+  return undefined;
+}
+
+function localCue(stage: Stage) {
+  switch (stage.id) {
+    case 'identity':
+      return 'Website auth optional';
+    case 'node':
+      return 'Direct fork also works locally';
+    case 'access':
+      return 'Local setup can skip Website mutation access';
+    case 'station':
+      return 'Local path: gh shoal init';
+    case 'policy':
+      return 'Local path: edit README.md';
+    case 'ready':
+      return 'Same readiness either way';
+    default:
+      return '';
+  }
 }

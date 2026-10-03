@@ -1,3 +1,5 @@
+export { resolveJoinServiceUrl } from './local_service_url';
+
 export type Identity = { id: number; login: string };
 export type Session = {
   session: string;
@@ -268,6 +270,15 @@ export class JoinError extends Error {
   }
 }
 
+function opaqueId(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(32));
+
+  return btoa(String.fromCharCode(...bytes))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+}
+
 export function joinClient(serviceUrl: string) {
   const base = new URL(serviceUrl);
 
@@ -314,7 +325,13 @@ export function joinClient(serviceUrl: string) {
 
   return {
     origin: base.origin,
-    authUrl: new URL('/auth/start', base).href,
+    get authUrl() {
+      const url = new URL('/auth/start', base);
+
+      url.searchParams.set('flow', opaqueId());
+
+      return url.href;
+    },
     session: (code: string) =>
       request<Session>('/api/session', undefined, { code }),
     inspect: async (session: Session) =>

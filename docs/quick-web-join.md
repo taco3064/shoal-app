@@ -3,7 +3,8 @@
 The public Website remains on GitHub Pages. The backend is a Cloudflare Worker
 with one SQLite Durable Object per authorization flow. The Worker is an API, not
 a second public Website. GitHub authentication is optional; ordinary public
-pages and Local / CLI Join remain available without it.
+pages remain available without it, and Local / CLI setup guidance is shown in
+the same staged Join journey.
 
 ## Reproducible owner bootstrap
 
@@ -74,30 +75,49 @@ only the Playwright fixture. Use an explicit local origin pair:
    GITHUB_APP_CLIENT_SECRET=...
    GITHUB_APP_PRIVATE_KEY="-----BEGIN RSA PRIVATE KEY-----\n...\n-----END RSA PRIVATE KEY-----"
    JOIN_SERVICE_ORIGIN=http://127.0.0.1:8787
-   JOIN_WEBSITE_RETURN_URL=http://localhost:4321/join/
+   JOIN_WEBSITE_RETURN_URL=http://127.0.0.1:4321/shoal-app/join/
    ```
 
-3. Start the Worker locally with `npx wrangler dev --local --port 8787`.
-   In dev mode, the Website defaults Quick Web Join to
-   `http://127.0.0.1:8787`, so `npm run dev -- --host localhost --port 4321`
-   is enough when using that service port. The same value is documented in
-   `.env.local.example`; copy it when you want an explicit local Website env
-   file:
+3. Start the Worker locally:
+
+   ```bash
+   npx wrangler dev --local --port 8787
+   ```
+
+4. In another terminal, run one supported localhost Website path:
+
+   ```bash
+   npm run dev -- --host 127.0.0.1 --port 4321
+   ```
+
+   or verify the built site locally:
+
+   ```bash
+   npm run build
+   npm run preview -- --host 127.0.0.1 --port 4321
+   ```
+
+   On `localhost`, `127.0.0.1`, or `[::1]`, the Website defaults Quick Web Join
+   to `http://127.0.0.1:8787` when `PUBLIC_SHOAL_JOIN_SERVICE_URL` is absent, so
+   the **Sign in with GitHub** button is enabled in both dev and preview mode.
+   `.env.local.example` documents the same default for explicit local env files:
 
    ```bash
    cp .env.local.example .env.local
-   npm run dev -- --host localhost --port 4321
    ```
 
-   To use a different service origin, edit `.env.local` or set it inline:
+   To use a different service origin, edit `.env.local` or set it inline before
+   the Website command:
 
    ```bash
-   PUBLIC_SHOAL_JOIN_SERVICE_URL=http://127.0.0.1:8787 npm run dev -- --host localhost --port 4321
+   PUBLIC_SHOAL_JOIN_SERVICE_URL=http://127.0.0.1:8787 npm run dev -- --host 127.0.0.1 --port 4321
    ```
 
-4. Open `http://localhost:4321/join/`, choose **Sign in with GitHub**, complete
-   GitHub authorization, and verify the popup returns to the same Join page with
-   an authenticated inline journey.
+5. Open `http://127.0.0.1:4321/shoal-app/join/`, choose **Sign in with GitHub**,
+   complete GitHub authorization, and verify the popup returns to the same Join
+   page with an authenticated inline journey. If you choose `localhost` instead
+   of `127.0.0.1`, set `JOIN_WEBSITE_RETURN_URL` to the matching `localhost`
+   origin and path; the Worker checks the exact Website origin.
 
 Local HTTP is accepted only for `localhost`, `127.0.0.1`, or `[::1]` origins.
 Any non-local authenticated origin still requires HTTPS. The Worker still checks

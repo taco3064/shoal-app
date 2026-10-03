@@ -16,8 +16,8 @@ export default function QuickJoin({ join }: { join: JoinState }) {
             write.
           </p>
           <p>
-            Public browsing stays open. Prefer local setup? Use Local / CLI Join
-            below.
+            Public browsing stays open. Local / CLI setup remains available
+            inside the same stages when you prefer not to authorize the Website.
           </p>
         </div>
         <div className="quick-auth">
@@ -51,8 +51,8 @@ export default function QuickJoin({ join }: { join: JoinState }) {
       </div>
       {!join.configured && (
         <p>
-          Quick Web Join is not configured on this deployment. Local / CLI Join
-          remains available.
+          Quick Web Join is not configured on this deployment. The same staged
+          journey still shows the Local / CLI path.
         </p>
       )}
       {!join.session && (
