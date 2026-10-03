@@ -28,6 +28,14 @@ the same staged Join journey.
    compatibility date, `JOIN_FLOWS` binding and `JoinFlow` SQLite migration.
    Preserve the binding and migration identity on subsequent deployments; do not
    recreate sessions by renaming the binding or class.
+   The automatic deployment reads the existing Worker settings first. For an
+   existing `JOIN_FLOWS` binding to this Worker's `JoinFlow` namespace, it omits
+   class migrations and preserves the namespace, including Dashboard/API-created
+   namespaces without Wrangler's `v1` migration tag. Only a confirmed missing
+   Worker receives the initial SQLite class migration. Failed settings reads,
+   mismatched bindings, and existing Workers without `JOIN_FLOWS` stop deployment
+   for investigation; do not delete a namespace or change a migration tag to
+   force deployment through. No additional Actions variable is required.
    The `SHOAL_GITHUB_*` names are used only for GitHub Actions repository
    variables because GitHub reserves the `GITHUB_` prefix. The Worker runtime
    variables generated during deploy remain `GITHUB_APP_ID`, `GITHUB_APP_SLUG`
