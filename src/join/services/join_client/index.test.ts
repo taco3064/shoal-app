@@ -165,3 +165,19 @@ test('client preserves partial verified progress and stale errors', async (conte
 test('client rejects insecure production origins', () => {
   assert.throws(() => joinClient('http://join.example/'), /secure service URL/);
 });
+
+test('client auth URL carries a fresh flow id for local popup routing', () => {
+  const client = joinClient('http://127.0.0.1:8787/');
+  const first = new URL(client.authUrl);
+  const second = new URL(client.authUrl);
+
+  assert.equal(first.origin, 'http://127.0.0.1:8787');
+  assert.equal(first.pathname, '/auth/start');
+  assert.match(first.searchParams.get('flow') ?? '', /^[A-Za-z0-9_-]{43}$/);
+  assert.match(second.searchParams.get('flow') ?? '', /^[A-Za-z0-9_-]{43}$/);
+
+  assert.notEqual(
+    first.searchParams.get('flow'),
+    second.searchParams.get('flow'),
+  );
+});

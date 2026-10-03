@@ -39,18 +39,20 @@ inspect the Reviewer's direct fork and execute only explicitly confirmed
 remaining setup. Policy changes require their own confirmation. Configure,
 deploy, and locally verify the service using
 [the operating guide](docs/quick-web-join.md); the static Pages site never holds
-GitHub mutation credentials. Local / CLI Join remains a secondary setup
-alternative for users who choose not to authorize the Website.
-For local Website development, copy `.env.local.example` to `.env.local` when
-running against the default local Worker at `http://127.0.0.1:8787`.
+GitHub mutation credentials. Local / CLI setup remains supported inside the
+same staged journey for users who choose not to authorize the Website.
+On localhost, Website dev and preview default Quick Web Join to the local Worker
+at `http://127.0.0.1:8787` when no public service URL is set; copy
+`.env.local.example` to `.env.local` only when you want the local value recorded
+or overridden explicitly.
 
-For Local / CLI Join, directly fork the
+For local setup, directly fork the
 [Network Root](https://github.com/taco3064/shoal-station), manually enable Actions
-in the fork, then use `gh shoal init` for the managed station setup. Each Reviewer
-authors their own `README.md` Review Policy. `gh shoal init` cannot replace the
-manual Actions step for a new fork. The Personal Account-owned Network Root is
-also its owner's valid Reviewer Node; Root bootstrap and maintenance are an
-internal maintainer path, separate from public onboarding.
+in the fork when required by the local command contract, then use
+`gh shoal init` for the managed station setup. Each Reviewer authors their own
+`README.md` Review Policy. The Personal Account-owned Network Root is also its
+owner's valid Reviewer Node; Root bootstrap and maintenance are an internal
+maintainer path, separate from public onboarding.
 
 ## Network Scan and publication
 

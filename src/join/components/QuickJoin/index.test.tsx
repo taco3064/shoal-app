@@ -3,6 +3,7 @@ import test from 'node:test';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import type useQuickJoin from '~app/join/hooks/useQuickJoin';
+import { resolveJoinServiceUrl } from '~app/join/services/join_client';
 import type { Stage } from '~app/join/services/join_client';
 import QuickJoin from './index';
 
@@ -78,14 +79,17 @@ function stages(overrides: Partial<Record<string, Partial<Stage>>> = {}): Stage[
   return base.map((stage) => ({ ...stage, ...overrides[stage.id] }));
 }
 
-test('public Join does not require authentication or replace the local path', () => {
+test('public Join shows one staged journey with colocated local guidance', () => {
   const html = renderToStaticMarkup(
     createElement(QuickJoin, { join: state() }),
   );
 
   assert.match(html, /Sign in with GitHub/);
   assert.match(html, /Public browsing stays open/);
-  assert.match(html, /Local \/ CLI Join/);
+  assert.match(html, /Local \/ CLI setup remains available inside the same stages/);
+  assert.match(html, /Local \/ CLI mode/);
+  assert.match(html, /Website auth optional/);
+  assert.match(html, /Local path: gh shoal init/);
   assert.match(html, /GitHub identity/);
   assert.match(html, /Reviewer Node \/ direct fork/);
   assert.match(html, /GitHub App repository access/);
@@ -94,6 +98,35 @@ test('public Join does not require authentication or replace the local path', ()
   assert.match(html, /Station ready \/ publication waiting/);
   assert.doesNotMatch(html, /Verified/);
   assert.doesNotMatch(html, /<dialog|Station status/);
+  assert.doesNotMatch(html, /Prefer local setup|Local \/ CLI Join/);
+});
+
+test('localhost without public env still enables the default local Worker', () => {
+  assert.equal(
+    resolveJoinServiceUrl('', { protocol: 'http:', hostname: 'localhost' }),
+    'http://127.0.0.1:8787',
+  );
+
+  assert.equal(
+    resolveJoinServiceUrl('', { protocol: 'http:', hostname: '127.0.0.1' }),
+    'http://127.0.0.1:8787',
+  );
+
+  assert.equal(
+    resolveJoinServiceUrl('', {
+      protocol: 'https:',
+      hostname: 'taco3064.github.io',
+    }),
+    '',
+  );
+
+  assert.equal(
+    resolveJoinServiceUrl('https://join.example.test', {
+      protocol: 'https:',
+      hostname: 'taco3064.github.io',
+    }),
+    'https://join.example.test',
+  );
 });
 
 test('partial failure shows frozen verified progress rather than success', () => {
