@@ -88,6 +88,14 @@ test('public Join shows one staged journey with colocated local guidance', () =>
   assert.match(html, /Public browsing stays open/);
   assert.match(html, /Local \/ CLI setup remains available inside the same stages/);
   assert.match(html, /Local \/ CLI mode for this stage/);
+
+  assert.match(
+    html,
+    /Show Local \/ CLI instructions for Reviewer Node \/ direct fork/,
+  );
+
+  assert.match(html, /Show Local \/ CLI instructions for Station setup/);
+
   assert.match(html, /Website authorization is optional/);
   assert.match(html, /GitHub identity/);
   assert.match(html, /Reviewer Node \/ direct fork/);

@@ -2,7 +2,13 @@ type StageWithId = {
   id: string;
 };
 
-export default function LocalStageGuidance({ stage }: { stage: StageWithId }) {
+export default function LocalStageGuidance({
+  open = false,
+  stage,
+}: {
+  open?: boolean;
+  stage: StageWithId;
+}) {
   const guidance = localGuidance(stage.id);
 
   if (!guidance) {
@@ -10,7 +16,7 @@ export default function LocalStageGuidance({ stage }: { stage: StageWithId }) {
   }
 
   return (
-    <details className="quick-local-note">
+    <details className="quick-local-note" open={open}>
       <summary>Local / CLI mode for this stage</summary>
       {guidance}
     </details>
