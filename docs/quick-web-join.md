@@ -131,25 +131,40 @@ Authorization starts in a popup. The temporary OAuth binding cookie is Secure,
 HttpOnly, SameSite=Lax and limited to the Worker origin. OAuth state and PKCE
 verifier are held in the flow's Durable Object. The callback exchanges the code
 server-side and obtains the authenticated Personal Account identity with GitHub.
-The user access token is transient and discarded; refresh credentials are not
-retained. Only the verified identity is persisted. Subsequent inspection and
-mutation revalidate stable identity, Personal Account ownership, direct-fork
-parent and exact App installation/repository binding against GitHub.
+The short-lived user access token is retained in the active Durable Object
+instance's memory, keyed by the bounded session id, so subsequent authoritative
+inspection uses authenticated GitHub REST requests rather than the anonymous
+shared-IP quota. A sealed token envelope is also written to Durable Object SQL
+using AES-GCM with Worker-secret key material and session-id authenticated data,
+so a normal isolate replacement can re-establish authenticated GitHub authority
+without persisting the raw token. Refresh credentials are not retained. The raw
+token is never returned to the browser, written to logs, or written into Durable
+Object SQL. Subsequent inspection and mutation revalidate stable identity,
+Personal Account ownership, direct-fork parent and exact App
+installation/repository binding against GitHub.
 
 The popup sends a single-use 60-second handoff to the fixed Website origin.
 The browser checks both popup identity and message origin before redeeming it.
-Opaque session/CSRF values live in React memory only: not URLs, localStorage or
-sessionStorage. Authenticated APIs require an exact Website origin; POSTs also
-require the session CSRF nonce. No wildcard-origin authenticated CORS is allowed.
+The Worker sets an HttpOnly, Secure, SameSite=None session cookie for the Worker
+origin so a page reload can restore the still-valid Durable Object session when
+the browser accepts credentialed cross-origin cookies. The Website also stores
+only the opaque session id, CSRF nonce and public identity in tab-scoped
+`sessionStorage` so ordinary refresh does not orphan a still-valid server
+session when third-party cookies are unavailable. GitHub tokens, App private
+keys, client secrets, installation tokens and refresh credentials are never
+placed in browser storage. Authenticated APIs require an exact Website origin and
+credentialed CORS; POSTs also require the session CSRF nonce. No wildcard-origin
+authenticated CORS is allowed.
 Installation tokens are minted server-side for the exact Reviewer Repository ID
 and current operation's minimum permission subset. They exist only during that
 request and are never stored in Durable Objects, returned to the browser or
 written into logs. App keys and client secrets are injected as Workers Secrets.
 
-Durable state contains OAuth binding, authenticated identity, session/CSRF
-binding, one confirmed plan, operation progress and expiry. It survives isolate
-replacement. OAuth state expires after ten minutes, a handoff after one minute,
-a confirmation plan after five minutes and a session after thirty minutes.
+Durable state contains OAuth binding, authenticated identity, a sealed user-token
+envelope, session/CSRF binding, one confirmed plan, operation progress and
+expiry. It survives isolate replacement; raw privileged GitHub credentials do
+not. OAuth state expires after ten minutes, a handoff after one minute, a
+confirmation plan after five minutes and a session after thirty minutes.
 Expiry is checked on every request and cleanup uses a Durable Object alarm.
 Logout deletes the record. An interrupted execution preserves verified progress;
 GitHub remains authoritative and retry requires fresh inspection. No destructive

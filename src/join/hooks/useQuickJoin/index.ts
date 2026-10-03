@@ -4,6 +4,7 @@ import {
   joinClient,
   resolveJoinServiceUrl,
 } from '~app/join/services/join_client';
+import useStoredQuickJoinSession from '../useStoredQuickJoinSession';
 import type {
   Inspection,
   Job,
@@ -11,6 +12,7 @@ import type {
   Session,
   Stage,
 } from '~app/join/services/join_client';
+import { writeStoredSession } from '~app/join/services/session_storage';
 
 export default function useQuickJoin(serviceUrl: string) {
   const [hydrated, setHydrated] = useState(false);
@@ -20,11 +22,7 @@ export default function useQuickJoin(serviceUrl: string) {
   const [job, setJob] = useState<Job>();
   const [jobId, setJobId] = useState<string>();
   const [policyPlan, setPolicyPlan] = useState<PolicyPlan>();
-
-  const [policyChoice, setPolicyChoice] = useState<
-    'keep' | 'default' | 'custom'
-  >('keep');
-
+  const [policyChoice, setPolicyChoice] = useState<'keep' | 'default' | 'custom'>('keep');
   const [content, setContent] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -32,6 +30,7 @@ export default function useQuickJoin(serviceUrl: string) {
   const [stale, setStale] = useState(false);
   const popup = useRef<Window | null>(null);
   const external = useRef<Window | null>(null);
+  const externalTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const externalPending = useRef(false);
   const busyRef = useRef(false);
 
@@ -44,6 +43,15 @@ export default function useQuickJoin(serviceUrl: string) {
   useEffect(() => {
     setHydrated(true);
   }, []);
+
+  useStoredQuickJoinSession({
+    authenticating,
+    client,
+    hydrated,
+    session,
+    setError,
+    setSession,
+  });
 
   useEffect(() => {
     busyRef.current = busy;
@@ -59,6 +67,18 @@ export default function useQuickJoin(serviceUrl: string) {
   }, []);
 
   const handleError = useCallback((cause: unknown) => {
+    if (
+      cause instanceof JoinError
+      && (cause.code === 'SESSION_EXPIRED' || cause.code === 'CSRF_DENIED')
+    ) {
+      writeStoredSession(undefined);
+      setSession(undefined);
+      setInspection(undefined);
+      setPolicyPlan(undefined);
+      setJob(undefined);
+      setJobId(undefined);
+    }
+
     setError(
       cause instanceof Error
         ? cause.message
@@ -101,6 +121,12 @@ export default function useQuickJoin(serviceUrl: string) {
 
     externalPending.current = false;
     external.current = null;
+
+    if (externalTimer.current) {
+      clearInterval(externalTimer.current);
+      externalTimer.current = null;
+    }
+
     void refresh();
   }, [refresh]);
 
@@ -193,7 +219,10 @@ export default function useQuickJoin(serviceUrl: string) {
         popup.current = null;
 
         try {
-          setSession(await client.session(event.data.code));
+          const nextSession = await client.session(event.data.code);
+
+          writeStoredSession(nextSession);
+          setSession(nextSession);
           setError('');
         } catch (cause) {
           handleError(cause);
@@ -247,6 +276,13 @@ export default function useQuickJoin(serviceUrl: string) {
     };
   }, [session, refreshAfterExternal]);
 
+  useEffect(() => () => {
+    if (externalTimer.current) {
+      clearInterval(externalTimer.current);
+      externalTimer.current = null;
+    }
+  }, []);
+
   const authenticate = () => {
     setError('');
 
@@ -268,6 +304,11 @@ export default function useQuickJoin(serviceUrl: string) {
   };
 
   const openExternal = (url: string) => {
+    if (externalTimer.current) {
+      clearInterval(externalTimer.current);
+      externalTimer.current = null;
+    }
+
     externalPending.current = true;
     external.current = window.open(url, 'shoal-external-step');
 
@@ -283,9 +324,8 @@ export default function useQuickJoin(serviceUrl: string) {
       // Some browsers expose a restricted WindowProxy for external tabs.
     }
 
-    const timer = setInterval(() => {
+    externalTimer.current = setInterval(() => {
       if (external.current?.closed) {
-        clearInterval(timer);
         refreshAfterExternal();
       }
     }, 500);
@@ -374,6 +414,7 @@ export default function useQuickJoin(serviceUrl: string) {
     }
 
     setSession(undefined);
+    writeStoredSession(undefined);
     setInspection(undefined);
     setJob(undefined);
     setJobId(undefined);

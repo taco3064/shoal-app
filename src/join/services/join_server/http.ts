@@ -1,6 +1,6 @@
 import { readBody } from './body';
 import type { AuthIdentity } from './auth';
-import { handleAuth } from './auth';
+import { cookie, handleAuth } from './auth';
 import type { JoinConfig } from './config';
 import { plan, savePlan, stoppedJob } from './execution';
 import {
@@ -40,10 +40,46 @@ export function json(status: number, value: object): Response {
   });
 }
 
+function sessionCookie(value: string, maxAge: number): string {
+  return `__Host-shoal-session=${value}; Secure; HttpOnly; SameSite=None; Path=/; Max-Age=${maxAge}`;
+}
+
+function sessionJson(status: number, value: object, sessionId: string): Response {
+  const response = json(status, value);
+
+  response.headers.append('Set-Cookie', sessionCookie(sessionId, 1800));
+
+  return response;
+}
+
 function exactFields(body: Record<string, unknown>, fields: string[]): void {
   if (Object.keys(body).some((key) => !fields.includes(key))) {
     throw new Error('Unsupported request field');
   }
+}
+
+function repositoryId(publicValue: object): number | null {
+  const repository = (publicValue as {
+    repository?: { id?: unknown } | null;
+  }).repository;
+
+  return typeof repository?.id === 'number' ? repository.id : null;
+}
+
+function authContext(
+  session: { identity: AuthIdentity },
+  userToken: string,
+): AuthIdentity & { userToken: string } {
+  return { ...session.identity, userToken };
+}
+
+function sessionExpired(): Response {
+  return json(401, {
+    error: {
+      code: 'SESSION_EXPIRED',
+      message: 'Authorize with GitHub again.',
+    },
+  });
 }
 
 export class JoinHttp {
@@ -53,6 +89,13 @@ export class JoinHttp {
       adapter: JoinAdapter;
       flow: DurableFlow;
       storage: FlowStorage;
+      userToken: (sessionId: string) => Promise<string>;
+      retainUserToken: (
+        sessionId: string,
+        token: string,
+        expires: number,
+      ) => Promise<void>;
+      forgetUserToken: (sessionId: string) => void;
     },
   ) {}
 
@@ -70,6 +113,8 @@ export class JoinHttp {
       flow,
       persist: () => this.persist(),
       identity: (token) => adapter.identity(token),
+      retainUserToken: (sessionId, token, expires) =>
+        this.options.retainUserToken(sessionId, token, expires),
     });
 
     if (auth) {
@@ -89,6 +134,7 @@ export class JoinHttp {
           'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
           'Access-Control-Allow-Headers':
             'Content-Type,Authorization,X-CSRF-Token',
+          'Access-Control-Allow-Credentials': 'true',
         },
       });
     }
@@ -117,16 +163,36 @@ export class JoinHttp {
         throw new Error('Invalid session handoff');
       }
 
-      return json(200, {
+      return sessionJson(200, {
         authenticated: true,
         session: session.id,
         csrfToken: session.csrf,
         identity: session.identity,
-      });
+      }, session.id);
     }
 
     const authorization = request.headers.get('Authorization') ?? '';
     const session = flow.session;
+
+    if (url.pathname === '/api/session/current' && request.method === 'GET') {
+      const current = cookie(request, '__Host-shoal-session');
+
+      if (
+        !session
+        || session.expires <= Date.now()
+        || !current
+        || !equalSecret(current, session.id)
+      ) {
+        return sessionExpired();
+      }
+
+      return sessionJson(200, {
+        authenticated: true,
+        session: session.id,
+        csrfToken: session.csrf,
+        identity: session.identity,
+      }, session.id);
+    }
 
     if (
       !session
@@ -134,12 +200,7 @@ export class JoinHttp {
       || !authorization.startsWith('Session ')
       || !equalSecret(authorization.slice(8), session.id)
     ) {
-      return json(401, {
-        error: {
-          code: 'SESSION_EXPIRED',
-          message: 'Authorize with GitHub again.',
-        },
-      });
+      return sessionExpired();
     }
 
     if (
@@ -181,14 +242,27 @@ export class JoinHttp {
 
     if (url.pathname === '/api/logout') {
       exactFields(body, []);
+      this.options.forgetUserToken(session.id);
       await this.options.storage.clear();
       delete flow.session;
 
-      return json(200, { authenticated: false });
+      return new Response(JSON.stringify({ authenticated: false }), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'Set-Cookie': sessionCookie('', 0),
+        },
+      });
     }
 
     if (url.pathname === '/api/inspect') {
       exactFields(body, []);
+
+      const userToken = await this.options.userToken(session.id);
+
+      if (!userToken) {
+        return sessionExpired();
+      }
 
       const previous = session.plan?.kind === 'station'
         ? session.plan.value
@@ -196,7 +270,27 @@ export class JoinHttp {
           ? (session.plan.value as { inspection?: unknown }).inspection
           : undefined;
 
-      const inspection = await adapter.inspect(session.identity, previous);
+      const previousRepositoryId = previous
+        ? repositoryId(adapter.publicInspection(previous))
+        : null;
+
+      const inspection = await adapter.inspect(
+        authContext(session, userToken),
+        previous,
+      );
+
+      const nextRepositoryId = repositoryId(adapter.publicInspection(inspection));
+
+      if (
+        previousRepositoryId !== null
+        && previousRepositoryId !== nextRepositoryId
+      ) {
+        delete session.plan;
+        delete session.job;
+        delete session.execution;
+        session.busy = false;
+      }
+
       const planId = savePlan(session, 'station', inspection);
 
       delete session.job;
@@ -212,6 +306,11 @@ export class JoinHttp {
       exactFields(body, ['planId', 'choice', 'content']);
 
       const held = plan(session, body.planId, 'station');
+      const userToken = await this.options.userToken(session.id);
+
+      if (!userToken) {
+        return sessionExpired();
+      }
 
       if (
         body.choice !== 'default'
@@ -225,10 +324,14 @@ export class JoinHttp {
         throw new Error('Custom policy bytes required');
       }
 
-      const policy = await adapter.preparePolicy(session.identity, held.value, {
-        kind: body.choice,
-        content: typeof body.content === 'string' ? body.content : undefined,
-      });
+      const policy = await adapter.preparePolicy(
+        authContext(session, userToken),
+        held.value,
+        {
+          kind: body.choice,
+          content: typeof body.content === 'string' ? body.content : undefined,
+        },
+      );
 
       const planId = savePlan(session, 'policy', policy);
 
@@ -308,8 +411,14 @@ export class JoinHttp {
       let result: object;
 
       if (kind === 'station') {
+        const userToken = await this.options.userToken(session.id);
+
+        if (!userToken) {
+          throw new Error('Session GitHub authority expired');
+        }
+
         const step = await adapter.executeStep(
-          session.identity,
+          authContext(session, userToken),
           value,
           progress,
         );
@@ -325,7 +434,17 @@ export class JoinHttp {
 
         result = step.result;
       } else {
-        result = await adapter.executePolicy(session.identity, value, progress);
+        const userToken = await this.options.userToken(session.id);
+
+        if (!userToken) {
+          throw new Error('Session GitHub authority expired');
+        }
+
+        result = await adapter.executePolicy(
+          authContext(session, userToken),
+          value,
+          progress,
+        );
       }
 
       const operations

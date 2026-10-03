@@ -33,7 +33,14 @@ const operationPermissions: Record<
 };
 
 export class GitHubError extends Error {
-  constructor(public readonly status: number) {
+  constructor(
+    public readonly status: number,
+    public readonly details: {
+      pathClass: string;
+      rateLimitRemaining: string | null;
+      rateLimitReset: string | null;
+    },
+  ) {
     super(`GitHub request failed (${status}).`);
   }
 }
@@ -75,7 +82,11 @@ export class GitHubJoinClient {
     }
 
     if (!response.ok) {
-      throw new GitHubError(response.status);
+      throw new GitHubError(response.status, {
+        pathClass: pathClass(path),
+        rateLimitRemaining: response.headers.get('x-ratelimit-remaining'),
+        rateLimitReset: response.headers.get('x-ratelimit-reset'),
+      });
     }
 
     if (response.status === 204) {
@@ -92,6 +103,20 @@ export class GitHubJoinClient {
   async identity(context: GitHubAuthContext): Promise<GitHubUser> {
     if (typeof context === 'string') {
       return this.request(context, '/user');
+    }
+
+    if ('userToken' in context) {
+      const identity = await this.request<GitHubUser>(context.userToken, '/user');
+
+      if (
+        identity.id !== context.id
+        || identity.type !== 'User'
+        || identity.login !== context.login
+      ) {
+        throw new Error('Authenticated GitHub identity mismatch.');
+      }
+
+      return identity;
     }
 
     if (!Number.isSafeInteger(context.id) || context.id <= 0 || context.type !== 'User') {
@@ -388,4 +413,40 @@ export class GitHubJoinClient {
       verifyRoot,
     });
   }
+}
+
+function pathClass(path: string): string {
+  if (path === '/user' || /^\/user\/\d+$/.test(path)) {
+    return 'user_identity';
+  }
+
+  if (path.includes('/forks')) {
+    return 'root_fork_discovery';
+  }
+
+  if (path.includes('/contents/')) {
+    return 'repository_content_read';
+  }
+
+  if (path.includes('/actions/')) {
+    return 'repository_actions';
+  }
+
+  if (path.includes('/installation')) {
+    return 'app_installation_binding';
+  }
+
+  if (path.includes('/git/')) {
+    return 'git_data';
+  }
+
+  if (path.startsWith('/repos/') || path.startsWith('/repositories/')) {
+    return 'repository_metadata';
+  }
+
+  if (path.includes('/access_tokens')) {
+    return 'installation_token';
+  }
+
+  return 'github_api';
 }

@@ -1,7 +1,10 @@
 export type GitHubUser = { id: number; login: string; type: string };
 // Identity objects come from the authenticated server session, never request JSON.
 // The string form is transient OAuth callback / isolated adapter-test authority.
-export type GitHubAuthContext = GitHubUser | string;
+export type GitHubAuthContext
+  = | GitHubUser
+    | string
+    | (GitHubUser & { userToken: string });
 export type Repository = {
   id: number;
   full_name: string;

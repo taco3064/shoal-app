@@ -49,7 +49,9 @@ export async function inspectStation(
   previous?: Inspection,
 ): Promise<Inspection> {
   const identity = await client.identity(context);
-  const userToken = typeof context === 'string' ? context : '';
+
+  const userToken = authToken(context);
+
   const root = await client.repository(userToken, networkRoot.fullName);
 
   if (root.id !== networkRoot.repositoryId) {
@@ -187,6 +189,14 @@ export async function inspectStation(
   result.ready = stationReady(result);
 
   return result;
+}
+
+export function authToken(context: GitHubAuthContext): string {
+  if (typeof context === 'string') {
+    return context;
+  }
+
+  return 'userToken' in context ? context.userToken : '';
 }
 
 export function managedMatch(inspection: Inspection): boolean {

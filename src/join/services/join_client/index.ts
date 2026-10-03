@@ -297,7 +297,7 @@ export function joinClient(serviceUrl: string) {
   ): Promise<T> => {
     const response = await fetch(new URL(path, base), {
       method: body === undefined ? 'GET' : 'POST',
-      credentials: 'omit',
+      credentials: 'include',
       headers: {
         ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
         ...(session
@@ -334,6 +334,8 @@ export function joinClient(serviceUrl: string) {
     },
     session: (code: string) =>
       request<Session>('/api/session', undefined, { code }),
+    restore: () =>
+      request<Session>('/api/session/current'),
     inspect: async (session: Session) =>
       inspectionView(await request<Snapshot>('/api/inspect', session, {})),
     execute: (session: Session, planId: string) =>

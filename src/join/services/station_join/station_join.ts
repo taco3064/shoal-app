@@ -6,7 +6,7 @@ import {
 } from '~app/protocol/services/network_compatibility';
 
 import { GitHubJoinClient, type GitHubAuthContext } from '../github_join';
-import { inspectStation, publicInspection } from './inspection';
+import { authToken, inspectStation, publicInspection } from './inspection';
 import type {
   ExecutionResult,
   ExecutionCheckpoint,
@@ -229,7 +229,7 @@ export class StationJoinService {
     userToken: GitHubAuthContext,
     inspection: Inspection,
   ): Promise<void> {
-    const readToken = typeof userToken === 'string' ? userToken : '';
+    const readToken = authToken(userToken);
 
     const root = await this.client.repository(
       readToken,
