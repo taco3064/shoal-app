@@ -24,11 +24,6 @@ export default function QuickJoin({ join }: { join: JoinState }) {
           {join.session
             ? (
                 <>
-                  <p>
-                    Signed in as
-                    {' '}
-                    <strong>{join.session.identity.login}</strong>
-                  </p>
                   <button
                     className="button external"
                     disabled={join.busy}
@@ -36,6 +31,11 @@ export default function QuickJoin({ join }: { join: JoinState }) {
                   >
                     Sign out
                   </button>
+                  <p>
+                    Signed in as
+                    {' '}
+                    <strong>{join.session.identity.login}</strong>
+                  </p>
                 </>
               )
             : (
