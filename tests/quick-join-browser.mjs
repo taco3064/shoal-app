@@ -275,7 +275,7 @@ test('Quick Web Join renders one inline journey and verifies recovery and Policy
   await page.getByRole('button', { name: 'Complete setup automatically' }).click();
   await expect(page.getByText('Station ready / publication waiting')).toBeVisible();
   await expect(page.locator('progress')).toHaveAttribute('max', '1');
-  await expect(page.getByText('Directory publication is waiting', { exact: false })).toBeVisible();
+  await expect(page.getByText('Directory publication waits', { exact: false })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Refresh status', exact: true })).toBeEnabled();
   await testInfo.attach('policy-step', {
     body: await page.screenshot({ fullPage: true }),
