@@ -307,7 +307,9 @@ test('Quick Web Join renders one inline journey and verifies recovery and Policy
 
   phase = 'setup';
   await page.getByRole('button', { name: 'Refresh status', exact: true }).click();
-  await expect(page.getByText('gh shoal init')).toBeVisible();
+  await expect(
+    page.locator('.quick-current-step').getByText('Local / CLI mode for this stage'),
+  ).toBeVisible();
   await testInfo.attach('station-setup-mixed-diagnostics', {
     body: await page.screenshot({ fullPage: true }),
     contentType: 'image/png',
@@ -457,7 +459,7 @@ test('Quick Web Join short-circuits the Network Root owner inline', async ({ pag
     }
   });
 
-  await page.goto('join/');
+  await page.goto('http://127.0.0.1:4322/shoal-app/join/');
   await expect(page.getByRole('button', { name: 'Sign in with GitHub' })).toBeEnabled();
   await page.getByRole('button', { name: 'Sign in with GitHub' }).click();
   await expect(page.getByRole('heading', { name: 'Network Root owner' })).toBeVisible();
