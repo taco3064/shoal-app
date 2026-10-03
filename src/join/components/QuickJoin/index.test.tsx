@@ -87,9 +87,8 @@ test('public Join shows one staged journey with colocated local guidance', () =>
   assert.match(html, /Sign in with GitHub/);
   assert.match(html, /Public browsing stays open/);
   assert.match(html, /Local \/ CLI setup remains available inside the same stages/);
-  assert.match(html, /Local \/ CLI mode/);
-  assert.match(html, /Website auth optional/);
-  assert.match(html, /Local path: gh shoal init/);
+  assert.match(html, /Local \/ CLI mode for this stage/);
+  assert.match(html, /Website authorization is optional/);
   assert.match(html, /GitHub identity/);
   assert.match(html, /Reviewer Node \/ direct fork/);
   assert.match(html, /GitHub App repository access/);
