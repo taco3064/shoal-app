@@ -232,6 +232,7 @@ test('Quick Web Join renders one inline journey and verifies recovery and Policy
   await expect(page.getByRole('heading', { name: 'Local / CLI Join', exact: true })).toHaveCount(0);
   await expect(page.getByRole('heading', { name: 'Join Shoal', exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Current onboarding journey' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Sign in with GitHub', exact: true })).toBeEnabled();
   await expect(page.getByText('Reviewer Node / direct fork')).toBeVisible();
   await expect(page.locator('.quick-map-local')).toHaveCount(6);
   await page
@@ -252,14 +253,26 @@ test('Quick Web Join renders one inline journey and verifies recovery and Policy
       name: 'Show Local / CLI instructions for Station setup',
     })
     .click();
+  await expect(page).toHaveURL(/localStage=station/);
   await expect(page.getByRole('heading', { name: 'Station setup' })).toBeVisible();
   await expect(page.getByText('gh shoal init')).toBeVisible();
+  await page.goto('how-it-works/');
+  await expect(page.locator('main h1')).toBeVisible();
+  await page.goto('join/?localStage=station');
+  await expect(page.locator('.quick-current-step[data-local="true"]')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Station setup' })).toBeVisible();
   await expect(page.getByText('Station ready / publication waiting')).toBeVisible();
   await expect(page.getByText('Verified')).toHaveCount(0);
   await attachViewport('unauthenticated-journey', 1024);
   await attachViewport('unauthenticated-journey', 768);
   await attachViewport('unauthenticated-journey', 390, 844);
   await page.setViewportSize({ width: 1280, height: 900 });
+  await page
+    .getByRole('button', {
+      name: 'Show Local / CLI instructions for Station setup',
+    })
+    .click();
+  await expect(page).not.toHaveURL(/localStage=station/);
   await page.getByRole('button', { name: 'Sign in with GitHub', exact: true }).click();
   await expect(page.getByRole('alert')).toContainText('cancelled');
   await expect(page.getByRole('dialog', { name: 'Station status' })).toHaveCount(0);
