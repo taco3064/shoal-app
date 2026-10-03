@@ -25,6 +25,25 @@ test('Quick Web Join renders one inline journey and verifies recovery and Policy
 
   page.on('pageerror', (error) => errors.push(error.message));
 
+  async function expectNoHorizontalOverflow() {
+    expect(await page.locator('.quick-join').evaluate((element) =>
+      element.scrollWidth <= element.clientWidth,
+    )).toBe(true);
+    expect(await page.evaluate(() =>
+      document.documentElement.scrollWidth <= window.innerWidth,
+    )).toBe(true);
+  }
+
+  async function attachViewport(name, width, height = 900) {
+    await page.setViewportSize({ width, height });
+    await expect(page.getByRole('heading', { name: 'Current onboarding journey' })).toBeVisible();
+    await expectNoHorizontalOverflow();
+    await testInfo.attach(`${name}-${width}`, {
+      body: await page.screenshot({ fullPage: true }),
+      contentType: 'image/png',
+    });
+  }
+
   const snapshot = () => ({
     planId: `fresh-${phase}`,
     identity: { id: 1, login: 'reviewer' },
@@ -217,6 +236,10 @@ test('Quick Web Join renders one inline journey and verifies recovery and Policy
   await expect(page.getByText('Local / CLI: gh shoal init')).toBeVisible();
   await expect(page.getByText('Station ready / publication waiting')).toBeVisible();
   await expect(page.getByText('Verified')).toHaveCount(0);
+  await attachViewport('unauthenticated-journey', 1024);
+  await attachViewport('unauthenticated-journey', 768);
+  await attachViewport('unauthenticated-journey', 390, 844);
+  await page.setViewportSize({ width: 1280, height: 900 });
   await page.getByRole('button', { name: 'Sign in with GitHub', exact: true }).click();
   await expect(page.getByRole('alert')).toContainText('cancelled');
   await expect(page.getByRole('dialog', { name: 'Station status' })).toHaveCount(0);
@@ -339,18 +362,9 @@ test('Quick Web Join renders one inline journey and verifies recovery and Policy
     body: await page.screenshot({ fullPage: true }),
     contentType: 'image/png',
   });
-  await page.setViewportSize({ width: 390, height: 844 });
-  await expect(page.getByRole('heading', { name: 'Current onboarding journey' })).toBeVisible();
-  expect(await page.locator('.quick-join').evaluate((element) =>
-    element.scrollWidth <= element.clientWidth,
-  )).toBe(true);
-  expect(await page.evaluate(() =>
-    document.documentElement.scrollWidth <= window.innerWidth,
-  )).toBe(true);
-  await testInfo.attach('final-completed-mobile', {
-    body: await page.screenshot({ fullPage: true }),
-    contentType: 'image/png',
-  });
+  await attachViewport('final-completed', 1024);
+  await attachViewport('final-completed', 768);
+  await attachViewport('final-completed', 390, 844);
 });
 
 test('Quick Web Join short-circuits the Network Root owner inline', async ({ page, context }, testInfo) => {
