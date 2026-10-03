@@ -5,5 +5,7 @@ playwright-report/
 test-results/
 .wrangler/
 .worker-build/
+.env.local
+.env.*.local
 .dev.vars
 .dev.vars.*

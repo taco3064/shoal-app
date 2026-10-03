@@ -41,6 +41,8 @@ deploy, and locally verify the service using
 [the operating guide](docs/quick-web-join.md); the static Pages site never holds
 GitHub mutation credentials. Local / CLI Join remains a secondary setup
 alternative for users who choose not to authorize the Website.
+For local Website development, copy `.env.local.example` to `.env.local` when
+running against the default local Worker at `http://127.0.0.1:8787`.
 
 For Local / CLI Join, directly fork the
 [Network Root](https://github.com/taco3064/shoal-station), manually enable Actions

@@ -80,8 +80,16 @@ only the Playwright fixture. Use an explicit local origin pair:
 3. Start the Worker locally with `npx wrangler dev --local --port 8787`.
    In dev mode, the Website defaults Quick Web Join to
    `http://127.0.0.1:8787`, so `npm run dev -- --host localhost --port 4321`
-   is enough when using that service port. To use a different service origin,
-   set it explicitly:
+   is enough when using that service port. The same value is documented in
+   `.env.local.example`; copy it when you want an explicit local Website env
+   file:
+
+   ```bash
+   cp .env.local.example .env.local
+   npm run dev -- --host localhost --port 4321
+   ```
+
+   To use a different service origin, edit `.env.local` or set it inline:
 
    ```bash
    PUBLIC_SHOAL_JOIN_SERVICE_URL=http://127.0.0.1:8787 npm run dev -- --host localhost --port 4321
