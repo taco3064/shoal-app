@@ -234,6 +234,26 @@ test('Quick Web Join renders one inline journey and verifies recovery and Policy
   await expect(page.getByRole('heading', { name: 'Current onboarding journey' })).toBeVisible();
   await expect(page.getByText('Reviewer Node / direct fork')).toBeVisible();
   await expect(page.locator('.quick-map-local')).toHaveCount(6);
+  await page
+    .getByRole('button', {
+      name: 'Show Local / CLI instructions for Reviewer Node / direct fork',
+    })
+    .click();
+  await expect(
+    page.locator('.quick-current-step[data-local="true"]'),
+  ).toBeVisible();
+  await expect(page.getByRole('heading', {
+    name: 'Reviewer Node / direct fork',
+  })).toBeVisible();
+  await expect(page.getByText('Directly fork')).toBeVisible();
+  await expect(page.getByText('not qualify')).toBeVisible();
+  await page
+    .getByRole('button', {
+      name: 'Show Local / CLI instructions for Station setup',
+    })
+    .click();
+  await expect(page.getByRole('heading', { name: 'Station setup' })).toBeVisible();
+  await expect(page.getByText('gh shoal init')).toBeVisible();
   await expect(page.getByText('Station ready / publication waiting')).toBeVisible();
   await expect(page.getByText('Verified')).toHaveCount(0);
   await attachViewport('unauthenticated-journey', 1024);

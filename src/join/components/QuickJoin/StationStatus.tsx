@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type useQuickJoin from '~app/join/hooks/useQuickJoin';
 import LocalStageGuidance from './LocalStageGuidance';
 import PolicyStep from './PolicyStep';
@@ -18,6 +19,7 @@ const stateLabels: Record<Stage['state'], string> = {
 };
 
 export default function StationStatus({ join }: { join: JoinState }) {
+  const [localStageId, setLocalStageId] = useState<string | null>(null);
   const inspection = join.inspection ?? previewInspection();
   const preview = !join.inspection;
 
@@ -44,10 +46,18 @@ export default function StationStatus({ join }: { join: JoinState }) {
     return null;
   }
 
-  const activeIndex = Math.max(
+  const localStage = localStageId
+    ? stages.find((stage) => stage.id === localStageId) ?? null
+    : null;
+
+  const displayStage = localStage ?? activeStage;
+
+  const displayIndex = Math.max(
     0,
-    stages.findIndex((stage) => stage.id === activeStage.id),
+    stages.findIndex((stage) => stage.id === displayStage.id),
   );
+
+  const localMode = Boolean(localStage);
 
   return (
     <>
@@ -98,6 +108,7 @@ export default function StationStatus({ join }: { join: JoinState }) {
                 key={stage.id}
                 data-state={stage.state}
                 data-active={stage.id === activeStage.id ? 'true' : 'false'}
+                data-local-active={stage.id === localStage?.id ? 'true' : 'false'}
                 data-actionable={actionable ? 'true' : 'false'}
               >
                 {actionable
@@ -113,31 +124,58 @@ export default function StationStatus({ join }: { join: JoinState }) {
                   : (
                       <div>{content}</div>
                     )}
-                <span className="quick-map-local">Local / CLI</span>
+                <button
+                  className="quick-map-local"
+                  type="button"
+                  aria-pressed={stage.id === localStage?.id}
+                  aria-label={`Show Local / CLI instructions for ${stage.label}`}
+                  onClick={() => setLocalStageId(
+                    stage.id === localStage?.id ? null : stage.id,
+                  )}
+                >
+                  Local / CLI
+                </button>
               </li>
             );
           })}
         </ol>
         <section
           className="quick-current-step"
-          data-state={activeStage.state}
+          data-state={displayStage.state}
+          data-local={localMode ? 'true' : 'false'}
           data-preview={preview ? 'true' : 'false'}
           aria-labelledby="quick-current-step-title"
         >
           <div className="quick-current-index" aria-hidden="true">
-            <span>{String(activeIndex + 1).padStart(2, '0')}</span>
-            <StatusIcon state={activeStage.state} />
+            <span>{String(displayIndex + 1).padStart(2, '0')}</span>
+            <StatusIcon state={displayStage.state} />
           </div>
           <div className="quick-current-body">
             <div className="quick-stage-topline">
+              {localMode && (
+                <span className="quick-stage-mode">
+                  Local / CLI mode
+                </span>
+              )}
               <span className="quick-stage-state">
-                {stateLabels[activeStage.state]}
+                {stateLabels[displayStage.state]}
               </span>
             </div>
-            <h4 id="quick-current-step-title">{activeStage.label}</h4>
-            <p>{activeStage.detail}</p>
-            {!preview && <StageAction join={join} stage={activeStage} />}
-            {activeStage.id === 'station' && inspection.operations.length > 0 && (
+            <h4 id="quick-current-step-title">{displayStage.label}</h4>
+            {localMode && (
+              <p className="quick-local-mode-note">
+                Local / CLI instructions are available for this canonical
+                stage. This does not mark the stage complete; authoritative
+                status still comes from GitHub inspection.
+              </p>
+            )}
+            <p>{displayStage.detail}</p>
+            {!preview && !localMode && (
+              <StageAction join={join} stage={displayStage} />
+            )}
+            {displayStage.id === 'station'
+              && inspection.operations.length > 0
+              && !localMode && (
               <div className="quick-stage-plan">
                 <p>Automatic completion will verify:</p>
                 <ol>
@@ -148,9 +186,10 @@ export default function StationStatus({ join }: { join: JoinState }) {
               </div>
             )}
             {!preview
-              && activeStage.id === 'policy'
-              && activeStage.action === 'policy' && <PolicyStep join={join} />}
-            {activeStage.id === 'ready' && inspection.ready && (
+              && !localMode
+              && displayStage.id === 'policy'
+              && displayStage.action === 'policy' && <PolicyStep join={join} />}
+            {displayStage.id === 'ready' && inspection.ready && !localMode && (
               <div className="quick-publication">
                 <p>
                   Directory publication waits for a separate successful Network
@@ -159,8 +198,10 @@ export default function StationStatus({ join }: { join: JoinState }) {
                 </p>
               </div>
             )}
-            {activeStage.facts && <StageFacts facts={activeStage.facts} />}
-            <LocalStageGuidance stage={activeStage} />
+            {displayStage.facts && !localMode && (
+              <StageFacts facts={displayStage.facts} />
+            )}
+            <LocalStageGuidance stage={displayStage} open={localMode} />
           </div>
         </section>
       </div>
