@@ -24,7 +24,9 @@ export default function StationStatus({ join }: { join: JoinState }) {
   if (inspection.rootOwner) {
     return (
       <section className="quick-root-owner" aria-labelledby="root-owner-title">
-        <span className="quick-root-mark" aria-hidden="true">✓</span>
+        <span className="quick-root-mark" aria-hidden="true">
+          <StatusIcon state="complete" />
+        </span>
         <h3 id="root-owner-title">Network Root owner</h3>
         <p>You’re signed in as the Network Root owner.</p>
         <p>
@@ -71,92 +73,102 @@ export default function StationStatus({ join }: { join: JoinState }) {
           </a>
         )}
       </div>
-      <section
-        className="quick-current-step"
-        data-state={activeStage.state}
-        data-preview={preview ? 'true' : 'false'}
-        aria-labelledby="quick-current-step-title"
-      >
-        <div className="quick-current-index" aria-hidden="true">
-          {String(activeIndex + 1).padStart(2, '0')}
-        </div>
-        <div className="quick-current-body">
-          <div className="quick-stage-topline">
-            <span className="quick-stage-state">
-              {stateLabels[activeStage.state]}
-            </span>
-          </div>
-          <h4 id="quick-current-step-title">{activeStage.label}</h4>
-          <p>{activeStage.detail}</p>
-          <LocalStageGuidance stage={activeStage} />
-          {!preview && <StageAction join={join} stage={activeStage} />}
-          {activeStage.id === 'station' && inspection.operations.length > 0 && (
-            <div className="quick-stage-plan">
-              <p>Automatic completion will verify:</p>
-              <ol>
-                {inspection.operations.map((operation) => (
-                  <li key={operation.id}>{operation.label}</li>
-                ))}
-              </ol>
-            </div>
-          )}
-          {!preview
-            && activeStage.id === 'policy'
-            && activeStage.action === 'policy' && <PolicyStep join={join} />}
-          {activeStage.id === 'ready' && inspection.ready && (
-            <div className="quick-publication">
-              <p>
-                Directory publication waits for a separate successful Network
-                Scan and publication. Readiness does not guarantee a publication
-                deadline.
-              </p>
-            </div>
-          )}
-          {activeStage.facts && <StageFacts facts={activeStage.facts} />}
-        </div>
-      </section>
-      <ol className="quick-progress-map" aria-label="Join progress">
-        {stages.map((stage, index) => {
-          const actionable = getMapAction(join, stage);
+      <div className="quick-journey-layout">
+        <ol className="quick-progress-map" aria-label="Join progress">
+          {stages.map((stage, index) => {
+            const actionable = getMapAction(join, stage);
 
-          const content = (
-            <>
-              <span className="quick-map-marker" aria-hidden="true">
-                <StatusIcon state={stage.state} />
-              </span>
-              <span className="quick-map-step">
-                {String(index + 1).padStart(2, '0')}
-              </span>
-              <strong>{stage.label}</strong>
-              <span className="quick-map-state">{stateLabels[stage.state]}</span>
-              <small>{localCue(stage)}</small>
-            </>
-          );
+            const content = (
+              <>
+                <span className="quick-map-marker" aria-hidden="true">
+                  <StatusIcon state={stage.state} />
+                </span>
+                <span className="quick-map-step">
+                  {String(index + 1).padStart(2, '0')}
+                </span>
+                <strong>{stage.label}</strong>
+                <span className="quick-map-state">
+                  {stateLabels[stage.state]}
+                </span>
+              </>
+            );
 
-          return (
-            <li
-              key={stage.id}
-              data-state={stage.state}
-              data-active={stage.id === activeStage.id ? 'true' : 'false'}
-              data-actionable={actionable ? 'true' : 'false'}
-            >
-              {actionable
-                ? (
-                    <button
-                      type="button"
-                      onClick={actionable.onClick}
-                      disabled={actionable.disabled}
-                    >
-                      {content}
-                    </button>
-                  )
-                : (
-                    <div>{content}</div>
+            return (
+              <li
+                key={stage.id}
+                data-state={stage.state}
+                data-active={stage.id === activeStage.id ? 'true' : 'false'}
+                data-actionable={actionable ? 'true' : 'false'}
+              >
+                {actionable
+                  ? (
+                      <button
+                        type="button"
+                        onClick={actionable.onClick}
+                        disabled={actionable.disabled}
+                      >
+                        {content}
+                      </button>
+                    )
+                  : (
+                      <div>{content}</div>
+                    )}
+                <div className="quick-map-local">
+                  <span>{localCue(stage)}</span>
+                  {stage.id !== activeStage.id && (
+                    <LocalStageGuidance stage={stage} />
                   )}
-            </li>
-          );
-        })}
-      </ol>
+                </div>
+              </li>
+            );
+          })}
+        </ol>
+        <section
+          className="quick-current-step"
+          data-state={activeStage.state}
+          data-preview={preview ? 'true' : 'false'}
+          aria-labelledby="quick-current-step-title"
+        >
+          <div className="quick-current-index" aria-hidden="true">
+            <span>{String(activeIndex + 1).padStart(2, '0')}</span>
+            <StatusIcon state={activeStage.state} />
+          </div>
+          <div className="quick-current-body">
+            <div className="quick-stage-topline">
+              <span className="quick-stage-state">
+                {stateLabels[activeStage.state]}
+              </span>
+            </div>
+            <h4 id="quick-current-step-title">{activeStage.label}</h4>
+            <p>{activeStage.detail}</p>
+            {!preview && <StageAction join={join} stage={activeStage} />}
+            {activeStage.id === 'station' && inspection.operations.length > 0 && (
+              <div className="quick-stage-plan">
+                <p>Automatic completion will verify:</p>
+                <ol>
+                  {inspection.operations.map((operation) => (
+                    <li key={operation.id}>{operation.label}</li>
+                  ))}
+                </ol>
+              </div>
+            )}
+            {!preview
+              && activeStage.id === 'policy'
+              && activeStage.action === 'policy' && <PolicyStep join={join} />}
+            {activeStage.id === 'ready' && inspection.ready && (
+              <div className="quick-publication">
+                <p>
+                  Directory publication waits for a separate successful Network
+                  Scan and publication. Readiness does not guarantee a
+                  publication deadline.
+                </p>
+              </div>
+            )}
+            {activeStage.facts && <StageFacts facts={activeStage.facts} />}
+            <LocalStageGuidance stage={activeStage} />
+          </div>
+        </section>
+      </div>
       {!preview && inspection.ready && activeStage.id !== 'ready' && (
         <div className="quick-publication">
           <p>
@@ -363,18 +375,18 @@ function getMapAction(join: JoinState, stage: Stage) {
 function localCue(stage: Stage) {
   switch (stage.id) {
     case 'identity':
-      return 'Website auth optional';
+      return 'Local / CLI: Website authorization optional';
     case 'node':
-      return 'Direct fork also works locally';
+      return 'Local / CLI: direct personal fork';
     case 'access':
-      return 'Local setup can skip Website mutation access';
+      return 'Local / CLI: Website mutation access optional';
     case 'station':
-      return 'Local path: gh shoal init';
+      return 'Local / CLI: gh shoal init';
     case 'policy':
-      return 'Local path: edit README.md';
+      return 'Local / CLI: edit README.md';
     case 'ready':
-      return 'Same readiness either way';
+      return 'Local / CLI: same readiness facts';
     default:
-      return '';
+      return 'Local / CLI available';
   }
 }

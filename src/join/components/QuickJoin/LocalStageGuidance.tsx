@@ -3,92 +3,96 @@ type StageWithId = {
 };
 
 export default function LocalStageGuidance({ stage }: { stage: StageWithId }) {
-  if (stage.id === 'identity') {
+  const guidance = localGuidance(stage.id);
+
+  if (!guidance) {
+    return null;
+  }
+
+  return (
+    <details className="quick-local-note">
+      <summary>Local / CLI mode for this stage</summary>
+      {guidance}
+    </details>
+  );
+}
+
+function localGuidance(stageId: string) {
+  if (stageId === 'identity') {
     return (
-      <div className="quick-local-note">
-        <strong>Local / CLI mode:</strong>
-        {' '}
+      <p>
         Website authorization is optional. You can complete the same canonical
         stages from your own checkout.
-      </div>
+      </p>
     );
   }
 
-  if (stage.id === 'node') {
+  if (stageId === 'node') {
     return (
-      <div className="quick-local-note">
-        <strong>Local / CLI mode:</strong>
-        {' '}
+      <p>
         Directly fork
         {' '}
         <code>taco3064/shoal-station</code>
         {' '}
         with your personal GitHub account. A fork of another Reviewer Node does
         not qualify.
-      </div>
+      </p>
     );
   }
 
-  if (stage.id === 'access') {
+  if (stageId === 'access') {
     return (
-      <div className="quick-local-note">
-        <strong>Local / CLI mode:</strong>
-        {' '}
+      <p>
         Granting Website mutation authority is only for Web-assisted setup.
         Local setup can continue from your checkout with authenticated GitHub
         CLI access.
-      </div>
+      </p>
     );
   }
 
-  if (stage.id === 'station') {
+  if (stageId === 'station') {
     return (
-      <div className="quick-local-note">
-        <strong>Local / CLI mode:</strong>
-        {' '}
-        Confirm GitHub Actions in your fork, install
-        {' '}
-        <code>gh</code>
-        , run
-        {' '}
-        <code>gh auth status</code>
-        , install
-        {' '}
-        <code>gh extension install taco3064/gh-shoal</code>
-        , then run
-        {' '}
-        <code>gh shoal init</code>
-        {' '}
-        in a clean checkout.
-      </div>
+      <>
+        <p>
+          Confirm GitHub Actions in your fork, authenticate the GitHub CLI, and
+          run the Shoal initializer from a clean checkout.
+        </p>
+        <ol>
+          <li>
+            <code>gh auth status</code>
+          </li>
+          <li>
+            <code>gh extension install taco3064/gh-shoal</code>
+          </li>
+          <li>
+            <code>gh shoal init</code>
+          </li>
+        </ol>
+      </>
     );
   }
 
-  if (stage.id === 'policy') {
+  if (stageId === 'policy') {
     return (
-      <div className="quick-local-note">
-        <strong>Local / CLI mode:</strong>
-        {' '}
+      <p>
         Edit, commit, and push your own
         {' '}
         <code>README.md</code>
         {' '}
         Review Policy. Setup must leave that standard to you.
-      </div>
+      </p>
     );
   }
 
-  if (stage.id === 'ready') {
+  if (stageId === 'ready') {
     return (
-      <div className="quick-local-note">
-        <strong>Local / CLI mode:</strong>
-        {' '}
+      <p>
         Readiness and Directory publication use the same station facts whether
         the work was completed through the Website or through
         {' '}
         <code>gh shoal</code>
         .
-      </div>
+      </p>
     );
   }
 
