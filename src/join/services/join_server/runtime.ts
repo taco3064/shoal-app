@@ -381,12 +381,12 @@ async function routingCode(request: Request): Promise<string> {
 }
 
 function routingSession(request: Request): string {
-  return (
-    request.headers
-      .get('cookie')
-      ?.split(';')
-      .map((value) => value.trim())
-      .find((value) => value.startsWith('__Host-shoal-session='))
-      ?.slice('__Host-shoal-session='.length) ?? ''
-  );
+  return request.headers
+    .get('cookie')
+    ?.split(';')
+    .map((value) => value.trim())
+    .find((value) => value.startsWith('__Host-shoal-session='))
+    ?.slice('__Host-shoal-session='.length)
+    ?? request.headers.get('Authorization')?.replace(/^Session /, '')
+    ?? '';
 }

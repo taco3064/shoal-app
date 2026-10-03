@@ -74,6 +74,7 @@ type Snapshot = {
   workflowSupported: boolean;
   platformBlocked: boolean;
   policy: { content: string; defaultContent: string; matchesDefault: boolean };
+  policyComplete: boolean;
   operations: string[];
   ready: boolean;
   installationUrl?: string;
@@ -137,6 +138,21 @@ function inspectionView(snapshot: Snapshot): Inspection {
   const stationComplete = stationFacts.every((item) => item.state === 'complete');
   const stationActionable = snapshot.appAccess && snapshot.operations.length > 0;
   const policyAvailable = stationComplete && !!snapshot.policy?.content;
+  const policyComplete = policyAvailable && snapshot.policyComplete;
+
+  const policyDetail = policyComplete
+    ? 'Review Policy choice is confirmed for this station state.'
+    : snapshot.policy?.matchesDefault
+      ? 'Current Policy equals the default; adoption needs no commit.'
+      : 'Your existing README.md is preserved unless separately confirmed.';
+
+  const readyDetail = snapshot.ready && policyComplete
+    ? 'Station readiness is verified. Directory publication waits for '
+    + 'a later Network Scan.'
+    : snapshot.ready
+      ? 'Station readiness is verified. Confirm the Policy step before '
+      + 'the canonical Join journey is complete.'
+      : 'Readiness appears after required station facts are verified.';
 
   const stages: Stage[] = [
     {
@@ -202,22 +218,19 @@ function inspectionView(snapshot: Snapshot): Inspection {
       {
         id: 'policy',
         label: 'Review Policy',
-        state: policyAvailable ? 'available' : 'waiting',
+        state: policyComplete
+          ? 'complete'
+          : policyAvailable ? 'available' : 'waiting',
         detail: !stationComplete
           ? 'Available after Station setup is verified.'
-          : snapshot.policy?.matchesDefault
-            ? 'Current Policy equals the default; adoption needs no commit.'
-            : 'Your existing README.md is preserved unless separately confirmed.',
-        action: policyAvailable ? 'policy' : undefined,
+          : policyDetail,
+        action: policyAvailable && !policyComplete ? 'policy' : undefined,
       },
       {
         id: 'ready',
         label: 'Station ready / publication waiting',
-        state: snapshot.ready && policyAvailable ? 'complete' : 'waiting',
-        detail: snapshot.ready
-          ? 'Station readiness is verified. Directory publication waits for '
-          + 'a later Network Scan.'
-          : 'Readiness appears after required station facts are verified.',
+        state: snapshot.ready && policyComplete ? 'complete' : 'waiting',
+        detail: readyDetail,
       },
     );
   }
@@ -349,8 +362,8 @@ export function joinClient(serviceUrl: string) {
     },
     session: (code: string) =>
       request<Session>('/api/session', undefined, { code }),
-    restore: () =>
-      request<Session>('/api/session/current'),
+    restore: (session?: Session) =>
+      request<Session>('/api/session/current', session),
     inspect: async (session: Session) =>
       inspectionView(await request<Snapshot>('/api/inspect', session, {})),
     execute: (session: Session, planId: string) =>

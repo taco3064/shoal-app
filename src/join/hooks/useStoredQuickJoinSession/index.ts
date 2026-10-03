@@ -1,7 +1,10 @@
 import { useEffect } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import type { joinClient, Session } from '~app/join/services/join_client';
-import { writeStoredSession } from '~app/join/services/session_storage';
+import {
+  readStoredSession,
+  writeStoredSession,
+} from '~app/join/services/session_storage';
 
 type JoinClient = ReturnType<typeof joinClient>;
 
@@ -37,7 +40,19 @@ export default function useStoredQuickJoinSession(options: {
       try {
         setAuthState('unknown');
 
-        const restored = await client.restore();
+        let restored: Session;
+
+        try {
+          restored = await client.restore();
+        } catch {
+          const stored = readStoredSession();
+
+          if (!stored) {
+            throw new Error('No restorable Shoal session.');
+          }
+
+          restored = await client.restore(stored);
+        }
 
         if (!disposed) {
           setSession(restored);

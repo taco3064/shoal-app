@@ -1,6 +1,7 @@
 import type { DurableObjectStorage } from '@cloudflare/workers-types';
 import type { AuthIdentity } from './auth';
 import type { Job } from './execution';
+import type { PolicyDecision } from './policy_completion';
 import type { SealedToken } from './sealed_token';
 
 export interface HeldPlan {
@@ -17,6 +18,7 @@ export interface DurableSession {
   expires: number;
   sealedUserToken?: SealedToken;
   handoff?: { code: string; expires: number };
+  policyDecision?: PolicyDecision;
   plan?: HeldPlan;
   job?: Job & { id: string };
   busy: boolean;
