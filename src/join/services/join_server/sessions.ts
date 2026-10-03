@@ -1,6 +1,7 @@
 import type { DurableObjectStorage } from '@cloudflare/workers-types';
 import type { AuthIdentity } from './auth';
 import type { Job } from './execution';
+import type { SealedToken } from './sealed_token';
 
 export interface HeldPlan {
   id: string;
@@ -14,6 +15,7 @@ export interface DurableSession {
   id: string;
   csrf: string;
   expires: number;
+  sealedUserToken?: SealedToken;
   handoff?: { code: string; expires: number };
   plan?: HeldPlan;
   job?: Job & { id: string };
@@ -45,7 +47,10 @@ export function equalSecret(left: string, right: string): boolean {
   return mismatch === 0;
 }
 
-/** One bounded record per isolated flow; secrets are never accepted by this schema. */
+/**
+ * One bounded record per isolated flow;
+ * raw secrets are never accepted by this schema.
+ */
 export class FlowStorage {
   constructor(private storage: DurableObjectStorage) {
     storage.sql.exec(

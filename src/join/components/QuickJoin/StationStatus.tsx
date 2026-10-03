@@ -3,7 +3,6 @@ import type useQuickJoin from '~app/join/hooks/useQuickJoin';
 import LocalStageGuidance from './LocalStageGuidance';
 import PolicyStep from './PolicyStep';
 import StatusIcon from './StatusIcon';
-import { readLocalStageId, writeLocalStageId } from './local_stage_url';
 import { previewInspection } from './preview_inspection';
 
 type JoinState = ReturnType<typeof useQuickJoin>;
@@ -63,24 +62,13 @@ export default function StationStatus({ join }: { join: JoinState }) {
   useEffect(() => {
     if (localStageId && !stages.some((stage) => stage.id === localStageId)) {
       setLocalStageId(null);
-      writeLocalStageId(null);
     }
   }, [localStageId, stages]);
-
-  useEffect(() => {
-    const syncFromUrl = () => setLocalStageId(readLocalStageId());
-
-    syncFromUrl();
-    window.addEventListener('popstate', syncFromUrl);
-
-    return () => window.removeEventListener('popstate', syncFromUrl);
-  }, []);
 
   const selectLocalStage = (stage: Stage) => {
     const nextStageId = stage.id === localStage?.id ? null : stage.id;
 
     setLocalStageId(nextStageId);
-    writeLocalStageId(nextStageId);
   };
 
   if (inspection.rootOwner) {

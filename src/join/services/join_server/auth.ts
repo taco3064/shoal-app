@@ -42,8 +42,13 @@ export async function handleAuth(options: {
   flow: DurableFlow;
   persist: () => Promise<void>;
   identity: (token: string) => Promise<AuthIdentity>;
+  retainUserToken: (
+    sessionId: string,
+    token: string,
+    expires: number,
+  ) => Promise<void>;
 }): Promise<Response | undefined> {
-  const { request, config, flow, persist, identity } = options;
+  const { request, config, flow, persist, identity, retainUserToken } = options;
   const url = new URL(request.url);
 
   if (
@@ -144,7 +149,6 @@ export async function handleAuth(options: {
     throw new Error('GitHub authorization exchange failed');
   }
 
-  // User credential exists only for this callback's authoritative identity read.
   const user = await identity(credentials.access_token);
 
   if (
@@ -167,6 +171,8 @@ export async function handleAuth(options: {
     handoff: { code: handoff, expires: Date.now() + 60_000 },
     busy: false,
   };
+
+  await retainUserToken(id, credentials.access_token, flow.session.expires);
 
   await persist();
 
