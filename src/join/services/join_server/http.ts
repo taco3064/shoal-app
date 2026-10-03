@@ -212,6 +212,16 @@ export class JoinHttp {
       });
     }
 
+    if (url.pathname === '/api/status/current' && request.method === 'GET') {
+      if (!session.job) {
+        return json(404, {
+          error: { code: 'NO_ACTIVE_JOB', message: 'No active Join job' },
+        });
+      }
+
+      return json(200, { ...session.job, id: session.job.id });
+    }
+
     if (url.pathname === '/api/status' && request.method === 'GET') {
       if (
         !session.job

@@ -1,14 +1,14 @@
 import { useEffect } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import type { joinClient, Session } from '~app/join/services/join_client';
-import {
-  readStoredSession,
-  writeStoredSession,
-} from '~app/join/services/session_storage';
+import { writeStoredSession } from '~app/join/services/session_storage';
 
 type JoinClient = ReturnType<typeof joinClient>;
 
 export default function useStoredQuickJoinSession(options: {
+  setAuthState: Dispatch<
+    SetStateAction<'unknown' | 'unauthenticated' | 'authenticated' | 'expired'>
+  >;
   authenticating: boolean;
   client?: JoinClient;
   hydrated: boolean;
@@ -16,18 +16,18 @@ export default function useStoredQuickJoinSession(options: {
   setError: Dispatch<SetStateAction<string>>;
   setSession: Dispatch<SetStateAction<Session | undefined>>;
 }) {
-  const { authenticating, client, hydrated, session, setError, setSession } = options;
+  const {
+    authenticating,
+    client,
+    hydrated,
+    session,
+    setAuthState,
+    setError,
+    setSession,
+  } = options;
 
   useEffect(() => {
     if (!client || !hydrated || session || authenticating) {
-      return;
-    }
-
-    const stored = readStoredSession();
-
-    if (stored) {
-      setSession(stored);
-
       return;
     }
 
@@ -35,15 +35,23 @@ export default function useStoredQuickJoinSession(options: {
 
     const restore = async () => {
       try {
+        setAuthState('unknown');
+
         const restored = await client.restore();
 
         if (!disposed) {
           setSession(restored);
           writeStoredSession(restored);
           setError('');
+          setAuthState('authenticated');
         }
       } catch {
         // Absence of a restorable server session keeps the public page signed out.
+        if (!disposed) {
+          writeStoredSession(undefined);
+          setAuthState('unauthenticated');
+          setError('');
+        }
       }
     };
 
@@ -52,5 +60,13 @@ export default function useStoredQuickJoinSession(options: {
     return () => {
       disposed = true;
     };
-  }, [authenticating, client, hydrated, session, setError, setSession]);
+  }, [
+    authenticating,
+    client,
+    hydrated,
+    session,
+    setAuthState,
+    setError,
+    setSession,
+  ]);
 }
