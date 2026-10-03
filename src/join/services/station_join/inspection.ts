@@ -13,6 +13,7 @@ import { stationReadiness } from '~app/protocol/services/station_readiness';
 import { GitHubJoinClient } from '../github_join';
 import type { GitFile, GitHubUser, GitHubAuthContext, Repository } from '../github_join';
 import { discoverReviewerNode } from './discovery';
+import { InspectionFailure, type InspectionStage } from './inspection_failure';
 import type { Inspection, OperationName, PublicInspection } from './types';
 
 export function digest(file: GitFile | null): string {
@@ -34,104 +35,167 @@ export async function inspectStation(
   context: GitHubAuthContext,
   previous?: Inspection,
 ): Promise<Inspection> {
-  const identity = await client.identity(context);
+  let stage: InspectionStage = 'github_identity';
+  let base: Inspection | undefined;
+  let evidence: PublicInspection | undefined;
 
-  const userToken = authToken(context);
+  try {
+    const identity = await client.identity(context);
 
-  const root = await client.repository(userToken, networkRoot.fullName);
+    if (
+      !Number.isSafeInteger(identity.id) || identity.id <= 0
+      || identity.type !== 'User' || !identity.login?.trim()
+    ) {
+      throw new Error('Authenticated Personal Account identity is unavailable.');
+    }
 
-  if (root.id !== networkRoot.repositoryId) {
-    throw new Error('Canonical Network Root identity mismatch.');
-  }
+    evidence = {
+      identity: { id: identity.id, login: identity.login },
+      repository: null,
+      rootOwner: false,
+      rootHead: '',
+      nodeHead: null,
+      waiting: 'fork',
+      appAccess: false,
+      issuesEnabled: false,
+      actionsEnabled: false,
+      managedFilesMatch: false,
+      workflowActive: false,
+      workflowSupported: false,
+      platformBlocked: false,
+      policy: { content: '', defaultContent: '', matchesDefault: false },
+      policyComplete: false,
+      operations: [],
+      ready: false,
+      publication: 'waiting_for_projection',
+    };
 
-  const rootHead = await client.head(userToken, root);
+    const userToken = authToken(context);
 
-  const sameGeneration = previous?.root.id === root.id
-    && previous.rootHead === rootHead;
+    stage = 'reviewer_node';
+    const root = await client.repository(userToken, networkRoot.fullName);
 
-  const [form, workflow, policy] = sameGeneration
-    ? [previous.rootFiles.form, previous.rootFiles.workflow, previous.rootFiles.policy]
-    : await Promise.all([
-        client.file(userToken, root, requestFormPath, rootHead),
-        client.file(userToken, root, summaryWorkflowPath, rootHead),
-        client.file(userToken, root, 'README.md', rootHead),
-      ]);
+    if (
+      root.id !== networkRoot.repositoryId
+      || root.owner.type !== 'User'
+      || !Number.isSafeInteger(root.owner.id) || root.owner.id <= 0
+    ) {
+      throw new Error('Canonical Network Root identity mismatch.');
+    }
 
-  if (!form || !workflow || !policy) {
-    throw new Error('Canonical Network Root surfaces are unavailable.');
-  }
+    const ownsRoot = rootOwner(root, identity);
 
-  const rootFiles = { form, workflow, policy };
-  const ownsRoot = rootOwner(root, identity);
+    base = {
+      identity,
+      repository: null,
+      rootOwner: ownsRoot,
+      root,
+      rootHead: '',
+      rootFiles: null,
+      platformBlocked: false,
+      nodeHead: null,
+      binding: null,
+      actions: null,
+      workflow: null,
+      files: { form: null, workflow: null, policy: null },
+      operations: [],
+      waiting: ownsRoot ? null : 'fork',
+      ready: false,
+    };
 
-  const platformBlocked
-    = !allowedSummaryWorkflows.has(digest(workflow))
+    if (ownsRoot) {
+      return base;
+    }
+
+    const repository = await discoverReviewerNode(client, {
+      token: userToken, root, identity, previous: previous?.repository,
+    });
+
+    base.repository = repository;
+    base.waiting = repository ? 'app_access' : 'fork';
+
+    if (!repository) {
+      return base;
+    }
+
+    stage = 'app_access';
+    const binding = await client.binding(userToken, repository);
+
+    if (
+      !binding
+      || (typeof context === 'string' && repository.permissions?.admin !== true)
+    ) {
+      return base;
+    }
+
+    base.binding = binding;
+    const token = await client.inspectionToken(binding);
+
+    base.waiting = null;
+
+    stage = 'station_setup';
+    const rootHead = await client.head(userToken, root);
+
+    base.rootHead = rootHead;
+
+    const sameGeneration = previous?.root.id === root.id
+      && previous.rootHead === rootHead;
+
+    const [form, workflow] = sameGeneration
+      && previous.rootFiles?.form && previous.rootFiles.workflow
+      ? [previous.rootFiles.form, previous.rootFiles.workflow]
+      : await Promise.all([
+          client.file(userToken, root, requestFormPath, rootHead),
+          client.file(userToken, root, summaryWorkflowPath, rootHead),
+        ]);
+
+    if (!form || !workflow) {
+      throw new Error('Canonical Network Root surfaces are unavailable.');
+    }
+
+    base.rootFiles = { form, workflow, policy: null };
+
+    base.platformBlocked = !allowedSummaryWorkflows.has(digest(workflow))
       || !allowedCanonicalReviewRequestFormDigests.has(digest(form));
 
-  const repository = ownsRoot
-    ? null
-    : await discoverReviewerNode(
-        client,
-        { token: userToken, root, identity, previous: previous?.repository },
-      );
+    base.nodeHead = await client.head(token, repository);
 
-  const base: Inspection = {
-    identity,
-    repository,
-    rootOwner: ownsRoot,
-    root,
-    rootHead,
-    rootFiles,
-    platformBlocked,
-    nodeHead: null,
-    binding: null,
-    actions: null,
-    workflow: null,
-    files: { form: null, workflow: null, policy: null },
-    operations: [],
-    waiting: ownsRoot ? null : repository ? 'app_access' : 'fork',
-    ready: false,
-  };
-
-  if (!repository || ownsRoot) {
-    return base;
-  }
-
-  const binding = await client.binding(userToken, repository);
-
-  if (
-    !binding
-    || (typeof context === 'string' && repository.permissions?.admin !== true)
-  ) {
-    return base;
-  }
-
-  const token = await client.inspectionToken(binding);
-  const nodeHead = await client.head(token, repository);
-
-  const [nodeForm, nodeWorkflow, nodePolicy, actions, workflowState]
-    = await Promise.all([
-      client.file(token, repository, requestFormPath, nodeHead),
-      client.file(token, repository, summaryWorkflowPath, nodeHead),
-      client.file(token, repository, 'README.md', nodeHead),
+    const [nodeForm, nodeWorkflow, actions, workflowState] = await Promise.all([
+      client.file(token, repository, requestFormPath, base.nodeHead),
+      client.file(token, repository, summaryWorkflowPath, base.nodeHead),
       client.actions(token, repository),
       client.workflow(token, repository),
     ]);
 
-  const result: Inspection = {
-    ...base,
-    binding,
-    nodeHead,
-    waiting: null,
-    actions,
-    workflow: workflowState,
-    files: { form: nodeForm, workflow: nodeWorkflow, policy: nodePolicy },
-  };
+    base.files.form = nodeForm;
+    base.files.workflow = nodeWorkflow;
+    base.actions = actions;
+    base.workflow = workflowState;
+    base.operations = remainingOperations(base);
+    base.ready = stationReady(base);
 
-  result.operations = remainingOperations(result);
-  result.ready = stationReady(result);
+    // Policy authority is reachable only after Station setup has converged.
+    if (base.operations.length || !base.ready || base.platformBlocked) {
+      return base;
+    }
 
-  return result;
+    stage = 'review_policy';
+
+    const policy = sameGeneration && previous.rootFiles?.policy
+      ? previous.rootFiles.policy
+      : await client.file(userToken, root, 'README.md', rootHead);
+
+    if (!policy) {
+      throw new Error('Canonical Network Root surfaces are unavailable.');
+    }
+
+    base.rootFiles.policy = policy;
+    base.files.policy = await client.file(token, repository, 'README.md', base.nodeHead);
+
+    return base;
+  } catch (cause) {
+    throw new InspectionFailure(stage, cause, base ? publicInspection(base) : evidence);
+  }
 }
 
 export function authToken(context: GitHubAuthContext): string {
@@ -144,7 +208,9 @@ export function authToken(context: GitHubAuthContext): string {
 
 export function managedMatch(inspection: Inspection): boolean {
   return (
-    inspection.files.form?.content === inspection.rootFiles.form.content
+    !!inspection.rootFiles?.form
+    && !!inspection.rootFiles.workflow
+    && inspection.files.form?.content === inspection.rootFiles.form.content
     && inspection.files.workflow?.content === inspection.rootFiles.workflow.content
   );
 }
@@ -183,7 +249,7 @@ function remainingOperations(inspection: Inspection): OperationName[] {
     && !inspection.platformBlocked
     && (synchronize
       || inspection.files.workflow?.content
-      === inspection.rootFiles.workflow.content)
+      === inspection.rootFiles?.workflow?.content)
   ) {
     operations.push('enable_workflow');
   }
@@ -220,9 +286,10 @@ export function publicInspection(inspection: Inspection): PublicInspection {
     platformBlocked: inspection.platformBlocked,
     policy: {
       content: inspection.files.policy?.content ?? '',
-      defaultContent: inspection.rootFiles.policy.content,
+      defaultContent: inspection.rootFiles?.policy?.content ?? '',
       matchesDefault:
-        inspection.files.policy?.content
+        !!inspection.rootFiles?.policy
+        && inspection.files.policy?.content
         === inspection.rootFiles.policy.content,
     },
     policyComplete: false,

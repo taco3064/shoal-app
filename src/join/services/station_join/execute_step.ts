@@ -1,4 +1,5 @@
 import { verified } from './verification';
+import { InspectionFailure } from './inspection_failure';
 import type {
   ExecutionCheckpoint,
   ExecutionStep,
@@ -97,6 +98,17 @@ export async function executeStep(
         = error instanceof Error && error.message === 'STALE_PLAN' ? 'blocked' : 'failed';
 
       operation.error = error instanceof Error ? error.message : 'Operation failed.';
+
+      if (error instanceof InspectionFailure) {
+        await actions.progress?.({
+          operations: result().operations,
+          completed: result().completed,
+          total: result().total,
+          ready: false,
+        });
+
+        throw error;
+      }
     }
 
     await actions.progress?.({
