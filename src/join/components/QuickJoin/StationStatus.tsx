@@ -41,6 +41,18 @@ export default function StationStatus({ join }: { join: JoinState }) {
     );
   }
 
+  const stages = join.executionStages ?? inspection.stages;
+  const activeStage = selectActiveStage(stages);
+
+  if (!activeStage) {
+    return null;
+  }
+
+  const activeIndex = Math.max(
+    0,
+    stages.findIndex((stage) => stage.id === activeStage.id),
+  );
+
   return (
     <>
       <div className="quick-journey-heading">
@@ -59,67 +71,75 @@ export default function StationStatus({ join }: { join: JoinState }) {
           </a>
         )}
       </div>
-      <ul className="quick-stages">
-        {(join.executionStages ?? inspection.stages).map((stage, index) => (
+      <section
+        className="quick-current-step"
+        data-state={activeStage.state}
+        aria-labelledby="quick-current-step-title"
+      >
+        <div className="quick-current-index" aria-hidden="true">
+          {String(activeIndex + 1).padStart(2, '0')}
+        </div>
+        <div className="quick-current-body">
+          <div className="quick-stage-topline">
+            <span className="quick-stage-state">
+              {stateLabels[activeStage.state]}
+            </span>
+          </div>
+          <h4 id="quick-current-step-title">{activeStage.label}</h4>
+          <p>{activeStage.detail}</p>
+          <StageAction join={join} stage={activeStage} />
+          {activeStage.id === 'station' && inspection.operations.length > 0 && (
+            <div className="quick-stage-plan">
+              <p>Automatic completion will verify:</p>
+              <ol>
+                {inspection.operations.map((operation) => (
+                  <li key={operation.id}>{operation.label}</li>
+                ))}
+              </ol>
+            </div>
+          )}
+          {activeStage.id === 'policy' && activeStage.action === 'policy' && (
+            <PolicyStep join={join} />
+          )}
+          {activeStage.id === 'ready' && inspection.ready && (
+            <div className="quick-publication">
+              <p>
+                Directory publication waits for a separate successful Network
+                Scan and publication. Readiness does not guarantee a publication
+                deadline.
+              </p>
+            </div>
+          )}
+          {activeStage.facts && <StageFacts facts={activeStage.facts} />}
+        </div>
+      </section>
+      <ol className="quick-progress-map" aria-label="Join progress">
+        {stages.map((stage, index) => (
           <li
             key={stage.id}
-            className="quick-stage"
             data-state={stage.state}
-            data-action={stage.action ?? 'none'}
+            data-active={stage.id === activeStage.id ? 'true' : 'false'}
           >
-            <div className="quick-stage-marker" aria-hidden="true">
-              <span>{stateGlyphs[stage.state]}</span>
-            </div>
-            <div className="quick-stage-body">
-              <div className="quick-stage-topline">
-                <span className="quick-stage-step">
-                  {String(index + 1).padStart(2, '0')}
-                </span>
-                <span className="quick-stage-state">{stateLabels[stage.state]}</span>
-              </div>
-              <strong className="quick-stage-title">{stage.label}</strong>
-              <p>{stage.detail}</p>
-              <StageAction join={join} stage={stage} />
-              {stage.id === 'station' && inspection.operations.length > 0 && (
-                <div className="quick-stage-plan">
-                  <p>Automatic completion will verify:</p>
-                  <ol>
-                    {inspection.operations.map((operation) => (
-                      <li key={operation.id}>{operation.label}</li>
-                    ))}
-                  </ol>
-                </div>
-              )}
-              {stage.id === 'policy' && stage.action === 'policy' && (
-                <PolicyStep join={join} />
-              )}
-              {stage.id === 'ready' && inspection.ready && (
-                <div className="quick-publication">
-                  <p>
-                    Directory publication waits for a separate successful
-                    Network Scan and publication. Readiness does not guarantee
-                    a publication deadline.
-                  </p>
-                </div>
-              )}
-              {stage.facts && (
-                <ul className="quick-facts">
-                  {stage.facts.map((fact) => (
-                    <li key={fact.label} data-state={fact.state}>
-                      <span className="quick-fact-mark" aria-hidden="true">
-                        {stateGlyphs[fact.state]}
-                      </span>
-                      <strong>{fact.label}</strong>
-                      <span>{stateLabels[fact.state]}</span>
-                      <p>{fact.detail}</p>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
+            <span className="quick-map-marker" aria-hidden="true">
+              {stateGlyphs[stage.state]}
+            </span>
+            <span className="quick-map-step">
+              {String(index + 1).padStart(2, '0')}
+            </span>
+            <strong>{stage.label}</strong>
+            <span>{stateLabels[stage.state]}</span>
           </li>
         ))}
-      </ul>
+      </ol>
+      {inspection.ready && activeStage.id !== 'ready' && (
+        <div className="quick-publication">
+          <p>
+            Directory publication waits for a separate successful Network Scan
+            and publication. Readiness does not guarantee a publication
+            deadline.
+          </p>
+        </div>
+      )}
       {inspection.blockedReason && (
         <p className="quick-warning">{inspection.blockedReason}</p>
       )}
@@ -147,6 +167,35 @@ export default function StationStatus({ join }: { join: JoinState }) {
         </details>
       )}
     </>
+  );
+}
+
+function selectActiveStage(stages: Stage[]) {
+  return (
+    stages.find((stage) => stage.state === 'current')
+    ?? stages.find((stage) => stage.state === 'available')
+    ?? stages.find((stage) => stage.state === 'executing')
+    ?? stages.find((stage) => stage.state === 'failed')
+    ?? stages.find((stage) => stage.state === 'blocked')
+    ?? stages.find((stage) => stage.state === 'waiting')
+    ?? stages[stages.length - 1]
+  );
+}
+
+function StageFacts({ facts }: { facts: NonNullable<Stage['facts']> }) {
+  return (
+    <ul className="quick-facts">
+      {facts.map((fact) => (
+        <li key={fact.label} data-state={fact.state}>
+          <span className="quick-fact-mark" aria-hidden="true">
+            {stateGlyphs[fact.state]}
+          </span>
+          <strong>{fact.label}</strong>
+          <span>{stateLabels[fact.state]}</span>
+          <p>{fact.detail}</p>
+        </li>
+      ))}
+    </ul>
   );
 }
 
