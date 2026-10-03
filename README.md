@@ -84,7 +84,6 @@ when no acceptable Summary is selected, metrics are unavailable.
 For a local scan, set `GITHUB_TOKEN` to a read-capable GitHub token and run
 `npm run scan:network`. The GitHub CLI must be installed for cryptographic
 attestation verification. The result is `dist/network-projection/network.json`.
-Run `npm run test:network` for focused trust and failure-path checks.
 
 Official managed-file digests and pinned Action commits are listed explicitly in
 `src/protocol/services/network_compatibility`. A new station or Action version

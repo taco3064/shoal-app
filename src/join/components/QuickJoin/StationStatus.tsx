@@ -4,9 +4,9 @@ import LocalStageGuidance from './LocalStageGuidance';
 import PolicyStep from './PolicyStep';
 import StatusIcon from './StatusIcon';
 import { readLocalStageId, writeLocalStageId } from './local_stage_url';
+import { previewInspection } from './preview_inspection';
 
 type JoinState = ReturnType<typeof useQuickJoin>;
-type Inspection = NonNullable<JoinState['inspection']>;
 type Stage = NonNullable<JoinState['inspection']>['stages'][number];
 
 const stateLabels: Record<Stage['state'], string> = {
@@ -19,29 +19,28 @@ const stateLabels: Record<Stage['state'], string> = {
   waiting: 'Locked',
 };
 
+const rootOwnerStage: Stage = {
+  id: 'root-owner',
+  label: 'Network Root owner',
+  state: 'complete',
+  detail:
+    'The Network Root is already your Reviewer Node, '
+    + 'so Quick Web Join is not required for this account.',
+};
+
 export default function StationStatus({ join }: { join: JoinState }) {
   const [localStageId, setLocalStageId] = useState<string | null>(null);
 
   const inspection = join.inspection ?? previewInspection();
   const preview = !join.inspection;
 
-  if (inspection.rootOwner) {
-    return (
-      <section className="quick-root-owner" aria-labelledby="root-owner-title">
-        <span className="quick-root-mark" aria-hidden="true">
-          <StatusIcon state="complete" />
-        </span>
-        <h3 id="root-owner-title">Network Root owner</h3>
-        <p>You’re signed in as the Network Root owner.</p>
-        <p>
-          The Network Root is already your Reviewer Node, so Quick Web Join is
-          not required for this account.
-        </p>
-      </section>
+  const stages = join.executionStages
+    ?? (
+      inspection.rootOwner && inspection.stages.length === 0
+        ? [rootOwnerStage]
+        : inspection.stages
     );
-  }
 
-  const stages = join.executionStages ?? inspection.stages;
   const activeStage = selectActiveStage(stages);
 
   if (!activeStage) {
@@ -83,6 +82,22 @@ export default function StationStatus({ join }: { join: JoinState }) {
     setLocalStageId(nextStageId);
     writeLocalStageId(nextStageId);
   };
+
+  if (inspection.rootOwner) {
+    return (
+      <section className="quick-root-owner" aria-labelledby="root-owner-title">
+        <span className="quick-root-mark" aria-hidden="true">
+          <StatusIcon state="complete" />
+        </span>
+        <h3 id="root-owner-title">Network Root owner</h3>
+        <p>You’re signed in as the Network Root owner.</p>
+        <p>
+          The Network Root is already your Reviewer Node, so Quick Web Join is
+          not required for this account.
+        </p>
+      </section>
+    );
+  }
 
   return (
     <>
@@ -265,55 +280,6 @@ export default function StationStatus({ join }: { join: JoinState }) {
       )}
     </>
   );
-}
-
-function previewInspection(): Inspection {
-  return {
-    planId: '',
-    identity: { id: 0, login: '' },
-    rootHead: '',
-    rootOwner: false,
-    stages: [
-      {
-        id: 'identity',
-        label: 'GitHub identity',
-        state: 'current',
-        detail: 'Sign in with GitHub to begin the authoritative join journey.',
-      },
-      {
-        id: 'node',
-        label: 'Reviewer Node / direct fork',
-        state: 'waiting',
-        detail: 'Shoal checks for your direct Personal Account fork after sign-in.',
-      },
-      {
-        id: 'access',
-        label: 'GitHub App repository access',
-        state: 'waiting',
-        detail: 'If needed, you grant the App access only to your Reviewer Node.',
-      },
-      {
-        id: 'station',
-        label: 'Station setup',
-        state: 'waiting',
-        detail: 'Shoal shows remaining setup only after inspecting GitHub state.',
-      },
-      {
-        id: 'policy',
-        label: 'Review Policy',
-        state: 'waiting',
-        detail: 'Policy authorship remains yours and is confirmed separately.',
-      },
-      {
-        id: 'ready',
-        label: 'Station ready / publication waiting',
-        state: 'waiting',
-        detail: 'Readiness and Directory publication appear after verification.',
-      },
-    ],
-    operations: [],
-    ready: false,
-  };
 }
 
 function selectActiveStage(stages: Stage[]) {

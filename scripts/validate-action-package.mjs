@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
-import { register } from 'node:module';
 import { readFile } from 'node:fs/promises';
+import { register } from 'node:module';
 
 register('../dist/action-package/loader.mjs', import.meta.url);
 const { runReviewerSummaryAction } = await import('../dist/action-package/src/action/index.js');
@@ -76,6 +76,7 @@ async function run(candidate) {
       // The runtime's fetch contract exposes headers only: no mutation method or body.
       assert.deepEqual(Object.keys(options).sort(), ['headers']);
       const path = new URL(url).pathname;
+
       assert.ok(path in routes, `Unexpected GitHub read: ${path}`);
       return new Response(JSON.stringify(routes[path]));
     },
@@ -90,6 +91,7 @@ async function run(candidate) {
 
 const root = await run(repository());
 const fork = await run(repository({ id: 400, fork: true, parent: { id: rootId } }));
+
 assert.deepEqual(root, fork);
 assert.deepEqual(root.metrics, {
   invalidReviewCommentCount: 0,
@@ -108,10 +110,12 @@ for (const overrides of [
   { id: 400 },
 ]) {
   const rejected = await run(repository(overrides));
+
   assert.equal(rejected.metrics.validReviewRequestIssueCount, 0);
   assert.equal(rejected.metrics.reviewBackedStarCount, 0);
 }
 
 const manifest = JSON.parse(await readFile('dist/action-package/package-manifest.json', 'utf8'));
+
 assert.ok(manifest.files.every(({ path }) => !path.includes('.test.')));
 console.log('Packaged Action: Root/direct-fork accounting, seven Membership negatives, unchanged schema, read-only IO, no shipped tests PASS.');
