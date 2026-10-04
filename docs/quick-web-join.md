@@ -252,20 +252,27 @@ The policy field alone therefore cannot authorize canonical activation.
 
 Inspection reads the repository workflow registry (`per_page=1` is enough to
 establish non-empty availability) and separately looks up the canonical path.
-If the governed file exists but the registry is unavailable, the confirmed plan
-contains the Actions prerequisite and excludes speculative activation. If no
-governed file exists and the registry is empty, managed-file synchronization
-first supplies a workflow for authoritative discovery. Each prerequisite ends
-with read-back and a fresh inspection; newly discoverable work requires a new
-plan and explicit confirmation. A missing canonical identity while another
-workflow is registered remains unverified and requires refresh, not blind enable.
+If the governed files already match one supported exact Root generation but the
+registry is unavailable, the confirmed plan includes the ordered dependency
+`enable_actions → enable_workflow`. The canonical filename and immutable bytes
+fix the activation target before confirmation; no operation is appended later.
+Actions must verify the preserved policy and registry availability before the
+next durable invocation can inspect and activate the canonical identity. A
+failed prerequisite stops the plan and leaves the dependent operation queued.
+Each invocation re-inspects the last verified checkpoint; stale authority stops
+execution rather than continuing blindly. Already-active Workflow state requires
+no activation mutation, but still receives authoritative verification.
 
-An Actions operation is verified only after both the preserved Actions policy
-and workflow registry availability are read back. The canonical workflow may
-then be visible as `disabled_fork`; this requires its own activation plan.
-Activation uses the supported `reviewer-summary.yml` filename endpoint, while
-retaining exact canonical path and numeric identity checks before and after the
-mutation. Already-converged inspection schedules neither operation.
+If the governed files do not yet match, activation is not pre-confirmed. If no
+governed file exists and the registry is empty, managed-file synchronization
+first supplies a workflow for authoritative discovery. Truly new work requires
+fresh inspection and a new confirmation. A missing canonical identity while
+another workflow is registered remains unverified and requires inspection, not
+blind enable.
+
+Activation uses the supported `reviewer-summary.yml` filename endpoint, retaining
+exact canonical path and numeric identity checks before and after mutation.
+Already-converged inspection schedules neither operation.
 
 The registry availability observation participates in stale-plan fingerprinting.
 Policy, branch, Root generation, installation binding and canonical Workflow
@@ -333,3 +340,19 @@ Then verify station readiness and the distinct waiting-for-publication message.
 External credentials or deployment evidence must never be replaced by synthetic
 field claims. Without an actual Worker, registered App, configured Pages origin
 and controlled live before/after evidence, full #31 Acceptance remains blocked.
+
+
+### Stage-local progression and completion
+
+Manual inspection lives after the current stage's content and Local / CLI detail.
+Continue requests fresh authoritative inspection; it never locally completes a
+stage. External return, popup close, focus and visibility still trigger the same
+deduplicated inspection. Station and Policy confirmations advance automatically
+and show no redundant Continue control while executing. Local / CLI execution
+retains a manual inspection fallback in its current stage.
+
+Stage 6 explicitly shows “Onboarding complete.” Publication waiting is
+informational. Its optional Refresh status control is a secondary utility, not a
+next onboarding action. Completed zero-operation jobs render no progress panel;
+meaningful verified history and actionable failed/blocked progress remain visible
+inside the current stage.

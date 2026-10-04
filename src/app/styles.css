@@ -267,7 +267,17 @@ html:has(.navigation-drawer[open]){overflow:hidden}
 .quick-auth{display:grid;gap:8px;align-content:start;justify-items:start}
 .quick-auth p{margin:0;color:#c3d2cf;font-size:14px}
 .quick-auth .button{width:100%}
-.quick-join>.actions .button{width:100%;justify-content:center}
+.quick-stage-progression{margin-top:20px}
+.quick-continue{min-height:44px;max-width:100%}
+.quick-inspect-utility{min-height:44px;padding:8px 0;border:0;background:transparent;color:#aabdb8;font:inherit;font-size:13px;text-decoration:underline;text-underline-offset:4px;cursor:pointer}
+.quick-inspect-utility:focus-visible{outline:2px solid #d7f387;outline-offset:3px}
+.quick-inspect-utility:disabled{opacity:.5;cursor:wait}
+.quick-current-step[data-terminal=true]{border-color:#d7f387;background:#183f3a;box-shadow:0 18px 44px #020a1048,0 0 0 1px #d7f38740}
+.quick-current-step[data-terminal=true] .quick-current-index{background:#d7f387;color:#09202a}
+.quick-current-step[data-terminal=true] .quick-stage-state{background:#d7f387;color:#09202a}
+.quick-completion{margin-top:22px;color:#dfebe7}
+.quick-completion strong{display:block;color:#d7f387;font:600 clamp(24px,3vw,32px)/1.2 'Space Grotesk',sans-serif}
+.quick-completion p{margin:12px 0 0}
 .quick-journey-heading{display:flex;justify-content:space-between;align-items:end;gap:20px;margin:28px 0 16px}
 .quick-journey-heading h3{margin:0}
 .quick-node-link{align-self:center;border:1px solid #42605b;border-radius:999px;padding:8px 12px;color:#d7f387;text-decoration:none;font-size:13px}
@@ -346,7 +356,7 @@ html:has(.navigation-drawer[open]){overflow:hidden}
 .quick-editor textarea{width:100%;resize:vertical;background:#091c25;color:#ecf3ed;border:1px solid #5c8376;border-radius:6px;padding:16px;font:14px/1.6 monospace}
 .quick-preview{border:1px solid #42605b;border-radius:6px;padding:20px;margin-bottom:20px;max-height:350px;overflow:auto}
 .quick-policy-confirm{border:1px solid #d8c985;border-radius:8px;padding:20px;margin-top:20px;background:#132b2d}
-.quick-policy .button,.quick-policy-confirm .button,.quick-progress+.actions .button{margin-top:20px}
+.quick-policy .button,.quick-policy-confirm .button{margin-top:20px}
 .quick-policy-confirm pre{max-height:250px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere}
 .quick-progress{padding:20px;border:1px solid #5c8376;border-radius:8px;margin-top:24px;background:#0a2029}
 .quick-progress progress{width:100%;height:20px;accent-color:#d7f387}

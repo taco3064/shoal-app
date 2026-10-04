@@ -254,7 +254,14 @@ function remainingOperations(inspection: Inspection): OperationName[] {
   if (!actionsAvailable(inspection)) {
     operations.push('enable_actions');
 
-    // Workflow identity/state after this prerequisite is not yet known.
+    // The supported canonical bytes and filename already fix the dependent
+    // target. Confirm it now; execution still requires verified Actions and
+    // canonical registry identity before activation can run.
+    if (!inspection.platformBlocked && managedMatch(inspection)
+      && !workflowActive(inspection)) {
+      operations.push('enable_workflow');
+    }
+
     return operations;
   }
 

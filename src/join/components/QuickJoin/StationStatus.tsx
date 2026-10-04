@@ -3,6 +3,9 @@ import type useQuickJoin from '~app/join/hooks/useQuickJoin';
 import LocalStageGuidance from './LocalStageGuidance';
 import PolicyStep from './PolicyStep';
 import StatusIcon from './StatusIcon';
+import Progress from './Progress';
+import StageProgression from './StageProgression';
+import StageAction, { getMapAction } from './StageAction';
 import {
   authenticatedPlaceholderInspection,
   previewInspection,
@@ -190,6 +193,10 @@ export default function StationStatus({ join }: { join: JoinState }) {
           className="quick-current-step"
           data-state={displayStage.state}
           data-local={localMode ? 'true' : 'false'}
+          data-terminal={displayStage.id === 'ready' && displayStage.state === 'complete'
+            && !localMode
+            ? 'true'
+            : 'false'}
           data-preview={preview ? 'true' : 'false'}
           aria-labelledby="quick-current-step-title"
         >
@@ -236,8 +243,10 @@ export default function StationStatus({ join }: { join: JoinState }) {
               && !localMode
               && displayStage.id === 'policy'
               && displayStage.action === 'policy' && <PolicyStep join={join} />}
-            {displayStage.id === 'ready' && inspection.ready && !localMode && (
-              <div className="quick-publication">
+            {displayStage.id === 'ready'
+              && displayStage.state === 'complete' && !localMode && (
+              <div className="quick-completion" role="status">
+                <strong>Onboarding complete.</strong>
                 <p>
                   Directory publication waits for a separate successful Network
                   Scan and publication. Readiness does not guarantee a
@@ -248,10 +257,15 @@ export default function StationStatus({ join }: { join: JoinState }) {
             {displayStage.facts && !localMode && (
               <StageFacts facts={displayStage.facts} />
             )}
+            {join.job && displayStage.id === activeStage.id && <Progress join={join} />}
             <LocalStageGuidance stage={displayStage} open={localMode} />
+            {displayStage.id === activeStage.id && (
+              <StageProgression join={join} stage={displayStage} localMode={localMode} />
+            )}
           </div>
         </section>
       </div>
+      {join.job && displayStage.id !== activeStage.id && <Progress join={join} />}
       {!preview && inspection.ready && activeStage.id !== 'ready' && (
         <div className="quick-publication">
           <p>
@@ -267,7 +281,7 @@ export default function StationStatus({ join }: { join: JoinState }) {
       {(inspection.forkUrl || inspection.installationUrl) && (
         <p className="quick-return-note">
           Waiting for you on GitHub. Returning to this page refreshes
-          authoritative state; Refresh status remains available.
+          authoritative state. You can also continue from the current step.
         </p>
       )}
       {inspection.operations.length > 0 && (
@@ -318,90 +332,4 @@ function StageFacts({ facts }: { facts: NonNullable<Stage['facts']> }) {
       ))}
     </ul>
   );
-}
-
-function StageAction({ join, stage }: { join: JoinState; stage: Stage }) {
-  const action = getStageAction(join, stage);
-
-  if (!action) {
-    return null;
-  }
-
-  return (
-    <button
-      className="button primary quick-stage-action"
-      disabled={action.disabled}
-      onClick={action.onClick}
-    >
-      {action.label}
-    </button>
-  );
-}
-
-function getStageAction(join: JoinState, stage: Stage) {
-  if (stage.id === 'identity' && !join.session) {
-    return {
-      label: join.authenticating ? 'Waiting for GitHub' : 'Sign in with GitHub',
-      disabled: !join.enabled || join.authenticating,
-      onClick: join.authenticate,
-    };
-  }
-
-  if (!join.inspection) {
-    return undefined;
-  }
-
-  const inspection = join.inspection!;
-
-  if (stage.action === 'fork' && inspection.forkUrl) {
-    return {
-      label: 'Create direct fork',
-      disabled: false,
-      onClick: () => join.openExternal(inspection.forkUrl!),
-    };
-  }
-
-  if (stage.action === 'app_access' && inspection.installationUrl) {
-    return {
-      label: 'Grant App access',
-      disabled: false,
-      onClick: () => join.openExternal(inspection.installationUrl!),
-    };
-  }
-
-  if (stage.action === 'execute') {
-    return {
-      label: 'Complete setup automatically',
-      disabled:
-        join.busy
-        || Boolean(inspection.blockedReason)
-        || Boolean(join.job && join.job.status !== 'complete'),
-      onClick: join.execute,
-    };
-  }
-
-  return undefined;
-}
-
-function getMapAction(join: JoinState, stage: Stage) {
-  const action = getStageAction(join, stage);
-
-  if (action) {
-    return action;
-  }
-
-  if (stage.action === 'policy') {
-    return {
-      label: 'Review Policy',
-      disabled: false,
-      onClick: () => {
-        document.getElementById('quick-policy-title')?.scrollIntoView({
-          behavior: 'smooth',
-          block: 'start',
-        });
-      },
-    };
-  }
-
-  return undefined;
 }
