@@ -40,9 +40,11 @@ jobs:
           SHOAL_PROJECTION_FILE: src/guide/services/directory/fixtures/network.json
           SHOAL_PUBLIC_CONTENT_FETCH: skip
       - run: npm run test:action
+      - run: npm run test:workload
       - run: npm run package:action
       - run: npm run validate:action-package
       - run: npm run validate:seo
+      - run: npm run validate:workload
       - run: npm run blueprint:validate
       - name: Scan current public Network
         if: matrix.os == 'ubuntu-latest' && github.event_name == 'pull_request'

@@ -1,3 +1,5 @@
+import type { SelectedSummary } from '~app/network/services/summary_selection';
+
 export type DirectoryEntry = {
   repositoryId: number;
   username: string;
@@ -13,7 +15,7 @@ export type DirectoryEntry = {
     | 'summary_workflow_missing_or_unsupported'
   >;
   summaryStatus: 'current' | 'fallback' | 'unavailable';
-  summary: { status: 'current' | 'fallback' | 'unavailable' };
+  summary: SelectedSummary;
 };
 
 export type DirectoryState = {

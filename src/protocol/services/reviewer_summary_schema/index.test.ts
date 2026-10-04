@@ -75,6 +75,10 @@ test('existing presentation fixtures retain v1 metrics', () => {
       continue;
     }
 
+    if (entry.summary.summary.summarySchemaVersion !== 1) {
+      continue;
+    }
+
     assert.deepEqual(
       validateReviewerSummary(entry.summary.summary, legacyReviewerSummaryContract),
       entry.summary.summary,
@@ -92,9 +96,18 @@ test('existing Workflow bindings remain 1/1 while source advances to 1/2', () =>
     summarySchemaVersion: 2,
   });
 
-  assert.equal(allowedSummaryWorkflows.size, 4);
+  const legacyDigests = [
+    '3b66f6c4afb545bbf1ad847aed96d0dd8c336e6df100c6b898250a0bddf58fd6',
+    '616eea6f7ce06c0991f0023768c02c79a99d53aeb2f845c0934461720546a999',
+    'd586ab618c894d9729e21d7105becb0ca805df576198353293b1f77818927e99',
+    '70d1011d0b1a6a68677bc891a408f2b73af868a89d283bffdfefa2fd24a6b9d2',
+  ];
 
-  for (const binding of allowedSummaryWorkflows.values()) {
+  for (const digest of legacyDigests) {
+    const binding = allowedSummaryWorkflows.get(digest);
+
+    assert.ok(binding);
+
     assert.deepEqual(binding.reviewerSummary, {
       protocolVersion: 1,
       summarySchemaVersion: 1,
