@@ -268,7 +268,8 @@ html:has(.navigation-drawer[open]){overflow:hidden}
 .quick-auth p{margin:0;color:#c3d2cf;font-size:14px}
 .quick-auth .button{width:100%}
 .quick-stage-progression{margin-top:20px}
-.quick-continue{min-height:44px;max-width:100%}
+.quick-continue{display:flex;min-height:44px;max-width:100%;margin-left:auto;justify-content:center}
+@media(max-width:700px){.quick-continue{width:100%}}
 .quick-inspect-utility{min-height:44px;padding:8px 0;border:0;background:transparent;color:#aabdb8;font:inherit;font-size:13px;text-decoration:underline;text-underline-offset:4px;cursor:pointer}
 .quick-inspect-utility:focus-visible{outline:2px solid #d7f387;outline-offset:3px}
 .quick-inspect-utility:disabled{opacity:.5;cursor:wait}
