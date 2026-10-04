@@ -277,6 +277,24 @@ export class GitHubJoinClient {
     );
   }
 
+  async workflowRegistryAvailable(
+    token: string,
+    repository: Repository,
+  ): Promise<boolean> {
+    const result = await this.request<{ total_count: number; workflows: Workflow[] }>(
+      token,
+      `/repos/${encodeLocator(repository.full_name)}/actions/workflows?per_page=1`,
+    );
+
+    if (!Number.isSafeInteger(result.total_count) || result.total_count < 0
+      || !Array.isArray(result.workflows)
+      || (result.total_count > 0) !== (result.workflows.length > 0)) {
+      throw new Error('Authoritative workflow registry is unavailable.');
+    }
+
+    return result.total_count > 0;
+  }
+
   async workflow(
     token: string,
     repository: Repository,
@@ -359,7 +377,7 @@ export class GitHubJoinClient {
 
     await this.request(
       token,
-      `/repos/${encodeLocator(binding.repository.full_name)}/actions/workflows/${workflow.id}/enable`,
+      `/repos/${encodeLocator(binding.repository.full_name)}/actions/workflows/reviewer-summary.yml/enable`,
       'PUT',
     );
 

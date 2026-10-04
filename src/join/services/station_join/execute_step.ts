@@ -19,6 +19,7 @@ export function fingerprint(inspection: Inspection): string {
     installation: inspection.binding?.installationId,
     issues: inspection.repository?.has_issues,
     actions: inspection.actions,
+    workflowRegistryAvailable: inspection.workflowRegistryAvailable,
     workflow: inspection.workflow,
     operations: inspection.operations,
     waiting: inspection.waiting,

@@ -242,6 +242,42 @@ and admitted exact form/Workflow digests. It does not prove Workflow
 executability. Repository Actions and Workflow activation remain separate setup
 stages and confirmed operations even when the station is already ready.
 
+### Fork Actions prerequisite and canonical activation
+
+Repository Actions policy, workflow registry availability, canonical workflow
+identity and canonical activation are separate inspected facts. In a fresh
+public fork, GitHub can return `enabled: true` from Actions permissions while
+the workflow registry is empty and the canonical workflow lookup returns 404.
+The policy field alone therefore cannot authorize canonical activation.
+
+Inspection reads the repository workflow registry (`per_page=1` is enough to
+establish non-empty availability) and separately looks up the canonical path.
+If the governed file exists but the registry is unavailable, the confirmed plan
+contains the Actions prerequisite and excludes speculative activation. If no
+governed file exists and the registry is empty, managed-file synchronization
+first supplies a workflow for authoritative discovery. Each prerequisite ends
+with read-back and a fresh inspection; newly discoverable work requires a new
+plan and explicit confirmation. A missing canonical identity while another
+workflow is registered remains unverified and requires refresh, not blind enable.
+
+An Actions operation is verified only after both the preserved Actions policy
+and workflow registry availability are read back. The canonical workflow may
+then be visible as `disabled_fork`; this requires its own activation plan.
+Activation uses the supported `reviewer-summary.yml` filename endpoint, while
+retaining exact canonical path and numeric identity checks before and after the
+mutation. Already-converged inspection schedules neither operation.
+
+The registry availability observation participates in stale-plan fingerprinting.
+Policy, branch, Root generation, installation binding and canonical Workflow
+guards remain unchanged. Reviewer-owned `README.md` is not touched.
+
+Real installation-authority evidence for the initial disabled fork and both
+transitions is recorded in [Stage 4 API evidence](quick-web-join-stage4-api-evidence.json).
+It demonstrates GitHub behavior before implementation, not a post-merge field
+gate for this delivery. The controlled repository is now Actions-enabled with
+an active canonical workflow; subsequent production inspection must recognize
+that state without replaying verified mutations.
+
 ## Browser API
 
 | Endpoint | Contract |

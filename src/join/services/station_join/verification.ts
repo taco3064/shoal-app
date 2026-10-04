@@ -23,11 +23,14 @@ export function verified(
     case 'enable_actions':
       return (
         !!next.actions?.enabled
+        && next.workflowRegistryAvailable
         && policyFields(next.actions) === policyFields(plan.actions)
       );
     case 'enable_workflow':
       return (
         next.workflow?.path === summaryWorkflowPath
+        && next.actions?.enabled === true
+        && next.workflowRegistryAvailable
         && next.workflow.id === workflowId
         && next.workflow.state === 'active'
       );

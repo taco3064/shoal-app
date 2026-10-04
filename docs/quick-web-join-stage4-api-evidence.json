@@ -1,0 +1,215 @@
+{
+  "issue": "https://github.com/taco3064/shoal-app/issues/31",
+  "capturedAt": "2026-10-04",
+  "productionAppId": "5161721",
+  "installationId": 167601521,
+  "repositoryId": 1403503893,
+  "ownerId": 333159609,
+  "parentRepositoryId": 1379044983,
+  "nodeHead": "64ff791aa4f01e3380c013c33492f0e8d3af4e1c",
+  "scope": "Real API investigation before implementation; server-side repository-scoped GitHub App tokens. No Policy or Git content mutations. Tokens revoked after each invocation.",
+  "before": {
+    "policy": {
+      "status": 200,
+      "requestId": "35A1:2B47F0:C0E1F9:27AE8EC:6AC1C14F",
+      "value": {
+        "enabled": true,
+        "allowed_actions": "all",
+        "sha_pinning_required": false
+      }
+    },
+    "list": {
+      "status": 200,
+      "requestId": "2599:35EC80:B73F93:25EF48B:6AC1C14F",
+      "value": {
+        "total_count": 0,
+        "workflows": []
+      }
+    },
+    "workflow": {
+      "status": 404,
+      "requestId": "2599:35EC80:B73F93:25EF487:6AC1C14F",
+      "value": {
+        "message": "Not Found",
+        "documentation_url": "https://docs.github.com/rest/actions/workflows#get-a-workflow",
+        "status": "404"
+      }
+    }
+  },
+  "actionsEnable": {
+    "repoId": 1403503893,
+    "head": "64ff791aa4f01e3380c013c33492f0e8d3af4e1c",
+    "before": {
+      "policy": {
+        "status": 200,
+        "requestId": "29D0:369778:C3192E:284EF5A:6AC1C173",
+        "value": {
+          "enabled": true,
+          "allowed_actions": "all",
+          "sha_pinning_required": false
+        }
+      },
+      "list": {
+        "status": 200,
+        "requestId": "29D0:369778:C3192F:284EF63:6AC1C173",
+        "value": {
+          "total_count": 0,
+          "workflows": []
+        }
+      },
+      "workflow": {
+        "status": 404,
+        "requestId": "29D0:369778:C3192E:284EF62:6AC1C173",
+        "value": {
+          "message": "Not Found",
+          "documentation_url": "https://docs.github.com/rest/actions/workflows#get-a-workflow",
+          "status": "404"
+        }
+      }
+    },
+    "mutation": {
+      "status": 204,
+      "requestId": "29D0:369778:C319D9:284F1DA:6AC1C173",
+      "value": null
+    },
+    "readBack": [
+      {
+        "policy": {
+          "status": 200,
+          "requestId": "29D0:369778:C31CA0:284FB7F:6AC1C174",
+          "value": {
+            "enabled": true,
+            "allowed_actions": "all",
+            "sha_pinning_required": false
+          }
+        },
+        "list": {
+          "status": 200,
+          "requestId": "29D0:369778:C31CA0:284FB77:6AC1C173",
+          "value": {
+            "total_count": 2,
+            "workflows": [
+              {
+                "id": 374327174,
+                "path": ".github/workflows/reviewer-summary.yml",
+                "state": "disabled_fork"
+              },
+              {
+                "id": 374327175,
+                "path": ".github/workflows/verify.yml",
+                "state": "active"
+              }
+            ]
+          }
+        },
+        "workflow": {
+          "status": 200,
+          "requestId": "29D0:369778:C31CA0:284FB79:6AC1C174",
+          "value": {
+            "id": 374327174,
+            "path": ".github/workflows/reviewer-summary.yml",
+            "state": "disabled_fork"
+          }
+        }
+      }
+    ]
+  },
+  "workflowEnable": {
+    "repoId": 1403503893,
+    "head": "64ff791aa4f01e3380c013c33492f0e8d3af4e1c",
+    "before": {
+      "policy": {
+        "status": 200,
+        "requestId": "3586:1E55E6:EC28C1:30AB691:6AC1C1F6",
+        "value": {
+          "enabled": true,
+          "allowed_actions": "all",
+          "sha_pinning_required": false
+        }
+      },
+      "list": {
+        "status": 200,
+        "requestId": "3586:1E55E6:EC28C1:30AB68B:6AC1C1F6",
+        "value": {
+          "total_count": 2,
+          "workflows": [
+            {
+              "id": 374327174,
+              "path": ".github/workflows/reviewer-summary.yml",
+              "state": "disabled_fork"
+            },
+            {
+              "id": 374327175,
+              "path": ".github/workflows/verify.yml",
+              "state": "active"
+            }
+          ]
+        }
+      },
+      "workflow": {
+        "status": 200,
+        "requestId": "3586:1E55E6:EC28C1:30AB699:6AC1C1F6",
+        "value": {
+          "id": 374327174,
+          "path": ".github/workflows/reviewer-summary.yml",
+          "state": "disabled_fork"
+        }
+      }
+    },
+    "mutation": {
+      "status": 204,
+      "requestId": "3586:1E55E6:EC297A:30AB963:6AC1C1F6",
+      "value": null
+    },
+    "readBack": [
+      {
+        "policy": {
+          "status": 200,
+          "requestId": "3586:1E55E6:EC2A70:30ABC8F:6AC1C1F6",
+          "value": {
+            "enabled": true,
+            "allowed_actions": "all",
+            "sha_pinning_required": false
+          }
+        },
+        "list": {
+          "status": 200,
+          "requestId": "3586:1E55E6:EC2A70:30ABC8E:6AC1C1F6",
+          "value": {
+            "total_count": 2,
+            "workflows": [
+              {
+                "id": 374327174,
+                "path": ".github/workflows/reviewer-summary.yml",
+                "state": "active"
+              },
+              {
+                "id": 374327175,
+                "path": ".github/workflows/verify.yml",
+                "state": "active"
+              }
+            ]
+          }
+        },
+        "workflow": {
+          "status": 200,
+          "requestId": "3586:1E55E6:EC2A77:30ABC95:6AC1C1F6",
+          "value": {
+            "id": 374327174,
+            "path": ".github/workflows/reviewer-summary.yml",
+            "state": "active"
+          }
+        }
+      }
+    ]
+  },
+  "actionsEndpoint": "PUT /repos/june-shoal/shoal-station/actions/permissions",
+  "workflowEndpoint": "PUT /repos/june-shoal/shoal-station/actions/workflows/reviewer-summary.yml/enable",
+  "interpretation": "Actions policy enabled does not prove fork workflow registry availability. Reapplying enabled:true makes workflows discoverable; canonical disabled_fork still requires separately confirmed activation. Workflow filename enable is supported after the prerequisite.",
+  "productionWorkerVersion": "ddfdea41-7725-451f-9115-12781ec5323e",
+  "diagnosticVersions": [
+    "22e4d65e-4de7-4cb5-a9c8-0012a763155a",
+    "ff81473b-ab16-4a84-838b-c545b3ca5d62"
+  ],
+  "deploymentTreatment": "Original Worker retained 100% ordinary traffic. Diagnostic versions had 0% traffic, invoked only with explicit version override. Original one-version deployment restored after each probe."
+}
