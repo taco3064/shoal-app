@@ -14,6 +14,8 @@ export default function StageProgression({ join, stage, localMode }: {
   }
 
   const retry = Boolean(join.error || join.stale
+    || (join.externalRecovery
+      && (stage.action === 'fork' || stage.action === 'app_access'))
     || join.job?.status === 'failed' || join.job?.status === 'blocked');
 
   // Primary actions advance after authoritative inspection or verified read-back.
