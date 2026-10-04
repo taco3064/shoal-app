@@ -1,8 +1,10 @@
 import {
+  allowedSummaryWorkflows,
   networkRoot,
   requestFormPath,
   summaryWorkflowPath,
 } from '~app/protocol/services/network_compatibility';
+import { validateReviewerSummary } from '~app/protocol/services/reviewer_summary_schema';
 import { stationReadiness } from '~app/protocol/services/station_readiness';
 import type { StationReadinessReason } from '~app/protocol/services/station_readiness';
 import type { GitHubRepository, WorkflowRun } from '../github_api';
@@ -259,6 +261,10 @@ export function validateProjection(projection: NetworkProjection): void {
 
     const selected = reviewer.summary;
 
+    if (!['current', 'fallback', 'unavailable'].includes(selected.status)) {
+      throw new Error('Invalid selected Summary state.');
+    }
+
     if (reviewer.summaryStatus !== selected.status) {
       throw new Error('Reviewer Summary status must match selected Summary.');
     }
@@ -270,12 +276,30 @@ export function validateProjection(projection: NetworkProjection): void {
       throw new Error('Unavailable Summary must not include metrics.');
     }
 
-    if (selected.status === 'fallback' && !selected.stale) {
+    if (selected.status === 'fallback' && selected.stale !== true) {
       throw new Error('Fallback Summary must be stale.');
     }
 
-    if (selected.status === 'current' && selected.stale) {
+    if (selected.status === 'current' && selected.stale !== false) {
       throw new Error('Current Summary must not be stale.');
+    }
+
+    if (selected.status === 'unavailable' && selected.stale !== false) {
+      throw new Error('Unavailable Summary must not be stale.');
+    }
+
+    if (selected.status !== 'unavailable') {
+      const trust = allowedSummaryWorkflows.get(selected.source.workflowDigest);
+
+      if (!trust || selected.source.actionCommit !== trust.actionCommit) {
+        throw new Error('Selected Summary must preserve its Workflow / Action binding.');
+      }
+
+      validateReviewerSummary(selected.summary, trust.reviewerSummary);
+
+      if (selected.summary.reviewerNode.repositoryId !== reviewer.repositoryId) {
+        throw new Error('Selected Summary must match its Reviewer Node identity.');
+      }
     }
   }
 }

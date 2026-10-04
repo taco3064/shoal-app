@@ -189,6 +189,17 @@ html:has(.navigation-drawer[open]){overflow:hidden}
 .directory .text-link{display:inline-block;margin-top:12px}
 
 /* Linked card body and product action are separate keyboard targets. */
+.reviewer-workload{min-width:0}
+.workload-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:10px 0 0}
+.workload-grid>div{min-width:0;padding:16px;border:1px solid #5b7770;border-radius:6px;background:#0b222a}
+.workload-grid dt{font-size:13px;line-height:1.4;color:#c2d2cc}
+.workload-grid dd{margin:8px 0 0;font:600 clamp(28px,4vw,40px)/1.15 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums;color:#efffae;overflow-wrap:anywhere}
+.workload-snapshot,.directory-page .reviewer-card .workload-snapshot{margin:0;font-size:12px;line-height:1.5;color:#c2d2cc}
+.reviewer-workload[data-freshness=fallback] .workload-snapshot{color:#ffd17e}
+.reviewer-workload[data-freshness=fallback] .workload-grid>div{border-color:#8e6e36}
+.workload-panel .reviewer-workload{margin-top:18px}
+.workload-panel .workload-grid{max-width:620px}
+.workload-explanation,.workload-absence{margin:16px 0 0;color:#b5c7c4;font-size:14px;line-height:1.7}
 .directory-page .reviewer-card{position:relative;padding:0;gap:0;overflow:visible;transition:background .2s}
 .reviewer-card-body{display:grid;gap:24px;padding:27px;border-radius:8px 8px 0 0;transition:background .2s}
 .reviewer-card-body::after{content:"";position:absolute;inset:0;z-index:1;border-radius:inherit}

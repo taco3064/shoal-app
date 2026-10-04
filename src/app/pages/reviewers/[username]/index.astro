@@ -8,6 +8,7 @@ import { publicProfile } from "~app/guide/services/profile_content";
 import { publishedProjection } from "~app/guide/services/projection_source";
 import TestReviewer from "~app/guide/components/TestReviewer";
 import ReviewPolicy from "~app/guide/components/ReviewPolicy";
+import ReviewerWorkload from "~app/guide/components/ReviewerWorkload";
 
 export const getStaticPaths = (async () => {
   const projection = await publishedProjection();
@@ -122,6 +123,17 @@ const readinessReasonLabels = {
         </>
       )}
     </section>
+    {selected.status !== "unavailable" && (
+      <section class="detail-panel workload-panel" aria-labelledby="workload-title">
+        <h2 id="workload-title">Review workload</h2>
+        <p class={`summary-state state-${selected.status}`}>
+          {selected.status === "fallback"
+            ? "Fallback · prior accepted snapshot"
+            : "Current summary"}
+        </p>
+        <ReviewerWorkload selected={selected} explainAbsence />
+      </section>
+    )}
     <section class="detail-panel profile-panel" aria-labelledby="profile-title">
       <div>
         <p class="section-kicker">PUBLIC GITHUB PROFILE</p>

@@ -17,6 +17,8 @@
     "scan:network": "tsx src/network/index.ts",
     "validate:action-package": "node scripts/validate-action-package.mjs",
     "validate:seo": "node scripts/validate-seo.mjs",
+    "validate:workload": "node scripts/validate-workload.mjs",
+    "test:workload": "node --import tsx --test src/network/services/network_projection/index.test.ts src/guide/components/ReviewerWorkload/index.test.tsx",
     "preview": "astro preview",
     "lint": "eslint src --ext .astro --no-error-on-unmatched-pattern",
     "typecheck": "astro check && tsc --noEmit",
