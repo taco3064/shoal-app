@@ -65,7 +65,9 @@ export function useExternalRefresh(options: {
     external.current = window.open(url, 'shoal-external-step');
 
     if (!external.current) {
-      setError('Open the external GitHub step, then use Continue in the current step.');
+      setError(
+        'Open the external GitHub step, then use Check again in the current step.',
+      );
 
       return;
     }

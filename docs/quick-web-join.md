@@ -345,11 +345,12 @@ and controlled live before/after evidence, full #31 Acceptance remains blocked.
 ### Stage-local progression and completion
 
 Manual inspection lives after the current stage's content and Local / CLI detail.
-Continue requests fresh authoritative inspection; it never locally completes a
+Continue or Check again requests fresh authoritative inspection; it never locally completes a
 stage. External return, popup close, focus and visibility still trigger the same
-deduplicated inspection. Station and Policy confirmations advance automatically
-and show no redundant Continue control while executing. Local / CLI execution
-retains a manual inspection fallback in its current stage.
+deduplicated inspection. Fork and App access return inspection, Station execution,
+and Policy confirmation advance automatically and show no redundant Continue in
+their normal Web-assisted states. Retry, stale, failure, blocked-popup and Local /
+CLI states retain a stage-local Check again inspection fallback.
 
 Stage 6 explicitly shows “Onboarding complete.” Publication waiting is
 informational. Its optional Refresh status control is a secondary utility, not a
