@@ -16,13 +16,20 @@ export default function StageProgression({ join, stage, localMode }: {
   const retry = Boolean(join.error || join.stale
     || join.job?.status === 'failed' || join.job?.status === 'blocked');
 
-  // Station and Policy confirmations already advance after verified read-back.
-  // Their Local / CLI mode still needs a way to inspect external changes.
-  if (!retry && !localMode && (stage.action === 'execute' || stage.action === 'policy')) {
+  // Primary actions advance after authoritative inspection or verified read-back.
+  // Recovery and Local / CLI mode still need a manual inspection fallback.
+  const automatic = stage.action === 'fork' || stage.action === 'app_access'
+    || stage.action === 'execute' || stage.action === 'policy';
+
+  if (!retry && !localMode && automatic) {
     return null;
   }
 
   const terminal = stage.id === 'ready' && stage.state === 'complete';
+
+  const label = retry || (!terminal && localMode)
+    ? 'Check again'
+    : terminal ? 'Refresh status' : 'Continue';
 
   return (
     <div className="quick-stage-progression">
@@ -32,7 +39,7 @@ export default function StageProgression({ join, stage, localMode }: {
         disabled={join.busy}
         onClick={() => void join.refresh()}
       >
-        {retry ? 'Check again' : terminal ? 'Refresh status' : 'Continue'}
+        {label}
       </button>
     </div>
   );

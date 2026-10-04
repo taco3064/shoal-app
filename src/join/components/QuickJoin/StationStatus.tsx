@@ -281,7 +281,8 @@ export default function StationStatus({ join }: { join: JoinState }) {
       {(inspection.forkUrl || inspection.installationUrl) && (
         <p className="quick-return-note">
           Waiting for you on GitHub. Returning to this page refreshes
-          authoritative state. You can also continue from the current step.
+          authoritative state. Verified completion advances this journey
+          automatically.
         </p>
       )}
       {inspection.operations.length > 0 && (
