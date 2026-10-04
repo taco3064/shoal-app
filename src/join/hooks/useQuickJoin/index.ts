@@ -120,13 +120,17 @@ export default function useQuickJoin(serviceUrl: string) {
     setSession,
   });
 
-  const recoverCurrentJob = useCallback(async () => {
+  const recoverCurrentJob = useCallback(async (generation: number) => {
     if (!client || !session) {
       return false;
     }
 
     try {
       const current = await client.currentStatus(session);
+
+      if (refreshGeneration.current !== generation) {
+        return false;
+      }
 
       setJob(current);
       setJobId(current.id);
@@ -162,12 +166,18 @@ export default function useQuickJoin(serviceUrl: string) {
 
       if (refreshGeneration.current === generation) {
         acceptInspection(nextInspection);
+
+        return nextInspection;
       }
     } catch (cause) {
+      if (refreshGeneration.current !== generation) {
+        return;
+      }
+
       if (
         cause instanceof JoinError
         && cause.code === 'OPERATION_RUNNING'
-        && await recoverCurrentJob()
+        && await recoverCurrentJob(generation)
       ) {
         recoveredJob = true;
         setInspectionState('stale');
@@ -186,17 +196,25 @@ export default function useQuickJoin(serviceUrl: string) {
     }
   }, [client, session, acceptInspection, handleError, recoverCurrentJob]);
 
-  const openExternal = useExternalRefresh({
-    refresh,
-    session,
-    setError,
-  });
-
   useEffect(() => {
+    refreshGeneration.current += 1;
+    busyRef.current = false;
+
     if (session) {
       void refresh();
     }
+
+    return () => {
+      refreshGeneration.current += 1;
+    };
   }, [session, refresh]);
+
+  const { openExternal, externalRecovery, cancelExternal } = useExternalRefresh({
+    refresh,
+    session,
+    inspection, authState, busyRef,
+    setError,
+  });
 
   useEffect(() => {
     if (!client || !session || !jobId) {
@@ -225,7 +243,13 @@ export default function useQuickJoin(serviceUrl: string) {
           timer = setTimeout(() => void poll(), 1000);
         } else {
           if (value.status === 'complete') {
-            acceptInspection(await client.inspect(session));
+            const fresh = await client.inspect(session);
+
+            if (disposed) {
+              return;
+            }
+
+            acceptInspection(fresh);
           }
 
           setBusy(false);
@@ -335,6 +359,9 @@ export default function useQuickJoin(serviceUrl: string) {
   };
 
   const logout = async () => {
+    refreshGeneration.current += 1;
+    cancelExternal();
+
     if (client && session) {
       try {
         await client.logout(session);
@@ -378,6 +405,7 @@ export default function useQuickJoin(serviceUrl: string) {
     previewPolicy,
     logout,
     openExternal,
+    externalRecovery,
     execute: () => void run(),
     confirmPolicy: () => void run(true),
     cancelAuth,

@@ -352,6 +352,49 @@ and Policy confirmation advance automatically and show no redundant Continue in
 their normal Web-assisted states. Retry, stale, failure, blocked-popup and Local /
 CLI states retain a stage-local Check again inspection fallback.
 
+### External-action return reconciliation
+
+Opening an incomplete fork or App-access step records only its stage, validated
+identity ID and start time in tab-scoped sessionStorage. This optional hint is
+valid for 30 minutes. It contains no repository target, credential, execution
+plan or stage-completion claim; restoring it never grants mutation authority.
+Session restoration must still pass server validation before reconciliation.
+
+Visible focus, visibility, pageshow and usable-popup closure feed one coordinator.
+Each return permits at most four authoritative inspections: immediately, then
+after 1, 2.5 and 5 seconds. The attempt window also has a 15-second deadline.
+Busy inspections/jobs share the existing guard rather than starting concurrent
+requests. Hidden pages, pagehide, unmount and session changes cancel scheduled
+work. Popup-handle observation is at most 2 Hz while eligible and expires with
+the hint; it performs no network request unless closure triggers reconciliation.
+
+An unchanged result retains the hint for a later return. Exhaustion exposes
+stage-local Check again without inventing an error or completion. Closing GitHub
+without acting is a normal cancellation. Delayed GitHub visibility can converge
+through bounded retries; completing a still-open tab later can converge through
+another return. Fresh authoritative completion clears the hint and cancels work.
+Logout, expiry and identity changes discard hints, while generation guards reject
+responses from an earlier session. Invalid or expired stored hints are discarded.
+
+#### Required field evidence for this repair
+
+Use a controlled account and record candidate head/tree, device/browser/version,
+before stage, external action taken or not taken, return lifecycle, inspection
+behavior, final authoritative stage and whether any manual click was needed.
+Do not replace real mobile evidence with narrow desktop screenshots or synthetic
+lifecycle events. In addition to existing controlled onboarding checks, exercise:
+
+- Stage 2 and Stage 3 completion with the GitHub tab closed and left open;
+- early unchanged return, then completion in the same external tab and return;
+- close without acting, delayed visibility and bounded exhaustion with Check again;
+- mobile background/restore, pageshow and reload with a valid hint;
+- rapid return signals, logout/expiry during inspection and stale response rejection;
+- unchanged ordered Station execution, separate Policy confirmation and terminal Ready.
+
+Full repair Acceptance remains blocked until the real mobile return/restore
+evidence is available. After merge, repeat the controlled production smoke on
+the exact successful main deployment before closing #31.
+
 Stage 6 explicitly shows “Onboarding complete.” Publication waiting is
 informational. Its optional Refresh status control is a secondary utility, not a
 next onboarding action. Completed zero-operation jobs render no progress panel;
