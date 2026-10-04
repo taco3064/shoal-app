@@ -24,7 +24,9 @@
     "prepare": "husky",
     "serve:join": "wrangler dev",
     "build:join": "wrangler deploy --dry-run --outdir .worker-build",
-    "deploy:join": "wrangler deploy"
+    "deploy:join": "wrangler deploy",
+    "test:action": "node --import tsx --test src/action/services/reviewer_summary/index.test.ts src/protocol/services/reviewer_summary_schema/index.test.ts src/network/services/summary_selection/index.test.ts",
+    "test:action-package": "npm run validate:action-package"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx,mjs,astro}": "eslint --fix"

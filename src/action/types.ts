@@ -1,7 +1,7 @@
 import type { GitHubClientOptions } from '~app/action/services/github_client';
-import type { ReviewerSummary } from '~app/protocol/services/reviewer_summary_schema';
+import type { ReviewerSummaryV2 } from '~app/protocol/services/reviewer_summary_schema';
 
-export type { ReviewerSummary };
+export type { ReviewerSummaryV2 as ReviewerSummary };
 
 export type ReviewerSummaryActionOptions = GitHubClientOptions & {
   networkRootRepositoryId: number;
@@ -11,6 +11,6 @@ export type ReviewerSummaryActionOptions = GitHubClientOptions & {
 
 export type ReviewerSummaryActionResult = {
   filename: 'reviewer-summary.json';
-  json: ReviewerSummary;
+  json: ReviewerSummaryV2;
   text: string;
 };
