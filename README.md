@@ -89,3 +89,28 @@ Official managed-file digests and pinned Action commits are listed explicitly in
 `src/protocol/services/network_compatibility`. A new station or Action version
 requires an intentional compatibility review and update; the scanner never
 trusts the latest mutable branch by default.
+
+## Reviewer Summary source generation
+
+The current Action source emits Protocol 1 / Summary schema 2 with the original
+S/R/Q/I facts plus Pending and Completed request workload (P/C). Every currently
+valid Initial Review or accepted Re-review request contributes to exactly one
+of P or C, so P + C = R. PASS and FAIL can both complete work; completion is not
+endorsement. A closed terminal Re-review epoch completes without a new judgment
+only when its current Target and Policy basis matches the previous usable
+judgment. Closed state alone is insufficient.
+
+Existing trusted Workflow generations remain explicitly bound to schema 1 with
+their original four metrics. Validation follows that trusted binding; missing
+legacy workload is never inferred as zero. Schema-2 Action publication, station
+Workflow activation, trust admission, and Directory presentation follow the
+separate downstream delivery chain (#32 → shoal-action#8 → shoal-station#13 → #33).
+
+Verify the source and reproducible distribution input with:
+
+```bash
+npm run test:action
+npm run build:action
+npm run package:action
+npm run test:action-package
+```

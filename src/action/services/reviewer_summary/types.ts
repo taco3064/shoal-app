@@ -77,7 +77,12 @@ export type ValidRequest = {
   target: TargetRepository;
 };
 
+export type ReviewEvidence
+  = | { kind: 'judgment'; value: JudgmentEvent }
+    | { kind: 'lifecycle'; value: LifecycleEvent };
+
 export type CanonicalThread = {
+  orderedEvidence: ReviewEvidence[];
   evidence: 'admission' | 'manual-judgment';
   issue: GitHubIssue;
   lifecycleEvents: LifecycleEvent[];

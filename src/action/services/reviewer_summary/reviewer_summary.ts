@@ -3,31 +3,28 @@ import {
   parseRequestPayload,
   type AdmissionRecord,
   type JudgmentEvent,
-  type LifecycleEvent,
 } from '~app/protocol/services/review_protocol';
 import {
   createReviewerSummary,
-  type ReviewerSummary,
+  type ReviewerSummaryV2,
 } from '~app/protocol/services/reviewer_summary_schema';
 import {
   countInvalidFormalResults,
   getCurrentAdmittedRequest,
-  getInvalidFormalResultIncrement,
-  isJudgmentLifecycleValid,
-  isPriorInitialReviewEvidence,
 } from './review_lifecycle';
+import { analyzeReviewThread } from './review_thread';
+import { countCompletedWork } from './workload';
 import { isValidRequesterNode } from './requester_membership';
 import type {
   CanonicalThread,
   GitHubIssue,
-  ReviewerNode,
   SummaryInput,
   ValidRequest,
 } from './types';
 
 export async function computeReviewerSummary(
   input: SummaryInput,
-): Promise<ReviewerSummary> {
+): Promise<ReviewerSummaryV2> {
   const currentPolicyCommit
     = await input.resolvers.resolveCurrentReviewPolicyCommit();
 
@@ -43,15 +40,26 @@ export async function computeReviewerSummary(
     canonicalThreads,
   );
 
+  const validReviewRequestIssueCount
+    = currentInitialReviewThreads.length + acceptedReReviewIssues.length;
+
+  const completedReviewRequestCount = countCompletedWork(
+    canonicalThreads,
+    acceptedReReviewIssues,
+    currentPolicyCommit,
+  );
+
   return createReviewerSummary(input.reviewerNode.id, {
+    completedReviewRequestCount,
+    pendingReviewRequestCount:
+      validReviewRequestIssueCount - completedReviewRequestCount,
     invalidReviewCommentCount: countInvalidFormalResults(canonicalThreads),
     reReviewRequestIssueCount: acceptedReReviewIssues.length,
     reviewBackedStarCount: countReviewBackedStars(
       currentInitialReviewThreads,
       currentPolicyCommit,
     ),
-    validReviewRequestIssueCount:
-      currentInitialReviewThreads.length + acceptedReReviewIssues.length,
+    validReviewRequestIssueCount,
   });
 }
 
@@ -127,9 +135,9 @@ async function collectCanonicalThreads(
 
     const targetRepositoryId = admission.value.targetRepositoryId;
 
-    const reviewEvents = analyzeReviewThread(
+    const reviewEvents = await analyzeReviewThread(
+      input,
       issue,
-      input.reviewerNode,
       targetRepositoryId,
     );
 
@@ -138,11 +146,8 @@ async function collectCanonicalThreads(
       evidence: 'admission',
       invalidFormalResultCount: reviewEvents.invalidFormalResultCount,
       issue,
-      lifecycleEvents: await collectLifecycleEvents(
-        input,
-        issue,
-        targetRepositoryId,
-      ),
+      lifecycleEvents: reviewEvents.lifecycleEvents,
+      orderedEvidence: reviewEvents.orderedEvidence,
       target,
       targetRepositoryId,
       validJudgments: reviewEvents.validJudgments,
@@ -160,9 +165,9 @@ async function collectCanonicalThreads(
       continue;
     }
 
-    const reviewEvents = analyzeReviewThread(
+    const reviewEvents = await analyzeReviewThread(
+      input,
       request.issue,
-      input.reviewerNode,
       request.target.id,
     );
 
@@ -180,11 +185,8 @@ async function collectCanonicalThreads(
       evidence,
       invalidFormalResultCount: reviewEvents.invalidFormalResultCount,
       issue: request.issue,
-      lifecycleEvents: await collectLifecycleEvents(
-        input,
-        request.issue,
-        request.target.id,
-      ),
+      lifecycleEvents: reviewEvents.lifecycleEvents,
+      orderedEvidence: reviewEvents.orderedEvidence,
       target: request.target,
       targetRepositoryId: request.target.id,
       validJudgments: reviewEvents.validJudgments,
@@ -315,121 +317,6 @@ function findManualJudgmentEvidence(
   )
     ? 'manual-judgment'
     : null;
-}
-
-async function collectLifecycleEvents(
-  input: SummaryInput,
-  issue: GitHubIssue,
-  targetRepositoryId: number,
-): Promise<LifecycleEvent[]> {
-  const events: LifecycleEvent[] = [];
-  let hasPriorInitialReviewEvidence = false;
-
-  for (const comment of issue.comments) {
-    const parsed = parseProtocolComment(comment.body);
-
-    if (isPriorInitialReviewEvidence(
-      parsed,
-      comment,
-      input.reviewerNode,
-      targetRepositoryId,
-    )) {
-      hasPriorInitialReviewEvidence = true;
-
-      continue;
-    }
-
-    if (parsed.kind !== 'lifecycle') {
-      continue;
-    }
-
-    if (
-      parsed.value.reviewerNodeId !== input.reviewerNode.id
-      || parsed.value.targetRepositoryId !== targetRepositoryId
-    ) {
-      continue;
-    }
-
-    if (!hasPriorInitialReviewEvidence) {
-      continue;
-    }
-
-    if (comment.author.id === input.reviewerNode.owner.id) {
-      events.push(parsed.value);
-
-      continue;
-    }
-
-    if (
-      await input.resolvers.isAllowedLifecycleAutomation(
-        comment,
-        parsed.value,
-        input.reviewerNode,
-      )
-    ) {
-      events.push(parsed.value);
-    }
-  }
-
-  return events;
-}
-
-function analyzeReviewThread(
-  issue: GitHubIssue,
-  reviewerNode: ReviewerNode,
-  targetRepositoryId: number,
-): { validJudgments: JudgmentEvent[]; invalidFormalResultCount: number } {
-  const validJudgments: JudgmentEvent[] = [];
-  let hasPriorInitialReviewEvidence = false;
-  let invalidFormalResultCount = 0;
-
-  for (const comment of issue.comments) {
-    const parsed = parseProtocolComment(comment.body);
-
-    if (parsed.kind === 'invalid-formal-result') {
-      invalidFormalResultCount += getInvalidFormalResultIncrement(issue);
-
-      hasPriorInitialReviewEvidence ||= isPriorInitialReviewEvidence(
-        parsed,
-        comment,
-        reviewerNode,
-        targetRepositoryId,
-      );
-
-      continue;
-    }
-
-    if (parsed.kind !== 'judgment') {
-      continue;
-    }
-
-    const lifecycleValid = isJudgmentLifecycleValid(
-      parsed.value,
-      hasPriorInitialReviewEvidence,
-    );
-
-    hasPriorInitialReviewEvidence ||= isPriorInitialReviewEvidence(
-      parsed,
-      comment,
-      reviewerNode,
-      targetRepositoryId,
-    );
-
-    if (
-      comment.author.id !== reviewerNode.owner.id
-      || parsed.value.reviewerNodeId !== reviewerNode.id
-      || parsed.value.targetRepositoryId !== targetRepositoryId
-      || !lifecycleValid
-    ) {
-      invalidFormalResultCount += getInvalidFormalResultIncrement(issue);
-
-      continue;
-    }
-
-    validJudgments.push(parsed.value);
-  }
-
-  return { invalidFormalResultCount, validJudgments };
 }
 
 function getLatestJudgment(judgments: JudgmentEvent[]): JudgmentEvent | null {

@@ -52,14 +52,14 @@ const comments = [
   ...comment, user: reviewer, created_at: '2026-10-01T00:00:00Z',
 }));
 
-async function run(candidate) {
+async function run(candidate, threadComments = comments, state = 'closed', triggers = []) {
   const routes = {
     '/repos/reviewer/station': repository({ id: reviewerId, owner: reviewer, full_name: 'reviewer/station' }),
     '/repos/reviewer/station/issues': [{
-      number: 1, state: 'closed', user: author,
+      number: 1, state, user: author,
       body: '### Repository name\n\ntarget\n\n### Invitation message\n\n_No response_',
-    }],
-    '/repos/reviewer/station/issues/1/comments': comments,
+    }, ...triggers],
+    '/repos/reviewer/station/issues/1/comments': threadComments,
     '/repos/reviewer/station/commits': [{ sha: policyCommit }],
     '/repos/requester/station': candidate,
     '/users/requester/repos': [],
@@ -67,6 +67,10 @@ async function run(candidate) {
     '/repos/requester/target/branches/main': { commit: { sha: targetCommit } },
     '/users/reviewer/starred': [repository({ id: targetId })],
   };
+
+  for (const trigger of triggers) {
+    routes[`/repos/reviewer/station/issues/${trigger.number}/comments`] = [];
+  }
 
   const result = await runReviewerSummaryAction({
     networkRootRepositoryId: rootId,
@@ -85,7 +89,10 @@ async function run(candidate) {
   assert.equal(result.filename, 'reviewer-summary.json');
   assert.deepEqual(JSON.parse(result.text), result.json);
   assert.equal(result.json.protocolVersion, 1);
-  assert.equal(result.json.summarySchemaVersion, 1);
+  assert.equal(result.json.summarySchemaVersion, 2);
+  assert.equal(result.json.metrics.pendingReviewRequestCount
+    + result.json.metrics.completedReviewRequestCount,
+  result.json.metrics.validReviewRequestIssueCount);
   return result.json;
 }
 
@@ -94,6 +101,8 @@ const fork = await run(repository({ id: 400, fork: true, parent: { id: rootId } 
 
 assert.deepEqual(root, fork);
 assert.deepEqual(root.metrics, {
+  pendingReviewRequestCount: 0,
+  completedReviewRequestCount: 1,
   invalidReviewCommentCount: 0,
   reReviewRequestIssueCount: 0,
   reviewBackedStarCount: 1,
@@ -113,9 +122,35 @@ for (const overrides of [
 
   assert.equal(rejected.metrics.validReviewRequestIssueCount, 0);
   assert.equal(rejected.metrics.reviewBackedStarCount, 0);
+  assert.equal(rejected.metrics.pendingReviewRequestCount, 0);
+  assert.equal(rejected.metrics.completedReviewRequestCount, 0);
 }
+
+const pending = await run(repository(), [comments[0]], 'open');
+assert.equal(pending.metrics.pendingReviewRequestCount, 1);
+assert.equal(pending.metrics.completedReviewRequestCount, 0);
+const lifecycle = {
+  id: 3, user: reviewer, created_at: '2026-10-01T01:00:00Z',
+  body: 'shoal-review-event:v1\n' + JSON.stringify({
+    type: 'RE_REVIEW_REQUESTED', reviewerNodeId: reviewerId,
+    targetRepositoryId: targetId, requestIssueNumber: 2,
+    eligibilityTargetCommit: 'c'.repeat(40), reviewPolicyCommit: policyCommit,
+    reason: 'TARGET_CHANGED',
+  }),
+};
+const trigger = {
+  number: 2, state: 'closed', user: author,
+  body: '### Repository name\n\ntarget\n\n### Invitation message\n\n_No response_',
+};
+const openEpoch = await run(repository(), [...comments, lifecycle], 'open', [trigger]);
+assert.equal(openEpoch.metrics.pendingReviewRequestCount, 1);
+assert.equal(openEpoch.metrics.completedReviewRequestCount, 1);
+const closedEpoch = await run(repository(), [...comments, lifecycle], 'closed', [trigger]);
+assert.equal(closedEpoch.metrics.pendingReviewRequestCount, 0);
+assert.equal(closedEpoch.metrics.completedReviewRequestCount, 2);
 
 const manifest = JSON.parse(await readFile('dist/action-package/package-manifest.json', 'utf8'));
 
-assert.ok(manifest.files.every(({ path }) => !path.includes('.test.')));
-console.log('Packaged Action: Root/direct-fork accounting, seven Membership negatives, unchanged schema, read-only IO, no shipped tests PASS.');
+assert.ok(manifest.files.every(({ path }) => !path.includes('.test.') && !path.includes('/fixtures/')));
+assert.ok(manifest.files.every(({ path }) => !path.includes('/fixtures/')));
+console.log('Packaged Action: Root/direct-fork accounting, seven Membership negatives, schema v2 workload partition and terminal resolution, read-only IO, no shipped tests PASS.');

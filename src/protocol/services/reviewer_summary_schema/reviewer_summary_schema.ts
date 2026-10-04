@@ -3,23 +3,25 @@ import {
   isSupportedReviewerSummaryContract,
 } from '../network_compatibility';
 import type { ReviewerSummaryContract } from '../network_compatibility';
-import type { ReviewerSummary, ReviewerSummaryMetrics } from './types';
+import type {
+  ReviewerSummary,
+  ReviewerSummaryMetricsV1,
+  ReviewerSummaryMetricsV2,
+  ReviewerSummaryV2,
+} from './types';
 
 export const summarySchemaVersion
   = currentReviewerSummaryContract.summarySchemaVersion;
 
 export function createReviewerSummary(
   repositoryId: number,
-  metrics: ReviewerSummaryMetrics,
-): ReviewerSummary {
+  metrics: ReviewerSummaryMetricsV2,
+): ReviewerSummaryV2 {
   return {
-    metrics: assertPrimitiveMetrics(metrics),
+    metrics: parseV2Metrics(metrics),
     protocolVersion: currentReviewerSummaryContract.protocolVersion,
     reviewerNode: {
-      repositoryId: assertPositiveInteger(
-        repositoryId,
-        'reviewerNode.repositoryId',
-      ),
+      repositoryId: assertPositiveInteger(repositoryId, 'reviewerNode.repositoryId'),
     },
     summarySchemaVersion,
   };
@@ -41,13 +43,8 @@ export function validateReviewerSummary(
     throw new Error('Reviewer Summary summarySchemaVersion is unsupported.');
   }
 
-  const candidateContract: ReviewerSummaryContract = {
-    protocolVersion: value.protocolVersion,
-    summarySchemaVersion: value.summarySchemaVersion,
-  };
-
-  if (!isSupportedReviewerSummaryContract(candidateContract)) {
-    throw new Error('Reviewer Summary protocolVersion is unsupported.');
+  if (!isSupportedReviewerSummaryContract(expectedContract)) {
+    throw new Error('Trusted Reviewer Summary contract is unsupported.');
   }
 
   if (
@@ -61,52 +58,98 @@ export function validateReviewerSummary(
     throw new Error('Reviewer Summary reviewerNode must be an object.');
   }
 
-  return createReviewerSummary(
-    assertPositiveInteger(
+  const reviewerNode = {
+    repositoryId: assertPositiveInteger(
       value.reviewerNode.repositoryId,
       'reviewerNode.repositoryId',
     ),
-    parseMetrics(value.metrics),
-  );
+  };
+
+  // Only the trusted binding selects the parser; candidate declarations merely
+  // have to match it. Legacy metrics retain their four-field shape.
+  if (expectedContract.summarySchemaVersion === 1) {
+    return {
+      protocolVersion: 1,
+      summarySchemaVersion: 1,
+      reviewerNode,
+      metrics: parseV1Metrics(value.metrics),
+    };
+  }
+
+  return {
+    protocolVersion: 1,
+    summarySchemaVersion: 2,
+    reviewerNode,
+    metrics: parseV2Metrics(value.metrics),
+  };
 }
 
-export function stringifyReviewerSummary(summary: ReviewerSummary): string {
+export function stringifyReviewerSummary(summary: ReviewerSummaryV2): string {
   const validated = validateReviewerSummary(summary);
 
   return `${JSON.stringify(validated, null, 2)}\n`;
 }
 
-function parseMetrics(value: unknown): ReviewerSummaryMetrics {
+const legacyMetricKeys = [
+  'invalidReviewCommentCount',
+  'reReviewRequestIssueCount',
+  'reviewBackedStarCount',
+  'validReviewRequestIssueCount',
+];
+
+function parseV1Metrics(value: unknown): ReviewerSummaryMetricsV1 {
+  const metrics = assertMetricKeys(value, legacyMetricKeys);
+
+  return assertLegacyMetrics(metrics);
+}
+
+function parseV2Metrics(value: unknown): ReviewerSummaryMetricsV2 {
+  const metrics = assertMetricKeys(value, [
+    ...legacyMetricKeys,
+    'pendingReviewRequestCount',
+    'completedReviewRequestCount',
+  ]);
+
+  const result = {
+    ...assertLegacyMetrics(metrics),
+    pendingReviewRequestCount: assertNonNegativeInteger(
+      metrics.pendingReviewRequestCount,
+      'metrics.pendingReviewRequestCount',
+    ),
+    completedReviewRequestCount: assertNonNegativeInteger(
+      metrics.completedReviewRequestCount,
+      'metrics.completedReviewRequestCount',
+    ),
+  };
+
+  if (
+    result.pendingReviewRequestCount + result.completedReviewRequestCount
+    !== result.validReviewRequestIssueCount
+  ) {
+    throw new Error('Pending plus completed requests must equal valid review requests.');
+  }
+
+  return result;
+}
+
+function assertMetricKeys(
+  value: unknown,
+  expectedKeys: string[],
+): Record<string, unknown> {
   if (!isRecord(value)) {
     throw new Error('Reviewer Summary metrics must be an object.');
   }
 
-  const keys = Object.keys(value).sort();
-
-  const expectedKeys = [
-    'invalidReviewCommentCount',
-    'reReviewRequestIssueCount',
-    'reviewBackedStarCount',
-    'validReviewRequestIssueCount',
-  ];
-
-  if (keys.join('\n') !== expectedKeys.join('\n')) {
+  if (Object.keys(value).sort().join('\n') !== [...expectedKeys].sort().join('\n')) {
     throw new Error(
-      'Reviewer Summary metrics must contain exactly the primitive MVP metrics.',
+      'Reviewer Summary metrics must contain exactly its schema primitive metrics.',
     );
   }
 
-  return assertPrimitiveMetrics({
-    invalidReviewCommentCount: value.invalidReviewCommentCount,
-    reReviewRequestIssueCount: value.reReviewRequestIssueCount,
-    reviewBackedStarCount: value.reviewBackedStarCount,
-    validReviewRequestIssueCount: value.validReviewRequestIssueCount,
-  });
+  return value;
 }
 
-function assertPrimitiveMetrics(
-  metrics: Record<keyof ReviewerSummaryMetrics, unknown>,
-): ReviewerSummaryMetrics {
+function assertLegacyMetrics(metrics: Record<string, unknown>): ReviewerSummaryMetricsV1 {
   const primitiveMetrics = {
     invalidReviewCommentCount: assertNonNegativeInteger(
       metrics.invalidReviewCommentCount,
@@ -131,13 +174,8 @@ function assertPrimitiveMetrics(
   return primitiveMetrics;
 }
 
-function assertPrimitiveMetricInvariants(
-  metrics: ReviewerSummaryMetrics,
-): void {
-  if (
-    metrics.reReviewRequestIssueCount
-    > metrics.validReviewRequestIssueCount
-  ) {
+function assertPrimitiveMetricInvariants(metrics: ReviewerSummaryMetricsV1): void {
+  if (metrics.reReviewRequestIssueCount > metrics.validReviewRequestIssueCount) {
     throw new Error(
       'metrics.reReviewRequestIssueCount must not exceed '
       + 'metrics.validReviewRequestIssueCount.',
@@ -145,8 +183,7 @@ function assertPrimitiveMetricInvariants(
   }
 
   const initialReviewRequestCount
-    = metrics.validReviewRequestIssueCount
-      - metrics.reReviewRequestIssueCount;
+    = metrics.validReviewRequestIssueCount - metrics.reReviewRequestIssueCount;
 
   if (metrics.reviewBackedStarCount > initialReviewRequestCount) {
     throw new Error(
