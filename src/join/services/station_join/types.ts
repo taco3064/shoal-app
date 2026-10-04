@@ -33,6 +33,7 @@ export type Inspection = {
     policy: GitFile | null;
   };
   actions: ActionsPolicy | null;
+  workflowRegistryAvailable: boolean;
   workflow: Workflow | null;
   operations: OperationName[];
   waiting: 'fork' | 'app_access' | null;
@@ -49,6 +50,9 @@ export type PublicInspection = {
   appAccess: boolean;
   issuesEnabled: boolean;
   actionsEnabled: boolean;
+  actionsPolicyEnabled: boolean;
+  workflowRegistryAvailable: boolean;
+  workflowIdentityAvailable: boolean;
   managedFilesMatch: boolean;
   workflowActive: boolean;
   workflowSupported: boolean;

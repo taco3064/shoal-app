@@ -175,6 +175,10 @@ export class StationJoinService {
 
         break;
       case 'enable_workflow':
+        if (!inspection.actions?.enabled || !inspection.workflowRegistryAvailable) {
+          throw new Error('Verified repository Actions availability is required.');
+        }
+
         if (
           inspection.platformBlocked
           || inspection.files.workflow?.content

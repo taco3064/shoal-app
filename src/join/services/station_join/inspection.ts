@@ -59,6 +59,9 @@ export async function inspectStation(
       appAccess: false,
       issuesEnabled: false,
       actionsEnabled: false,
+      actionsPolicyEnabled: false,
+      workflowRegistryAvailable: false,
+      workflowIdentityAvailable: false,
       managedFilesMatch: false,
       workflowActive: false,
       workflowSupported: false,
@@ -96,6 +99,7 @@ export async function inspectStation(
       nodeHead: null,
       binding: null,
       actions: null,
+      workflowRegistryAvailable: false,
       workflow: null,
       files: { form: null, workflow: null, policy: null },
       operations: [],
@@ -160,22 +164,26 @@ export async function inspectStation(
 
     base.nodeHead = await client.head(token, repository);
 
-    const [nodeForm, nodeWorkflow, actions, workflowState] = await Promise.all([
-      client.file(token, repository, requestFormPath, base.nodeHead),
-      client.file(token, repository, summaryWorkflowPath, base.nodeHead),
-      client.actions(token, repository),
-      client.workflow(token, repository),
-    ]);
+    const [nodeForm, nodeWorkflow, actions, workflowState, registryAvailable]
+      = await Promise.all([
+        client.file(token, repository, requestFormPath, base.nodeHead),
+        client.file(token, repository, summaryWorkflowPath, base.nodeHead),
+        client.actions(token, repository),
+        client.workflow(token, repository),
+        client.workflowRegistryAvailable(token, repository),
+      ]);
 
     base.files.form = nodeForm;
     base.files.workflow = nodeWorkflow;
     base.actions = actions;
     base.workflow = workflowState;
+    base.workflowRegistryAvailable = registryAvailable;
     base.operations = remainingOperations(base);
     base.ready = stationReady(base);
 
     // Policy authority is reachable only after Station setup has converged.
-    if (base.operations.length || !base.ready || base.platformBlocked) {
+    if (base.operations.length || !base.ready || base.platformBlocked
+      || !actionsAvailable(base) || !workflowActive(base)) {
       return base;
     }
 
@@ -232,29 +240,50 @@ function remainingOperations(inspection: Inspection): OperationName[] {
     operations.push('enable_issues');
   }
 
-  if (!inspection.actions?.enabled) {
-    operations.push('enable_actions');
+  const synchronize = !managedMatch(inspection) && !inspection.platformBlocked;
+
+  // An empty registry cannot prove fork execution authority. If no governed
+  // workflow file exists yet, create it before attempting registry convergence.
+  if (!inspection.files.workflow && !inspection.workflowRegistryAvailable
+    && synchronize) {
+    operations.push('sync_managed_files');
+
+    return operations;
   }
 
-  const synchronize = !managedMatch(inspection) && !inspection.platformBlocked;
+  if (!actionsAvailable(inspection)) {
+    operations.push('enable_actions');
+
+    // Workflow identity/state after this prerequisite is not yet known.
+    return operations;
+  }
 
   if (synchronize) {
     operations.push('sync_managed_files');
+
+    return operations;
   }
 
-  // A missing workflow becomes resolvable after the confirmed governed-file sync.
+  // Activation is confirmed only for an already discovered canonical identity.
   if (
-    (inspection.workflow?.state !== 'active'
-      || inspection.workflow.path !== summaryWorkflowPath)
+    inspection.workflow?.path === summaryWorkflowPath
+    && inspection.workflow.state !== 'active'
     && !inspection.platformBlocked
-    && (synchronize
-      || inspection.files.workflow?.content
-      === inspection.rootFiles?.workflow?.content)
+    && managedMatch(inspection)
   ) {
     operations.push('enable_workflow');
   }
 
   return operations;
+}
+
+export function actionsAvailable(inspection: Inspection): boolean {
+  return !!inspection.actions?.enabled && inspection.workflowRegistryAvailable;
+}
+
+function workflowActive(inspection: Inspection): boolean {
+  return inspection.workflow?.path === summaryWorkflowPath
+    && inspection.workflow.state === 'active';
 }
 
 export function publicInspection(inspection: Inspection): PublicInspection {
@@ -275,7 +304,10 @@ export function publicInspection(inspection: Inspection): PublicInspection {
     waiting: inspection.waiting,
     appAccess: !!inspection.binding,
     issuesEnabled: !!repository?.has_issues,
-    actionsEnabled: !!inspection.actions?.enabled,
+    actionsEnabled: actionsAvailable(inspection),
+    actionsPolicyEnabled: !!inspection.actions?.enabled,
+    workflowRegistryAvailable: inspection.workflowRegistryAvailable,
+    workflowIdentityAvailable: inspection.workflow?.path === summaryWorkflowPath,
     managedFilesMatch: managedMatch(inspection),
     workflowActive:
       inspection.workflow?.state === 'active'
