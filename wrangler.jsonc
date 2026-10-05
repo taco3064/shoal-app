@@ -6,13 +6,21 @@
   "compatibility_flags": ["nodejs_compat"],
   "workers_dev": true,
   "durable_objects": {
-    "bindings": [{ "name": "JOIN_FLOWS", "class_name": "JoinFlow" }],
+    "bindings": [
+      { "name": "JOIN_FLOWS", "class_name": "JoinFlow" },
+      { "name": "HOSTED_GRANTS", "class_name": "HostedGrant" },
+    ],
   },
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["JoinFlow"] }],
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["JoinFlow"] },
+    { "tag": "v2", "new_sqlite_classes": ["HostedGrant"] },
+  ],
   "vars": {
     "GITHUB_APP_ID": "",
     "GITHUB_APP_SLUG": "",
     "GITHUB_APP_CLIENT_ID": "",
+    "HOSTED_OAUTH_CLIENT_ID": "",
+    "HOSTED_BROKER_AUDIENCE": "shoal-hosted-review",
     "JOIN_SERVICE_ORIGIN": "https://shoal-quick-web-join.YOUR-SUBDOMAIN.workers.dev",
     "JOIN_WEBSITE_RETURN_URL": "https://taco3064.github.io/shoal-app/join/",
   },

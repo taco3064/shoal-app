@@ -16,3 +16,4 @@ export type {
   OperationStatus,
   ProgressObserver,
 } from './types';
+export { discoverReviewerNode, validNode } from './discovery';

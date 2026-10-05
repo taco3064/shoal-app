@@ -51,8 +51,14 @@ For local setup, directly fork the
 in the fork when required by the local command contract, then use
 `gh shoal init` for the managed station setup. Each Reviewer authors their own
 `README.md` Review Policy. The Personal Account-owned Network Root is also its
-owner's valid Reviewer Node; Root bootstrap and maintenance are an internal
+owner’s valid Reviewer Node; Root bootstrap and maintenance are an internal
 maintainer path, separate from public onboarding.
+
+Hosted Review settings are a separate authenticated capability after station
+discovery. Reviewers explicitly choose `none`, `review`, `re-review`, or `all`
+and separately connect recurring Reviewer authority. Base station readiness,
+Reviewer Summary and local CLI execution stay independent. Deployment and
+credential boundaries are documented in [Hosted Review operations](docs/hosted-review.md).
 
 ## Network Scan and publication
 

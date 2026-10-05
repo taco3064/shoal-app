@@ -11,6 +11,7 @@ import { loadJoinConfig, type JoinEnvironment } from './config';
 import { JoinHttp, json } from './http';
 import { openToken, sealToken } from './sealed_token';
 import { FlowStorage, opaqueId } from './sessions';
+import { handleHostedPublic, handleHostedSession } from '../hosted_server';
 
 export class JoinFlow extends DurableObject<JoinEnvironment> {
   private storage: FlowStorage;
@@ -60,6 +61,8 @@ export class JoinFlow extends DurableObject<JoinEnvironment> {
           forgetUserToken: (sessionId) => {
             this.userTokens.delete(sessionId);
           },
+          hosted: (request, identity, sessionId) =>
+            handleHostedSession(request, this.env, identity, sessionId),
         });
 
         return await handler.handle(request);
@@ -197,7 +200,9 @@ export async function workerFetch(
   const url = new URL(request.url);
   let response: Response;
 
-  if (request.method === 'OPTIONS' && url.pathname.startsWith('/api/')) {
+  if (url.pathname.startsWith('/hosted/')) {
+    response = await handleHostedPublic(request, env);
+  } else if (request.method === 'OPTIONS' && url.pathname.startsWith('/api/')) {
     const expected = env.JOIN_WEBSITE_RETURN_URL
       ? new URL(env.JOIN_WEBSITE_RETURN_URL).origin
       : '';
