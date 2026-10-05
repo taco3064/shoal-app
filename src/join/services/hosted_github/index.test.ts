@@ -34,7 +34,7 @@ function fixture(permission: string | null = 'write') {
     if (path.endsWith('/installation')) {
       return Response.json({
         id: 3, account: { id: owner, type: 'User' }, suspended_at: suspended,
-        permissions: permission ? { variables: permission } : {},
+        permissions: permission ? { actions_variables: permission } : {},
       });
     }
 
@@ -79,7 +79,7 @@ test('inspection mints exact read scope and absent variables remain unwritten',
     });
 
     assert.deepEqual(calls.find((call) => call.path.endsWith('/access_tokens'))?.body, {
-      repository_ids: [17], permissions: { metadata: 'read', variables: 'read' },
+      repository_ids: [17], permissions: { metadata: 'read', actions_variables: 'read' },
     });
 
     assert.equal(calls.filter((call) => call.method !== 'GET'
@@ -126,7 +126,7 @@ test('bounded variable writes use POST/PATCH, scope write token and authoritativ
 
     assert.deepEqual(calls.filter((call) => call.path.endsWith('/access_tokens'))
       .map((call) => call.body), Array.from({ length: 3 }, () => ({
-      repository_ids: [17], permissions: { metadata: 'read', variables: 'write' },
+      repository_ids: [17], permissions: { metadata: 'read', actions_variables: 'write' },
     })));
 
     assert.deepEqual(calls.filter((call) => ['POST', 'PATCH'].includes(call.method)

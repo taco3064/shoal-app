@@ -34,7 +34,7 @@ const fetcher=async(url,init)=>{
     owner:scenario==='transferred'?{id:101,type:'User'}:node.owner,
     parent:scenario==='indirect'?{id:500}:node.parent});
   if(path.endsWith('/installation'))return Response.json({id:7,
-    account:{id:100,type:'User'},permissions:{variables:'write',
+    account:{id:100,type:'User'},permissions:{actions_variables:'write',
       issues:scenario==='issues-denied'?'read':'write'}});
   if(path==='/app/installations/7/access_tokens')return Response.json({
     token:'lifecycle_'+'b'.repeat(32),expires_at:new Date(Date.now()+3600000).toISOString()});

@@ -48,14 +48,14 @@ export class HostedGitHub {
     if (!Number.isSafeInteger(installation.id) || installation.id <= 0
       || installation.account.id !== repository.owner.id
       || installation.account.type !== 'User' || installation.suspended_at
-      || !['read', 'write'].includes(installation.permissions.variables)) {
+      || !['read', 'write'].includes(installation.permissions.actions_variables)) {
       return null;
     }
 
     return {
       repository,
       installationId: installation.id,
-      writable: installation.permissions.variables === 'write',
+      writable: installation.permissions.actions_variables === 'write',
     };
   }
 
@@ -68,7 +68,7 @@ export class HostedGitHub {
       appJwt(this.config), `/app/installations/${binding.installationId}/access_tokens`,
       'POST', {
         repository_ids: [binding.repository.id],
-        permissions: { metadata: 'read', variables: write ? 'write' : 'read' },
+        permissions: { metadata: 'read', actions_variables: write ? 'write' : 'read' },
       },
     );
 
