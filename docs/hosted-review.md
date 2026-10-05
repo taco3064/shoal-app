@@ -93,7 +93,44 @@ station head and run ID/attempt. Redact all credentials, authorization headers,
 cookies and session values. Local screenshots and controlled API fixtures prove
 presentation only; they do not replace these live gates.
 
-## Code-review candidate chain (#49)
+## Published dependency integration (2026-10-06)
+
+The current Hosted registry and both auxiliary fixtures use the published
+Action and the exact merged Station bytes:
+
+| Immutable fact | Verified value |
+| --- | --- |
+| Action v0.2.1 commit | `85dde9b9760be9a640b29b1f4c2a6aa911b2cb37` |
+| Action tree (unchanged from accepted candidate) | `ba06f41743e4fb46bfa5adfe3ad569e3e257df73` |
+| Station source commit | `83e0b94ddb3b690db0e5b1d2ff4c5189e17c4fe1` |
+| Auxiliary SHA-256 | `eabb769e5810789e2c83232a8dc86bef23e87cc3b268ea788007f0e699a49537` |
+| Caller SHA-256 (unchanged) | `b9162cae864bbd6e00745346f37f701fe5c003d3367cc3dc37c6fb394f9d8105` |
+
+Both fixtures were decoded directly from the GitHub Contents API at that Station
+commit, preserving original bytes. The release tag was dereferenced to its commit;
+the registry still trusts an immutable SHA, never a mutable tag.
+
+Local Windows tests on Node 24.16.0 passed: Hosted 54, Summary 72, workload 17.
+Typecheck, Blueprint doctor/inspect with baseline, static build,
+SEO/workload artifact validation, the 31-file Action
+package validation, and Worker dry-run with both Durable Object bindings passed.
+Lint passed with 0 errors and 125 advisory warnings; the build retained its
+large-chunk advisory. These results describe the local working tree, not a new
+remote exact-head CI run.
+The Hosted suite uses locally signed assertions and controlled GitHub responses;
+it does not prove a production GitHub OIDC exchange.
+
+Production inspection found `/health` returning HTTP 200 with `healthy: true`,
+but unauthenticated `POST /hosted/exchange` returned HTTP 401 `SESSION_EXPIRED`,
+not the candidate broker's `MACHINE_IDENTITY_REFUSED`. The latest successful
+[Worker deployment](https://github.com/taco3064/shoal-app/actions/runs/37204185622)
+still targets `134d82457c99777cba752a549fb7e26ab239d71c`, the pre-PR main.
+The canonical Station has no configured Actions variables at inspection time.
+Production OIDC, identity-bearing lifecycle/read-back, revoked-grant refusal,
+and live None skipping remain unverified until deployment and explicit Reviewer
+configuration/authorization. This local integration does not close #49.
+
+## Historical code-review candidate chain (#49)
 
 The owner requested code and review-ready PRs before owner testing, merging,
 publication, permission approval or production authorization. This candidate
