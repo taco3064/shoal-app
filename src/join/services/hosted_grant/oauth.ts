@@ -35,6 +35,10 @@ export class HostedOAuthClient implements GrantOAuth {
 
     const payload = await response.json() as Record<string, unknown>;
 
+    if (payload.error === 'incorrect_client_credentials') {
+      throw new GrantError('GRANT_CLIENT_CONFIG');
+    }
+
     if (payload.error === 'bad_refresh_token' || payload.error === 'invalid_grant') {
       throw new GrantError('GRANT_REVOKED');
     }
