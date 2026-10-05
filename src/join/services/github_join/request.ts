@@ -1,6 +1,12 @@
 import { GitHubError, pathClass } from './errors';
 
-type Operation = { token: string; path: string; method: string; body?: unknown };
+type Operation = {
+  token: string;
+  path: string;
+  method: string;
+  body?: unknown;
+  response?: 'empty';
+};
 
 function unavailable(path: string, cause: unknown, signal: AbortSignal): GitHubError {
   const timeout = signal.aborted
@@ -61,7 +67,9 @@ export async function githubRequest<T>(
     });
   }
 
-  if (response.status === 204) {
+  if (response.status === 204 || operation.response === 'empty') {
+    await response.body?.cancel();
+
     return undefined as T;
   }
 

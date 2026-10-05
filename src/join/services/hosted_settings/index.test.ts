@@ -110,7 +110,7 @@ function fixture(rootOwner = false) {
         rebound = true;
       }
 
-      return new Response(null, { status: 204 });
+      return new Response(null, { status: method === 'POST' ? 201 : 204 });
     }
 
     const name = path.split('/').at(-1) ?? '';

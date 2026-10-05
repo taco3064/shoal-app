@@ -133,9 +133,15 @@ export class HostedGitHub {
     await verify();
 
     if (current !== value) {
-      await this.request(token, current === null
-        ? `/repos/${locator(binding.repository)}/actions/variables`
-        : path, current === null ? 'POST' : 'PATCH', { name, value });
+      await githubRequest<void>(this.fetcher, {
+        token,
+        path: current === null
+          ? `/repos/${locator(binding.repository)}/actions/variables`
+          : path,
+        method: current === null ? 'POST' : 'PATCH',
+        body: { name, value },
+        response: 'empty',
+      });
     }
 
     const readback = await this.read(token, binding.repository, name);
