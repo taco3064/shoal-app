@@ -41,6 +41,8 @@ jobs:
           SHOAL_PUBLIC_CONTENT_FETCH: skip
       - run: npm run test:action
       - run: npm run test:workload
+      - run: npm run test:hosted
+      - run: npm run build:join
       - run: npm run package:action
       - run: npm run validate:action-package
       - run: npm run validate:seo

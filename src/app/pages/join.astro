@@ -75,8 +75,8 @@ const joinServiceUrl = import.meta.env.PUBLIC_SHOAL_JOIN_SERVICE_URL
           <p><code>.github/ISSUE_TEMPLATE/review-request.yml</code> and <code>.github/workflows/reviewer-summary.yml</code> are Shoal-managed. Even whitespace or comments change the workflow’s exact digest; a Summary outside the allowed canonical digest set is rejected. Run <code>gh shoal init</code> to repair managed-file drift. In local setup, a fresh fork’s Actions confirmation remains yours to complete. Quick Web Join can enable the required Actions state after your explicit authorization.</p>
         </section>
         <section>
-          <h3>Automated Review stays local</h3>
-          <p>Run <code>gh shoal</code> with an explicitly selected local agent: <code>claude</code>, <code>codex</code>, <code>gemini</code>, <code>opencode</code>, <code>cursor</code>, <code>grok</code>, <code>qwen</code>, or <code>kimi</code>. The extension owns GitHub mutations and Protocol handling. Shoal does not host or silently choose an agent. Invalid formal result comments are maintenance facts, not reputation scores.</p>
+          <h3>Choose your review execution</h3>
+          <p>Run <code>gh shoal</code> with an explicitly selected local agent: <code>claude</code>, <code>codex</code>, <code>gemini</code>, <code>opencode</code>, <code>cursor</code>, <code>grok</code>, <code>qwen</code>, or <code>kimi</code>. Local / CLI execution uses your own credentials and remains independent. You can also explicitly enable Hosted Copilot Review in the settings above with a separate recurring authorization. Both paths use the shared Review runtime and Protocol. Operational failures leave work pending; they do not create FAIL judgments.</p>
         </section>
       </div>
     </section>

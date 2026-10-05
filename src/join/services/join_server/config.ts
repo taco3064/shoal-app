@@ -1,4 +1,5 @@
 import type { DurableObjectNamespace } from '@cloudflare/workers-types';
+import type { HostedEnvironment } from '../hosted_server';
 export interface JoinConfig {
   appId: string;
   installationUrl: string;
@@ -10,7 +11,7 @@ export interface JoinConfig {
   returnUrl: string;
 }
 
-export interface JoinEnvironment {
+export interface JoinEnvironment extends HostedEnvironment {
   JOIN_FLOWS: DurableObjectNamespace;
   GITHUB_APP_ID: string;
   GITHUB_APP_SLUG: string;
@@ -40,7 +41,7 @@ export function loadJoinConfig(
   ): string => {
     const value = env[name];
 
-    if (!value) {
+    if (typeof value !== 'string' || !value) {
       throw new Error(`${name} is required`);
     }
 

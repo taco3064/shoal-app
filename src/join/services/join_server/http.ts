@@ -5,6 +5,8 @@ import type { JoinConfig } from './config';
 import { plan, savePlan, stoppedJob, clearRepositoryState } from './execution';
 import { acceptPolicyResult, applyPolicyCompletion } from './policy_completion';
 import { sessionRestoreMatches } from './session_restore';
+import { forwardHostedRequest } from './hosted_request';
+import { authContext, sessionExpired } from './session_response';
 import {
   equalSecret,
   opaqueId,
@@ -68,22 +70,6 @@ function repositoryId(publicValue: object): number | null {
   return typeof repository?.id === 'number' ? repository.id : null;
 }
 
-function authContext(
-  session: { identity: AuthIdentity },
-  userToken: string,
-): AuthIdentity & { userToken: string } {
-  return { ...session.identity, userToken };
-}
-
-function sessionExpired(): Response {
-  return json(401, {
-    error: {
-      code: 'SESSION_EXPIRED',
-      message: 'Authorize with GitHub again.',
-    },
-  });
-}
-
 export class JoinHttp {
   constructor(
     private options: {
@@ -98,6 +84,11 @@ export class JoinHttp {
         expires: number,
       ) => Promise<void>;
       forgetUserToken: (sessionId: string) => void;
+      hosted?: (
+        request: Request,
+        identity: AuthIdentity & { userToken: string },
+        sessionId: string,
+      ) => Promise<Response>;
     },
   ) {}
 
@@ -247,6 +238,11 @@ export class JoinHttp {
           message: 'Wait for the current operation.',
         },
       });
+    }
+
+    if (url.pathname.startsWith('/api/hosted/') && this.options.hosted) {
+      return forwardHostedRequest({ request, body, session,
+        userToken: this.options.userToken, handle: this.options.hosted });
     }
 
     if (url.pathname === '/api/logout') {

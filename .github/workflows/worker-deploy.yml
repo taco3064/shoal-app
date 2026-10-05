@@ -56,6 +56,8 @@ jobs:
           SHOAL_GITHUB_APP_ID: ${{ vars.SHOAL_GITHUB_APP_ID }}
           SHOAL_GITHUB_APP_SLUG: ${{ vars.SHOAL_GITHUB_APP_SLUG }}
           SHOAL_GITHUB_APP_CLIENT_ID: ${{ vars.SHOAL_GITHUB_APP_CLIENT_ID }}
+          SHOAL_HOSTED_OAUTH_CLIENT_ID: ${{ vars.SHOAL_HOSTED_OAUTH_CLIENT_ID }}
+          HOSTED_BROKER_AUDIENCE: ${{ vars.HOSTED_BROKER_AUDIENCE }}
           JOIN_SERVICE_ORIGIN: ${{ vars.PUBLIC_SHOAL_JOIN_SERVICE_URL }}
           JOIN_WEBSITE_RETURN_URL: ${{ vars.JOIN_WEBSITE_RETURN_URL }}
         run: |
@@ -77,39 +79,125 @@ jobs:
             throw new Error(`Missing required deployment config: ${missing.join(', ')}`);
           }
 
-          // Dashboard/API bootstrap can provision JoinFlow without Wrangler's v1 tag.
-          // Read the existing binding before deciding whether creation is required.
-          const response = await fetch(
-            `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(process.env.CLOUDFLARE_ACCOUNT_ID)}/workers/scripts/shoal-quick-web-join/settings`,
-            { headers: { Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}` } },
-          );
-          const settings = await response.json();
-          const absent = response.status === 404 &&
-            settings.errors?.some((error) => error.code === 10007);
-          if (!absent && (!response.ok || settings.success !== true)) {
-            throw new Error(`Cannot inspect existing Worker settings (HTTP ${response.status})`);
+          const workerName = 'shoal-quick-web-join';
+          const api = `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(process.env.CLOUDFLARE_ACCOUNT_ID)}`;
+          const headers = { Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}` };
+          async function read(path, allowAbsent = false) {
+            const response = await fetch(`${api}${path}`, {
+              headers, redirect: 'error', signal: AbortSignal.timeout(15000),
+            });
+            const body = await response.json();
+            if (allowAbsent && response.status === 404 &&
+                body.errors?.some((error) => error.code === 10007)) return null;
+            if (!response.ok || body.success !== true) {
+              throw new Error(`Cannot inspect production Worker metadata (HTTP ${response.status})`);
+            }
+            return body;
           }
+          const settings = await read(`/workers/scripts/${workerName}/settings`, true);
+          const absent = settings === null;
           const bindings = absent ? [] : settings.result?.bindings;
           if (!Array.isArray(bindings)) {
             throw new Error('Existing Worker settings did not include bindings');
           }
-          const existing = bindings.filter((binding) => binding.name === 'JOIN_FLOWS');
-          if (existing.length > 1 || (existing.length === 1 && (
-            existing[0].type !== 'durable_object_namespace' ||
-            existing[0].class_name !== 'JoinFlow' ||
-            !existing[0].namespace_id ||
-            existing[0].environment ||
-            existing[0].dispatch_namespace ||
-            (existing[0].script_name && existing[0].script_name !== 'shoal-quick-web-join')
-          ))) {
-            throw new Error('Existing JOIN_FLOWS binding does not match the production JoinFlow namespace');
+
+          // Binding absence is not class absence. Complete authoritative namespace
+          // enumeration prevents recreating an unbound, already provisioned class.
+          const namespaces = [];
+          let complete = false;
+          for (let page = 1; page <= 100; page += 1) {
+            const result = await read(`/workers/durable_objects/namespaces?per_page=1000&page=${page}`);
+            if (!Array.isArray(result.result) || result.result.length > 1000) {
+              throw new Error('Invalid namespace inventory');
+            }
+            namespaces.push(...result.result);
+            const pages = result.result_info?.total_pages;
+            if ((result.result_info?.page !== undefined && result.result_info.page !== page) ||
+                (pages !== undefined && (!Number.isSafeInteger(pages) || pages < 0 ||
+                (pages === 0 && result.result.length !== 0)))) {
+              throw new Error('Invalid namespace pagination metadata');
+            }
+            if (pages !== undefined ? page >= pages : result.result.length < 1000) {
+              complete = true;
+              break;
+            }
           }
-          // Existing Workers without this binding need explicit investigation:
-          // an unbound class may still exist, so absence of a binding is not proof
-          // that new_sqlite_classes is safe.
-          if (!absent && existing.length === 0) {
-            throw new Error('Existing Worker has no JOIN_FLOWS binding; refusing implicit namespace creation');
+          if (!complete) throw new Error('Namespace inventory pagination is incomplete');
+          function existingClass(name, className) {
+            const selected = bindings.filter((binding) => binding.name === name);
+            const provisioned = namespaces.filter((namespace) =>
+              namespace.script === workerName && namespace.class === className &&
+              !namespace.preview && !namespace.dispatch_namespace);
+            if (selected.length > 1 || provisioned.length > 1 ||
+                (selected.length === 1 && (
+                  selected[0].type !== 'durable_object_namespace' ||
+                  selected[0].class_name !== className || !selected[0].namespace_id ||
+                  selected[0].environment || selected[0].dispatch_namespace ||
+                  (selected[0].script_name && selected[0].script_name !== workerName) ||
+                  provisioned.length !== 1 ||
+                  provisioned[0].id !== selected[0].namespace_id ||
+                  provisioned[0].use_sqlite !== true
+                )) || (selected.length === 0 && provisioned.length !== 0)) {
+              throw new Error(`Inconsistent existing ${name} binding or ${className} namespace`);
+            }
+            return selected.length === 1;
           }
+          const hasJoin = existingClass('JOIN_FLOWS', 'JoinFlow');
+          const hasHosted = existingClass('HOSTED_GRANTS', 'HostedGrant');
+          if (!absent && !hasJoin) {
+            throw new Error('Existing Worker has no JOIN_FLOWS binding; refusing namespace creation');
+          }
+          const service = absent ? null : await read(`/workers/services/${workerName}`);
+          const script = service?.result?.default_environment?.script;
+          if (!absent && (!script || script.id !== workerName)) {
+            throw new Error('Cannot prove existing Worker migration metadata');
+          }
+          if (script?.exports && Object.keys(script.exports).length) {
+            throw new Error('Existing Worker uses exports lifecycle; refusing a legacy migration change');
+          }
+          const tag = script?.migration_tag;
+          if (tag !== undefined && tag !== null && typeof tag !== 'string') {
+            throw new Error('Invalid existing Worker migration tag');
+          }
+          let migrations;
+          if (absent) {
+            migrations = [
+              { tag: 'v1', new_sqlite_classes: ['JoinFlow'] },
+              { tag: 'v2', new_sqlite_classes: ['HostedGrant'] },
+            ];
+          } else if (!hasHosted) {
+            if (tag && tag !== 'v1') {
+              throw new Error('Unknown or inconsistent migration history for HostedGrant creation');
+            }
+            // v1 is a no-op history marker: never recreate the live JoinFlow.
+            // Untagged dashboard bootstrap needs only the new HostedGrant step.
+            migrations = [
+              ...(tag === 'v1' ? [{ tag: 'v1' }] : []),
+              { tag: 'v2', new_sqlite_classes: ['HostedGrant'] },
+            ];
+          }
+          function existingText(name) {
+            const selected = bindings.filter((binding) => binding.name === name);
+            if (selected.length > 1 || (selected.length === 1 &&
+                (selected[0].type !== 'plain_text' || typeof selected[0].text !== 'string'))) {
+              throw new Error(`Invalid existing ${name} configuration`);
+            }
+            return selected[0]?.text;
+          }
+          const existingClientId = existingText('HOSTED_OAUTH_CLIENT_ID');
+          const existingAudience = existingText('HOSTED_BROKER_AUDIENCE');
+          const hostedClientId = process.env.SHOAL_HOSTED_OAUTH_CLIENT_ID || existingClientId;
+          const brokerAudience = process.env.HOSTED_BROKER_AUDIENCE ||
+            existingAudience || 'shoal-hosted-review';
+          for (const name of ['HOSTED_OAUTH_CLIENT_SECRET', 'HOSTED_GRANT_ENCRYPTION_KEY']) {
+            const selected = bindings.filter((binding) => binding.name === name);
+            if (selected.length > 1 || selected.some((binding) =>
+                !['secret_text', 'secret_key'].includes(binding.type))) {
+              throw new Error(`Existing ${name} must remain a dedicated secret binding`);
+            }
+          }
+          // Wrangler retains secret_text/secret_key bindings on deploy. Dedicated
+          // Hosted secrets are never copied into vars, read, printed, or overwritten.
 
           const config = {
             $schema: 'node_modules/wrangler/config-schema.json',
@@ -120,23 +208,28 @@ jobs:
             compatibility_flags: ['nodejs_compat'],
             workers_dev: true,
             durable_objects: {
-              bindings: [{ name: 'JOIN_FLOWS', class_name: 'JoinFlow' }],
+              bindings: [
+                { name: 'JOIN_FLOWS', class_name: 'JoinFlow' },
+                { name: 'HOSTED_GRANTS', class_name: 'HostedGrant' },
+              ],
             },
-            ...(absent ? {
-              migrations: [{ tag: 'v1', new_sqlite_classes: ['JoinFlow'] }],
-            } : {}),
+            ...(migrations ? { migrations } : {}),
             vars: {
               GITHUB_APP_ID: process.env.SHOAL_GITHUB_APP_ID,
               GITHUB_APP_SLUG: process.env.SHOAL_GITHUB_APP_SLUG,
               GITHUB_APP_CLIENT_ID: process.env.SHOAL_GITHUB_APP_CLIENT_ID,
+              ...(hostedClientId ? { HOSTED_OAUTH_CLIENT_ID: hostedClientId } : {}),
+              HOSTED_BROKER_AUDIENCE: brokerAudience,
               JOIN_SERVICE_ORIGIN: process.env.JOIN_SERVICE_ORIGIN,
               JOIN_WEBSITE_RETURN_URL: process.env.JOIN_WEBSITE_RETURN_URL,
             },
           };
 
           console.log(absent
-            ? 'Creating the initial JoinFlow SQLite namespace'
-            : 'Preserving the existing JoinFlow namespace; no class migration');
+            ? 'Preparing initial JoinFlow and HostedGrant SQLite namespaces'
+            : hasHosted
+              ? 'Preserving existing JoinFlow and HostedGrant namespaces'
+              : 'Preserving JoinFlow; preparing the new HostedGrant SQLite namespace');
           fs.writeFileSync(
             '.wrangler.production.json',
             JSON.stringify(config, null, 2),

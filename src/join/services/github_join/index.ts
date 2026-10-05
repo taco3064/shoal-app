@@ -23,3 +23,5 @@ export type {
   ContentChange,
   Installation,
 } from './types';
+export { appJwt } from './auth';
+export { githubRequest } from './request';
