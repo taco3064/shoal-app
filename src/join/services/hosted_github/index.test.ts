@@ -47,7 +47,7 @@ function fixture(permission: string | null = 'write') {
     if (method === 'POST' || method === 'PATCH') {
       values.set(body.name, body.value);
 
-      return new Response(null, { status: 204 });
+      return new Response(null, { status: method === 'POST' ? 201 : 204 });
     }
 
     if (values.has(name)) {
