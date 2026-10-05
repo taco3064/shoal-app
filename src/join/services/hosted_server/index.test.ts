@@ -7,12 +7,22 @@ const code = buildSync({ stdin: { resolveDir: process.cwd(), contents: `
 import { createHostedSessionHandler } from './src/join/services/hosted_server/session.ts';
 import { createHostedCallbackHandler } from './src/join/services/hosted_server/oauth_callback.ts';
 import { createHostedStartHandler } from './src/join/services/hosted_server/oauth_start.ts';
+import { grantOperation } from './src/join/services/hosted_server/grants.ts';
+import { GitHubError } from './src/join/services/github_join/index.ts';
 const settings = {membership:true,repository:{id:200},authorizationAvailable:true};
 const env = {JOIN_WEBSITE_RETURN_URL:'https://site.test/join/',
   JOIN_SERVICE_ORIGIN:'https://join.test'};
 let operations = [];
 const grant = async (env,binding,operation,input) => {
   operations.push({binding,operation,input});
+  if (input?.code?.startsWith('failure-')) {
+    return grantOperation({...env, GITHUB_APP_PRIVATE_KEY:'',
+      HOSTED_OAUTH_CLIENT_ID:'test', HOSTED_OAUTH_CLIENT_SECRET:'secret-marker',
+      HOSTED_GRANT_ENCRYPTION_KEY:'k'.repeat(32),
+      HOSTED_GRANTS:{idFromName:value=>value,get:()=>({fetch:async()=>
+        Response.json({error:{code:input.code.slice(8),message:'secret-marker'}},
+          {status:403})})}},binding,operation,input);
+  }
   const state = input?.state ?? '200.100.'+'a'.repeat(43);
   return {authorizationUrl:'https://github.com/login/oauth/authorize?state='+state,
     browserBinding:'a'.repeat(43),state,launchTicket:'c'.repeat(43)};
@@ -20,7 +30,8 @@ const grant = async (env,binding,operation,input) => {
 const service = {
   inspect:async () => settings,
   configure:async (identity,id,mode,confirmed) => ({id,mode,confirmed}),
-  repair:async () => settings,
+  repair:async () => {throw new GitHubError(0,
+    {pathClass:'repository_actions',failure:'transport'});},
 };
 const session = createHostedSessionHandler({service:()=>service,grant});
 const callback = createHostedCallbackHandler(grant);
@@ -173,6 +184,55 @@ test('top-level bootstrap sets binding cookie and redirects only to GitHub', asy
     assert.equal(rejected.status, 403);
     assert.equal(rejected.headers.get('Set-Cookie'), null);
     assert.equal(rejected.headers.get('X-Test-Calls'), '[]');
+  } finally {
+    await runtime.dispose();
+  }
+});
+
+test('callback carries only allowlisted failure categories through the grant boundary',
+  async () => {
+    const runtime = await worker();
+    const state = `200.100.${'b'.repeat(43)}`;
+
+    try {
+      for (const code of ['GRANT_CLIENT_CONFIG', 'GRANT_AUTH_STATE',
+        'GRANT_RECONSENT', 'secret-marker']) {
+        const response = await runtime.dispatchFetch(
+          `https://join.test/hosted/auth/callback?state=${state}&code=failure-${code}`, {
+            headers: { Cookie: `__Host-shoal-hosted=${'a'.repeat(43)}` },
+          });
+
+        const html = await response.text();
+        const expected = code === 'secret-marker' ? 'GRANT_UNAVAILABLE' : code;
+
+        assert.ok(html.includes(`Reference: ${expected}`));
+        assert.ok(!html.includes('secret-marker'));
+        assert.ok(!html.includes(state));
+        assert.ok(!html.includes('failure-'));
+        assert.match(html, /"connected":false/);
+      }
+    } finally {
+      await runtime.dispose();
+    }
+  });
+
+test('Hosted mutation preserves sanitized upstream failure classification', async () => {
+  const runtime = await worker();
+
+  try {
+    const response = await runtime.dispatchFetch(request('/api/hosted/repair', {
+      repositoryId: 200,
+    }));
+
+    assert.equal(response.status, 502);
+
+    const result = await response.json() as { error: {
+      code: string; failure: string; pathClass: string;
+    }; };
+
+    assert.equal(result.error.code, 'GITHUB_UPSTREAM_FAILED');
+    assert.equal(result.error.failure, 'transport');
+    assert.equal(result.error.pathClass, 'repository_actions');
   } finally {
     await runtime.dispose();
   }

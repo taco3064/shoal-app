@@ -43,9 +43,19 @@ export interface GrantOAuth {
   verify(token: string, binding: GrantBinding): Promise<void>;
   revoke(token: string): Promise<void>;
 }
+
+const grantErrorCodes = ['GRANT_UNAVAILABLE', 'GRANT_REVOKED', 'GRANT_EXPIRED',
+  'GRANT_RECONSENT', 'GRANT_BINDING', 'GRANT_AUTH_STATE', 'GRANT_CLIENT_CONFIG'] as const;
+
+type GrantErrorCode = typeof grantErrorCodes[number];
+
+export function isGrantErrorCode(value: unknown): value is GrantErrorCode {
+  return typeof value === 'string'
+    && grantErrorCodes.some((code) => code === value);
+}
+
 export class GrantError extends Error {
-  constructor(public code: 'GRANT_UNAVAILABLE' | 'GRANT_REVOKED'
-    | 'GRANT_EXPIRED' | 'GRANT_RECONSENT' | 'GRANT_BINDING' | 'GRANT_AUTH_STATE') {
+  constructor(public code: GrantErrorCode) {
     super('Recurring Reviewer authority is unavailable. Reconnect explicitly.');
   }
 }

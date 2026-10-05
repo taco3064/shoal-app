@@ -1,4 +1,4 @@
-import { hostedGrantStub } from '../hosted_grant';
+import { hostedGrantStub, GrantError, isGrantErrorCode } from '../hosted_grant';
 import type { GrantBinding, GrantView } from '../hosted_grant';
 import type { HostedGrantState } from '../hosted_settings';
 import { grantEnvironment } from './config';
@@ -20,7 +20,11 @@ export async function grantOperation<T>(
   );
 
   if (!response.ok) {
-    throw new Error('Recurring Reviewer authority is unavailable. Reconnect explicitly.');
+    const failure = await response.json() as { error?: { code?: unknown } };
+
+    throw new GrantError(isGrantErrorCode(failure?.error?.code)
+      ? failure.error.code
+      : 'GRANT_UNAVAILABLE');
   }
 
   return await response.json() as T;

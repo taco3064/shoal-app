@@ -1,4 +1,4 @@
-import { createGitHubJoinClient, type GitHubUser } from '../github_join';
+import { createGitHubJoinClient, githubFailure, type GitHubUser } from '../github_join';
 import { HostedSettingsService, type HostedMode,
   type HostedSettings } from '../hosted_settings';
 import { hostedConfiguration, type HostedEnvironment } from './config';
@@ -164,7 +164,13 @@ export function createHostedSessionHandler(dependencies = defaults) {
       await dependencies.grant(env, binding, 'disconnect');
 
       return json(200, await service.inspect(identity));
-    } catch {
+    } catch (error) {
+      const failure = githubFailure(error);
+
+      if (failure) {
+        return json(failure.httpStatus, { error: failure.error });
+      }
+
       return json(403, { error: { code: 'HOSTED_UNAVAILABLE',
         message: 'Hosted Review is unavailable. Inspect status or reconnect.' } });
     }

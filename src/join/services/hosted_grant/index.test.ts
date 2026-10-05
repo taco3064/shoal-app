@@ -282,3 +282,18 @@ test('launch is one-use and required before callback', async () => {
   await assert.rejects(grant.launch(binding, { state: expired.state,
     launchTicket: expired.launchTicket }), { code: 'GRANT_AUTH_STATE' });
 });
+
+test('OAuth client failure never reflects upstream descriptions', async () => {
+  const oauth = new HostedOAuthClient({ clientId: 'oauth-app', clientSecret: 'secret',
+    callbackUrl: 'https://join.test/hosted/auth/callback' }, async () => Response.json({
+    error: 'incorrect_client_credentials', error_description: 'secret-marker',
+  }));
+
+  await assert.rejects(oauth.exchange('code', 'verifier'), (error: unknown) => {
+    assert.ok(error instanceof Error);
+    assert.equal((error as Error & { code: string }).code, 'GRANT_CLIENT_CONFIG');
+    assert.ok(!error.message.includes('secret-marker'));
+
+    return true;
+  });
+});
