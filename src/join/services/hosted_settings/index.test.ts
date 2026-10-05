@@ -94,7 +94,7 @@ function fixture(rootOwner = false) {
     if (path.endsWith('/installation')) {
       return Response.json({
         id: 9, account: identity,
-        permissions: permission ? { variables: 'write' } : {},
+        permissions: permission ? { actions_variables: 'write' } : {},
       });
     }
 

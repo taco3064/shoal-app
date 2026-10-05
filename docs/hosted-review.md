@@ -14,6 +14,14 @@ issuance needs **Issues write**, restricted to the requesting station through
 Existing installations must explicitly approve added permissions. An installation
 without Variables access remains usable for base onboarding and local CLI setup.
 
+GitHub's API permission key for repository Variables is `actions_variables`,
+both in installation metadata and installation-token permission requests. The
+Hosted adapter must not use `variables`; that key incorrectly reports a valid
+installation as missing authority. Production testing on 2026-10-06 confirmed
+the public App metadata returned `actions_variables: write` after permission
+approval. The corrected API fixtures reproduce the failure before the adapter
+fix and cover node-scoped read/write token requests after it.
+
 Only these station variables are managed by Hosted settings:
 
 | Variable | Source |
