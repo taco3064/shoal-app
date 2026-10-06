@@ -4,7 +4,7 @@ import {
   appJwt, createGitHubJoinClient, githubRequest, type Installation,
 } from '../github_join';
 import type { BrokerAuthority, BrokerIdentity } from '../hosted_broker';
-import { brokerGithub, repositoryIdentity } from './broker_github';
+import { brokerGithub, publicGithubFetcher, repositoryIdentity } from './broker_github';
 import { hostedConfiguration, type HostedEnvironment } from './config';
 import { grantOperation } from './grants';
 
@@ -12,7 +12,7 @@ export async function issueHostedAuthority(
   env: HostedEnvironment, identity: BrokerIdentity, fetcher: typeof fetch = fetch,
 ): Promise<BrokerAuthority> {
   const config = hostedConfiguration(env);
-  const client = createGitHubJoinClient(config, fetcher);
+  const client = createGitHubJoinClient(config, publicGithubFetcher(env, fetcher));
   const github = brokerGithub(env, fetcher);
 
   const verify = async () => {

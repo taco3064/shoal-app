@@ -29,14 +29,43 @@ function locator(fullName: string): string {
   return fullName.split('/').map(encodeURIComponent).join('/');
 }
 
+export function publicGithubFetcher(
+  env: HostedEnvironment, fetcher: typeof fetch,
+): typeof fetch {
+  if (!env.HOSTED_OAUTH_CLIENT_ID || !env.HOSTED_OAUTH_CLIENT_SECRET) {
+    throw new Error('Hosted public API authentication is unavailable.');
+  }
+
+  const authorization = `Basic ${Buffer.from(
+    `${env.HOSTED_OAUTH_CLIENT_ID}:${env.HOSTED_OAUTH_CLIENT_SECRET}`,
+  ).toString('base64')}`;
+
+  return (input, init) => {
+    const headers = new Headers(init?.headers);
+
+    // Only our explicit, otherwise anonymous GitHub API GETs use the OAuth
+    // app's public-data quota. Existing user and installation tokens stay intact.
+    if (typeof input !== 'string' || init?.method !== 'GET'
+      || new URL(input).origin !== 'https://api.github.com'
+      || headers.has('Authorization')) {
+      return fetcher(input, init);
+    }
+
+    headers.set('Authorization', authorization);
+
+    return fetcher(input, { ...init, headers, redirect: 'manual' });
+  };
+}
+
 export function brokerGithub(
   env: HostedEnvironment, fetcher: typeof fetch = fetch,
 ): HostedBrokerGithub {
   const config = hostedConfiguration(env);
-  const client = createGitHubJoinClient(config, fetcher);
+  const publicFetcher = publicGithubFetcher(env, fetcher);
+  const client = createGitHubJoinClient(config, publicFetcher);
   const variables = new HostedGitHub(config, fetcher);
 
-  const request = <T>(path: string) => githubRequest<T>(fetcher, {
+  const request = <T>(path: string) => githubRequest<T>(publicFetcher, {
     token: '', path, method: 'GET',
   });
 
