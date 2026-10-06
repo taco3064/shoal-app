@@ -48,5 +48,17 @@ for (const drift of [Buffer.concat([repairedBytes, Buffer.from(' ')]),
   Buffer.from(repairedBytes.toString().replace(repairedAction, 'a'.repeat(40)))]) {
   assert.equal(allowedSummaryWorkflows.has(digest(drift)), false);
 }
-assert.equal(allowedSummaryWorkflows.size, 8);
+const damagedRepairBytes = readFileSync('src/protocol/services/network_compatibility/fixtures/f02-summary.yml');
+const damagedRepairDigest = 'acf3b8edc35584309a73bfe67e2c6fd453acb07e9a1033de34f4f6ab039e042f';
+const damagedRepairAction = '1916eb85cd251b073520956512cd9b5549fba2a7';
+assert.equal(digest(damagedRepairBytes), damagedRepairDigest);
+assert.equal(damagedRepairBytes.toString(), repairedBytes.toString().replace(repairedAction, damagedRepairAction));
+assert.deepEqual(allowedSummaryWorkflows.get(damagedRepairDigest), {
+  actionCommit: damagedRepairAction, reviewerSummary: { protocolVersion: 1, summarySchemaVersion: 2 },
+});
+for (const drift of [Buffer.concat([damagedRepairBytes, Buffer.from(' ')]),
+  Buffer.from(damagedRepairBytes.toString().replace(damagedRepairAction, 'a'.repeat(40)))]) {
+  assert.equal(allowedSummaryWorkflows.has(digest(drift)), false);
+}
+assert.equal(allowedSummaryWorkflows.size, 9);
 console.log('Canonical trust: exact Stage A generations, byte-drift refusal, all historical bindings unchanged PASS.');
