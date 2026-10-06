@@ -27,7 +27,10 @@ for (const reviewer of projection.reviewers) {
     selected.status !== 'unavailable' && selected.summary.summarySchemaVersion === 2;
 
   assert.ok(card, 'Static Directory card: ' + reviewer.username);
-  assert.equal(card.includes('class="workload-grid"'), hasWorkload);
+  assert.equal(card.includes('class="workload-grid"'), false);
+  assert.equal(card.includes('Selected accepted workload'), false);
+  assert.equal(card.includes('<dt>Pending</dt>'), false);
+  assert.equal(card.includes('<dt>Completed</dt>'), false);
   assert.equal(detail.includes('class="workload-grid"'), hasWorkload);
   assert.equal(card.includes('state-fallback'), selected.status === 'fallback');
   assert.equal(card.includes('state-current'), selected.status === 'current');
@@ -39,14 +42,12 @@ for (const reviewer of projection.reviewers) {
       completedReviewRequestCount: completed,
     } = selected.summary.metrics;
 
-    for (const html of [card, detail]) {
-      assert.ok(html.includes('<dt>Pending</dt><dd>' + pending + '</dd>'));
-      assert.ok(html.includes('<dt>Completed</dt><dd>' + completed + '</dd>'));
-      assert.equal(
-        html.includes('Prior accepted workload · stale'),
-        selected.status === 'fallback',
-      );
-    }
+    assert.ok(detail.includes('<dt>Pending</dt><dd>' + pending + '</dd>'));
+    assert.ok(detail.includes('<dt>Completed</dt><dd>' + completed + '</dd>'));
+    assert.equal(
+      detail.includes('Prior accepted workload · stale'),
+      selected.status === 'fallback',
+    );
     assert.ok(
       detail.indexOf('id="workload-title"') < detail.indexOf('id="policy-title"'),
     );
