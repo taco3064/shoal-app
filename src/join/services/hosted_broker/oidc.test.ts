@@ -100,7 +100,7 @@ test('verifies signed OIDC through native Workers fetch', async () => {
     });
 
     assert.equal(refused.status, 500);
-    assert.deepEqual(await refused.json(), { error: 'OIDC_REFUSED' });
+    assert.deepEqual(await refused.json(), { error: 'OIDC_JWKS_REFUSED' });
     assert.equal(requests, 2);
   } finally {
     await runtime.dispose();

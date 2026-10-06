@@ -36,7 +36,7 @@ function validateTimes(claims: OidcClaims, now: number): void {
     || typeof iat !== 'number' || !Number.isSafeInteger(iat)
     || exp <= seconds || nbf > seconds + 30 || iat > seconds + 30
     || iat < seconds - 300 || exp > iat + 600 || nbf > exp || iat >= exp) {
-    throw new Error('OIDC_REFUSED');
+    throw new Error('OIDC_TIME_REFUSED');
   }
 }
 
@@ -66,7 +66,7 @@ export async function verifyGitHubOidc(input: {
     || typeof header.kid !== 'string' || !header.kid || header.kid.length > 256
     || header.crit !== undefined || header.jku !== undefined || header.x5u !== undefined
     || claims.iss !== issuer || claims.aud !== input.audience) {
-    throw new Error('OIDC_REFUSED');
+    throw new Error('OIDC_HEADER_REFUSED');
   }
 
   validateTimes(claims, input.now);
@@ -79,13 +79,13 @@ export async function verifyGitHubOidc(input: {
   });
 
   if (!response.ok) {
-    throw new Error('OIDC_REFUSED');
+    throw new Error('OIDC_JWKS_REFUSED');
   }
 
   const jwks = await boundedJson(response.body, 65536) as { keys?: SigningKey[] };
 
   if (!Array.isArray(jwks.keys) || jwks.keys.length > 32) {
-    throw new Error('OIDC_REFUSED');
+    throw new Error('OIDC_JWKS_REFUSED');
   }
 
   const keys = jwks.keys.filter((key) => key.kid === header.kid);
@@ -95,7 +95,7 @@ export async function verifyGitHubOidc(input: {
     || (key.alg !== undefined && key.alg !== 'RS256')
     || (key.use !== undefined && key.use !== 'sig')
     || (key.key_ops !== undefined && !key.key_ops.includes('verify'))) {
-    throw new Error('OIDC_REFUSED');
+    throw new Error('OIDC_KEY_REFUSED');
   }
 
   const publicKey = await crypto.subtle.importKey('jwk', key, {
@@ -109,7 +109,7 @@ export async function verifyGitHubOidc(input: {
   );
 
   if (!valid) {
-    throw new Error('OIDC_REFUSED');
+    throw new Error('OIDC_SIGNATURE_REFUSED');
   }
 
   return claims;
