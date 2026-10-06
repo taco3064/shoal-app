@@ -110,13 +110,19 @@ Action and the exact merged Station bytes:
 | --- | --- |
 | Action v0.2.1 commit | `85dde9b9760be9a640b29b1f4c2a6aa911b2cb37` |
 | Action tree (unchanged from accepted candidate) | `ba06f41743e4fb46bfa5adfe3ad569e3e257df73` |
-| Station source commit | `83e0b94ddb3b690db0e5b1d2ff4c5189e17c4fe1` |
-| Auxiliary SHA-256 | `eabb769e5810789e2c83232a8dc86bef23e87cc3b268ea788007f0e699a49537` |
+| Station source commit | `f8258d2a5ef197e76eab5b3f6f21da24f86c2015` |
+| Auxiliary SHA-256 | `328e51948690f810d16441f40e4c2361778cb45317d37afd5ab58b2976e82117` |
 | Caller SHA-256 (unchanged) | `b9162cae864bbd6e00745346f37f701fe5c003d3367cc3dc37c6fb394f9d8105` |
 
 The workflow digests were verified from the GitHub Contents API at that Station
 commit, preserving original bytes. The release tag was dereferenced to its commit;
 the registry still trusts an immutable SHA, never a mutable tag.
+
+The broker and Station accept bounded opaque legacy and stateless installation
+tokens, including JWT separators, up to 2048 characters. They do not parse or
+trust installation-token JWT contents. Identity, separate roles, expiry and the
+8192-byte broker response limit remain enforced. This supports GitHub's completed
+stateless installation-token rollout on 2026-10-02.
 
 Before test-file removal, local Windows tests on Node 24.16.0 passed:
 Hosted 54, Summary 72, workload 17.
