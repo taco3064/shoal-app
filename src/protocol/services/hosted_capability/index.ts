@@ -17,8 +17,8 @@ export type HostedCapabilityTrust = {
 // remain separate evidence gates.
 export const hostedCapabilities: readonly HostedCapabilityTrust[] = [{
   callerDigest: 'b9162cae864bbd6e00745346f37f701fe5c003d3367cc3dc37c6fb394f9d8105',
-  auxiliaryDigest: '890324280151a25a7309c3f8104529304fccaa936141197c73cfb66a824d6b81',
-  actionCommit: '94f9d7a36a783d093b9ceafff0789f6983337b73',
+  auxiliaryDigest: 'c2187c122a151075c35f75461bfe1f29b824d858949ec465bf7080dc9d20d326',
+  actionCommit: 'c39a313795b9a9d941e6e737bd03687d8292d64c',
   actionPath: 'hosted-review/',
   runtimeSourceCommit: '230a97af21c45b8d8f0cdcd4a02d13dddd2c4730',
   runtimeSourceTree: 'db8cfb7ed4cb54c4bc60569b5e55ed36fa68452c',
