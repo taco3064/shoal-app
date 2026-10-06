@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { buildSync } from 'esbuild';
+import { Miniflare, Response as WorkerResponse } from 'miniflare';
 
 import { verifyGitHubOidc } from './oidc';
 
@@ -44,6 +46,66 @@ const fetcher: typeof fetch = async (url) => {
 
   return Response.json({ keys: [publicJwk] });
 };
+
+test('verifies signed OIDC through native Workers fetch', async () => {
+  const token = await signed(validClaims);
+  let requests = 0;
+  let redirect = false;
+
+  const code = buildSync({ stdin: { resolveDir: process.cwd(), contents: `
+    import { verifyGitHubOidc } from './src/join/services/hosted_broker/oidc.ts';
+    export default {async fetch(request) {
+      try {
+        const claims = await verifyGitHubOidc({token:await request.text(),
+          audience:${JSON.stringify(audience)},now:${now},fetcher:fetch});
+        return Response.json(claims);
+      } catch (error) {
+        return Response.json({error:error.message},{status:500});
+      }
+    }};
+  ` }, bundle: true, write: false, format: 'esm', platform: 'node',
+  target: 'es2022' }).outputFiles[0].text;
+
+  const runtime = new Miniflare({ workers: [{ config: {
+    name: 'oidc-native-fetch', compatibilityDate: '2026-10-05',
+    manifest: { mainModule: 'worker.mjs', modules: {
+      'worker.mjs': { type: 'esm', contents: code },
+    } },
+  }, dev: { outboundService: { type: 'fetcher', handler: async (request) => {
+    assert.equal(request.url, 'https://token.actions.githubusercontent.com/.well-known/jwks');
+    requests++;
+
+    if (redirect) {
+      return new WorkerResponse(null, { status: 302,
+        headers: { Location: 'https://unexpected.test/jwks' } });
+    }
+
+    return WorkerResponse.json({ keys: [publicJwk] });
+  } } } }] });
+
+  try {
+    const response = await runtime.dispatchFetch('https://test.local/', {
+      method: 'POST', body: token,
+    });
+
+    const result = await response.json();
+
+    assert.equal(response.status, 200, JSON.stringify(result));
+    assert.deepEqual(result, validClaims);
+    assert.equal(requests, 1);
+    redirect = true;
+
+    const refused = await runtime.dispatchFetch('https://test.local/', {
+      method: 'POST', body: token,
+    });
+
+    assert.equal(refused.status, 500);
+    assert.deepEqual(await refused.json(), { error: 'OIDC_REFUSED' });
+    assert.equal(requests, 2);
+  } finally {
+    await runtime.dispose();
+  }
+});
 
 test('verifies RSA signature, fixed issuer and exact audience', async () => {
   const token = await signed(validClaims);

@@ -71,8 +71,10 @@ export async function verifyGitHubOidc(input: {
 
   validateTimes(claims, input.now);
 
-  const response = await input.fetcher(jwksUrl, {
-    redirect: 'error',
+  const { fetcher } = input;
+
+  const response = await fetcher(jwksUrl, {
+    redirect: 'manual',
     signal: AbortSignal.timeout(10000),
   });
 
