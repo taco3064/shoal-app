@@ -9,7 +9,7 @@ export interface HostedOAuthConfig {
 }
 export class HostedOAuthClient implements GrantOAuth {
   constructor(private config: HostedOAuthConfig,
-    private request: typeof fetch = fetch) {}
+    private request: typeof fetch = (input, init) => fetch(input, init)) {}
 
   authorization(state: string, challenge: string): string {
     const url = new URL('https://github.com/login/oauth/authorize');

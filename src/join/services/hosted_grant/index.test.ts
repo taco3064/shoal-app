@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { buildSync } from 'esbuild';
+import { Miniflare, Response as WorkerResponse } from 'miniflare';
 import { HostedGrantStore } from './store';
 import { HostedOAuthClient } from './oauth';
 import { GrantError, type GrantOAuth, type GrantRecord,
@@ -7,6 +9,73 @@ import { GrantError, type GrantOAuth, type GrantRecord,
 
 const binding = { reviewerId: '100', repositoryId: '200' };
 const secret = 'separate-encryption-key-not-oauth-secret';
+
+test('default OAuth transport works with native Workers fetch', async () => {
+  const calls: string[] = [];
+
+  const code = buildSync({ stdin: { resolveDir: process.cwd(), contents: `
+    import { HostedOAuthClient } from './src/join/services/hosted_grant/oauth.ts';
+    import { networkRoot } from './src/protocol/services/network_compatibility/index.ts';
+    export default { async fetch() {
+      const oauth = new HostedOAuthClient({clientId:'test-client',
+        clientSecret:'test-secret',callbackUrl:'https://join.test/callback'});
+      try {
+        const first = await oauth.exchange('test-code','test-verifier');
+        await oauth.verify(first.accessToken,
+          {reviewerId:'100',repositoryId:String(networkRoot.repositoryId)});
+        const rotated = await oauth.refresh(first.refreshToken);
+        await oauth.revoke(rotated.accessToken);
+        return Response.json({ok:true});
+      } catch (error) {
+        return Response.json({error:error.message},{status:500});
+      }
+    }};
+  ` }, bundle: true, write: false, format: 'esm', platform: 'node',
+  target: 'es2022' }).outputFiles[0].text;
+
+  const runtime = new Miniflare({ workers: [{ config: {
+    name: 'oauth-native-fetch', compatibilityDate: '2026-10-05',
+    manifest: { mainModule: 'worker.mjs', modules: {
+      'worker.mjs': { type: 'esm', contents: code },
+    } },
+  }, dev: { outboundService: { type: 'fetcher', handler: async (request) => {
+    const path = new URL(request.url).pathname;
+
+    calls.push(`${request.method} ${path}`);
+
+    if (path === '/login/oauth/access_token') {
+      const body = await request.json() as Record<string, string>;
+
+      assert.equal(body.client_id, 'test-client');
+      assert.equal(body.client_secret, 'test-secret');
+      assert.ok(body.code === 'test-code' || body.refresh_token === 'refresh');
+
+      return WorkerResponse.json({ access_token: 'access', refresh_token: 'refresh',
+        token_type: 'bearer', scope: 'public_repo offline_access',
+        expires_in: 28_800, refresh_token_expires_in: 15_552_000 });
+    }
+
+    if (request.method === 'DELETE') {
+      return new WorkerResponse(null, { status: 204 });
+    }
+
+    return WorkerResponse.json(path === '/user'
+      ? { id: 100, type: 'User' }
+      : { id: Number(path.split('/').at(-1)), private: false,
+          owner: { id: 100, type: 'User' } });
+  } } },
+  }] });
+
+  try {
+    const response = await runtime.dispatchFetch('https://test.local/');
+
+    assert.equal(response.status, 200, await response.text());
+    assert.equal(calls.length, 5);
+    assert.equal(calls.at(-1), 'DELETE /applications/test-client/grant');
+  } finally {
+    await runtime.dispose();
+  }
+});
 
 function harness() {
   let record: GrantRecord | undefined;
