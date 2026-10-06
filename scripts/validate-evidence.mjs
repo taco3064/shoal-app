@@ -37,17 +37,31 @@ const good = renderEvidenceComment(judgment, presentation);
 const payload = JSON.stringify({ formatVersion: 1, record: judgment, presentation: {} });
 assert.equal(parseProtocolComment(wrap(payload)).kind, 'judgment');
 for (const body of [
-  good + good, start + good, good + end, good.replace(end, ''), good.replace(start, ''),
+  good + good, start + good, good + end, good.replace(end, ''),
   good.replaceAll('shoal-evidence:v1:', 'shoal-evidence:v2:'),
   wrap(payload.replace('"formatVersion":1', '"formatVersion":2')),
   wrap(payload.replace('"formatVersion":1', '"formatVersion":1,"formatVersion":1')),
   wrap(payload.replace('"verdict":"PASS"', '"verdict":"FAIL","verdict":"PASS"')),
   wrap(payload.replace('"verdict":"PASS"', '"verdict":"FAIL","verdi\\u0063t":"PASS"')),
-  wrap('{'), wrap(JSON.stringify({ formatVersion: 1, record: judgment })),
+  wrap(JSON.stringify({ formatVersion: 1, record: judgment })),
   wrap(JSON.stringify({ formatVersion: 1, record: judgment, presentation: {}, foreign: true })),
 ]) {
   assert.notEqual(decodeEvidenceDocument(body).kind, 'present', body);
-  assert.equal(parseProtocolComment(body).kind, 'none', body);
+  assert.deepEqual(parseProtocolComment(body), { kind: 'invalid-formal-result', initialReviewEvidence: null }, body);
+}
+for (const body of [good.replace(start, ''), wrap('{'),
+  wrap(JSON.stringify({ formatVersion: 99, record: admission, presentation: { explanation: 'REVIEWED PASS' } })),
+  wrap(JSON.stringify({ formatVersion: 99, record: {}, presentation: { type: 'REVIEWED' } })),
+  wrap(JSON.stringify({ formatVersion: 99, record: { nested: { type: 'REVIEWED' } }, presentation: {} })),
+  wrap(JSON.stringify({ formatVersion: 99, record: [{ type: 'REVIEWED' }], presentation: {} })),
+]) {
+  assert.equal(parseProtocolComment(body).kind, 'none');
+}
+for (const payload of [
+  `{"formatVersion":1,"record":{"type":"REVIEWED","type":"unknown"},"presentation":{}}`,
+  `{"formatVersion":1,"record":{"type":"REVIEWED"},"record":${JSON.stringify(admission)},"presentation":{}}`,
+]) {
+  assert.deepEqual(parseProtocolComment(wrap(payload)), { kind: 'invalid-formal-result', initialReviewEvidence: null });
 }
 for (const prose of ['Review Result: PASS', 'REVIEWED', JSON.stringify(judgment),
   'shoal-review-event:v1\n' + JSON.stringify(judgment), '<summary>Formal Shoal evidence</summary>',

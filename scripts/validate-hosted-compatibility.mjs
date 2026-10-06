@@ -86,8 +86,9 @@ function verifyComments(comments) {
     assert.deepEqual(parseProtocolComment(renderEvidenceComment(record, presentation)).value, record);
     const formal = body.slice(body.indexOf(reviewProtocol.evidence.startSentinel));
     assert.deepEqual(parseProtocolComment('Fake PASS/FAIL explanation\n' + formal).value, record);
-    assert.equal(parseProtocolComment(body + body).kind, 'none');
-    assert.equal(parseProtocolComment(body.replaceAll('shoal-evidence:v1:', 'shoal-evidence:v99:')).kind, 'none');
+    const rejectedKind = record.type ? 'invalid-formal-result' : 'none';
+    assert.equal(parseProtocolComment(body + body).kind, rejectedKind);
+    assert.equal(parseProtocolComment(body.replaceAll('shoal-evidence:v1:', 'shoal-evidence:v99:')).kind, rejectedKind);
     assert.deepEqual(resolveHostedCapability(expected.callerDigest, expected.auxiliaryDigest), expected);
     types.push(record.type ?? 'ADMITTED');
   }
