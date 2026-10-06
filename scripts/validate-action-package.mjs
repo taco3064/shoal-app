@@ -192,7 +192,34 @@ for (const body of [comments[1].body + comments[1].body,
   assert.equal((await run(repository(), [comments[0], invalid], 'open')).metrics.invalidReviewCommentCount, 0);
   assert.equal((await run(repository(), [invalid])).metrics.validReviewRequestIssueCount, 0);
 }
+const damagedMachine = '<!-- shoal-evidence:v1:start -->\n{"formatVersion":1,"record":{"type":"REVIEWED","reviewerNodeId":200,"targetRepositoryId":300,';
+for (const type of ['REVIEWED', 'RE_REVIEWED', 'STAR_REVOKED', 'REVOKED_EXTERNALLY']) {
+  const damaged = { ...comments[1], body: damagedMachine.replace('REVIEWED', type) };
+  for (const candidate of [repository(), repository({ id: 400, fork: true, parent: { id: rootId } })]) {
+    const result = await run(candidate, [comments[0], damaged]);
+    assert.deepEqual(result.metrics, { ...pending.metrics, invalidReviewCommentCount: 1 });
+    assert.deepEqual((await run(candidate, [comments[0], damaged], 'open')).metrics, pending.metrics);
+    assert.equal((await run(candidate, [damaged])).metrics.validReviewRequestIssueCount, 0);
+  }
+}
+const damagedInitial = { ...comments[1], body: damagedMachine };
+const laterInitial = { ...comments[1], id: 4, created_at: '2026-10-01T02:00:00Z' };
+const repeatedInitial = await run(repository(), [comments[0], damagedInitial, laterInitial]);
+assert.deepEqual(repeatedInitial.metrics, { ...pending.metrics, invalidReviewCommentCount: 2 });
+const openRepeatedInitial = await run(repository(), [comments[0], damagedInitial, laterInitial], 'open');
+assert.deepEqual(openRepeatedInitial.metrics, pending.metrics);
+for (const first of [
+  { ...damagedInitial, user: author },
+  { ...damagedInitial, body: damagedMachine.replace('200', '999') },
+  { ...damagedInitial, body: damagedMachine.replace('300', '999') },
+  { ...damagedInitial, body: damagedMachine.replace('300', '300oops') },
+]) {
+  assert.deepEqual((await run(repository(), [comments[0], first, laterInitial])).metrics,
+    { ...root.metrics, invalidReviewCommentCount: 1 });
+}
 for (const body of ['Review Result: PASS', JSON.stringify(formal),
+  damagedMachine.slice(damagedMachine.indexOf('{')),
+  '<!-- shoal-evidence:v1:start -->{"record":{"reviewerNodeId":200,"targetRepositoryId":300,',
   'shoal-review-event:v1\n' + JSON.stringify(formal), comments[0].body + comments[0].body,
   comments[0].body.replace('"formatVersion":1', '"formatVersion":99'),
   '<!-- shoal-evidence:v1:start -->garbage<!-- shoal-evidence:v1:end -->']) {

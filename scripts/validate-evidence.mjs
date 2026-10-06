@@ -47,7 +47,7 @@ for (const body of [
   wrap(JSON.stringify({ formatVersion: 1, record: judgment, presentation: {}, foreign: true })),
 ]) {
   assert.notEqual(decodeEvidenceDocument(body).kind, 'present', body);
-  assert.deepEqual(parseProtocolComment(body), { kind: 'invalid-formal-result', initialReviewEvidence: null }, body);
+  assert.equal(parseProtocolComment(body).kind, 'invalid-formal-result', body);
 }
 for (const body of [good.replace(start, ''), wrap('{'),
   wrap(JSON.stringify({ formatVersion: 99, record: admission, presentation: { explanation: 'REVIEWED PASS' } })),
@@ -67,6 +67,52 @@ for (const prose of ['Review Result: PASS', 'REVIEWED', JSON.stringify(judgment)
   'shoal-review-event:v1\n' + JSON.stringify(judgment), '<summary>Formal Shoal evidence</summary>',
   'PASS verdict actualStarState ' + JSON.stringify(presentation)]) {
   assert.equal(parseProtocolComment(prose).kind, 'none');
+}
+// Damaged diagnostics consume direct machine fields without reconstructing records.
+const damaged = '{"formatVersion":1,"record":{"type":"REVIEWED","reviewerNodeId":200,"targetRepositoryId":300,';
+const identity = { reviewerNodeId: 200, targetRepositoryId: 300 };
+for (const type of ['REVIEWED', 'RE_REVIEWED', 'STAR_REVOKED', 'REVOKED_EXTERNALLY']) {
+  for (const suffix of ['', '"verdict":"PA', '"other": ??? }}', '"extra":[1,2,']) {
+    const body = wrap(damaged.replace('REVIEWED', type) + suffix);
+    assert.equal(decodeEvidenceDocument(body).kind, 'invalid');
+    assert.deepEqual(parseProtocolComment(body), {
+      kind: 'invalid-formal-result', initialReviewEvidence: type === 'REVIEWED' ? identity : null,
+    });
+  }
+}
+for (const body of [start + damaged, wrap(damaged).replaceAll(':v1:', ':v99:'),
+  wrap(damaged.replace(',"reviewerNodeId"', ' "reviewerNodeId"')),
+  wrap(damaged.replace('"type":"REVIEWED"', '"other":false "type":"REVIEWED"')),
+  wrap(damaged.replace('"record"', '"rec\\u006frd"').replace('"type"', '"ty\\u0070e"')),
+  good.replace(end, ''), wrap(payload.replace('"formatVersion":1', '"formatVersion":99'))]) {
+  assert.deepEqual(parseProtocolComment(body), { kind: 'invalid-formal-result', initialReviewEvidence: identity });
+}
+assert.deepEqual(parseProtocolComment(wrap('{"record":{"type":"REVIEWED",')), {
+  kind: 'invalid-formal-result', initialReviewEvidence: { reviewerNodeId: undefined, targetRepositoryId: undefined },
+});
+assert.equal(parseProtocolComment(wrap(damaged + '"targetRepositoryId":999,')).initialReviewEvidence, null);
+assert.equal(parseProtocolComment(wrap(damaged + '"type":"RE_REVIEWED",')).initialReviewEvidence, null);
+assert.equal(parseProtocolComment(wrap(damaged) + wrap(damaged)).initialReviewEvidence, null);
+assert.deepEqual(parseProtocolComment(wrap(damaged.replace('300,', '300oops,'))).initialReviewEvidence,
+  { reviewerNodeId: 200, targetRepositoryId: null });
+for (const payload of [
+  '{"record":{"reviewerNodeId":200,"targetRepositoryId":300,',
+  '{"presentation":{"type":"REVIEWED","reviewerNodeId":200,',
+  '{"record":{"nested":{"type":"REVIEWED",',
+  '{"record":[{"type":"REVIEWED",',
+  '{"record":{"explanation":"text \\"type\\":\\"REVIEWED\\",',
+  '{"record":{"explanation":"unterminated \\"quoted\\", \\"type\\":\\"REVIEWED\\"',
+  '{"record":{"explanation":"bad\\q", "type":"REVIEWED",',
+  '{"record":{"explanation":"type":"REVIEWED",',
+  '{"record":{},"presentation":{"record":{"type":"REVIEWED",',
+  '{"record":0,"unrelated" damaged: {"type":"REVIEWED",',
+  '{} {"record":{"type":"REVIEWED",',
+]) {
+  assert.equal(parseProtocolComment(wrap(payload)).kind, 'none', payload);
+}
+for (const body of [damaged, 'shoal-review-event:v1\n' + damaged,
+  'Prose REVIEWED PASS ' + damaged]) {
+  assert.equal(parseProtocolComment(body).kind, 'none');
 }
 const invalid = { ...judgment, targetCommit: 'short' };
 assert.equal(parseProtocolComment(renderEvidenceComment(invalid, presentation)).kind, 'invalid-formal-result');

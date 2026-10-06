@@ -1,4 +1,5 @@
 import { reviewProtocol } from './contract';
+import type { ParsedProtocolComment } from './types';
 
 export type EvidenceDocument = {
   formatVersion: 1;
@@ -58,88 +59,131 @@ export function encodeEvidenceDocument(
     `\\u${char.charCodeAt(0).toString(16).padStart(4, '0')}`);
 }
 
-// Recognition is only a diagnostic for rejected evidence. It supplies no record,
-// admission identity or workload completion, and never reads presentation prose.
-export function hasIdentifiableResultEvidence(body: string): boolean {
-  const markers = [...body.matchAll(/<!-- shoal-evidence:v\d+:(?:start|end) -->/gu)];
+// Diagnostic only: recover direct machine fields without repairing JSON or
+// producing a Protocol record. Never resume tokenization inside a damaged string.
+type MachineFields = Map<string, unknown[]>;
+type InvalidResult = Extract<ParsedProtocolComment, { kind: 'invalid-formal-result' }>;
+type MachineScope = {
+  object: boolean; directRecord: boolean; key: string; valueIndex: number;
+};
 
-  return markers.some((marker, index) => {
-    const next = markers[index + 1];
+export function getInvalidResultEvidence(body: string): InvalidResult | null {
+  // GitHub comments are smaller than this bound; depth is bounded separately.
+  const bounded = body.slice(0, 131072);
+  const markers = [...bounded.matchAll(/<!-- shoal-evidence:v\d+:(?:start|end) -->/gu)];
 
-    if (!marker[0].endsWith(':start -->')) {
-      return false;
-    }
+  const records = markers.flatMap((marker, index) =>
+    marker[0].endsWith(':start -->')
+      ? readMachineFields(bounded.slice(
+          marker.index + marker[0].length, markers[index + 1]?.index,
+        ))
+      : []);
 
-    const payload = completeMachineObject(body.slice(
-      marker.index + marker[0].length, next?.index,
-    ));
+  const identifiable = records.some((fields) =>
+    fields.get('type')?.some((value) =>
+      reviewProtocol.event.judgmentTypes.some((type) => type === value)));
 
-    try {
-      JSON.parse(payload);
+  if (!identifiable) {
+    return null;
+  }
 
-      return containsResultType(payload);
-    } catch {
-      return false;
-    }
-  });
+  return {
+    kind: 'invalid-formal-result',
+    initialReviewEvidence: records.length === 1 ? initialIdentity(records[0]) : null,
+  };
 }
 
-function completeMachineObject(payload: string): string {
-  const tokens = payload.trim().match(
-    /"(?:[^"\\]|\\.)*"|[{}\[\]:,]|[^\s{}\[\]:,]+/gu,
-  ) ?? [];
+function initialIdentity(fields: MachineFields): InvalidResult['initialReviewEvidence'] {
+  const types = fields.get('type');
+  const reviewer = fields.get('reviewerNodeId');
+  const target = fields.get('targetRepositoryId');
 
-  let depth = 0;
+  // Duplicate identities/types are ambiguous; never select a winning value.
+  if (types?.length !== 1 || types[0] !== 'REVIEWED'
+    || (reviewer?.length ?? 0) > 1 || (target?.length ?? 0) > 1) {
+    return null;
+  }
+
+  return { reviewerNodeId: reviewer?.[0], targetRepositoryId: target?.[0] };
+}
+
+function machineTokens(payload: string): string[] {
+  const tokens: string[] = [];
+  const token = /\s*("(?:[^"\\\u0000-\u001f]|\\(?:["\\/bfnrt]|u[0-9a-fA-F]{4}))*"|[{}\[\]:,]|[^\s{}\[\]:,"]+)/guy;
+  let match: RegExpExecArray | null;
+
+  while ((match = token.exec(payload)) !== null) {
+    tokens.push(match[1]);
+  }
+
+  return tokens;
+}
+
+function readMachineFields(payload: string): MachineFields[] {
+  const tokens = machineTokens(payload);
+  const scopes: MachineScope[] = [];
+  const records: MachineFields[] = [];
+  let fields: MachineFields | undefined;
 
   if (tokens[0] !== '{') {
-    return '';
+    return records;
   }
 
-  for (let index = 0; index < tokens.length; index += 1) {
-    if (tokens[index] === '{' || tokens[index] === '[') {
-      depth += 1;
-    } else if (tokens[index] === '}' || tokens[index] === ']') {
-      depth -= 1;
-
-      if (depth === 0) {
-        return tokens.slice(0, index + 1).join(' ');
-      }
-    }
-  }
-
-  return '';
-}
-
-function containsResultType(payload: string): boolean {
-  const tokens = payload.match(/"(?:[^"\\]|\\.)*"|[{}\[\]:,]|[^\s{}\[\]:,]+/gu) ?? [];
-  const scopes: Array<{ path: string[]; key: string; object: boolean }> = [];
-
-  // JSON.parse already established syntax. Inspect every direct record.type,
-  // including duplicate keys, without selecting a winning ambiguous record.
   for (let index = 0; index < tokens.length; index += 1) {
     const token = tokens[index];
     const scope = scopes.at(-1);
 
     if (token === '{' || token === '[') {
-      const path = scope ? [...scope.path, scope.object ? scope.key : '[]'] : [];
+      if (scopes.length >= 64) {
+        break;
+      }
 
-      scopes.push({ path, key: '', object: token === '{' });
+      const directRecord = token === '{' && scopes.length === 1
+        && scope?.key === 'record' && scope.valueIndex === index;
+
+      scopes.push({ object: token === '{', directRecord, key: '', valueIndex: -1 });
+
+      if (directRecord) {
+        fields = new Map();
+        records.push(fields);
+      }
     } else if (token === '}' || token === ']') {
-      scopes.pop();
-    } else if (token.startsWith('"') && scope?.object) {
-      const value = String(JSON.parse(token));
+      if (!scope || scope.object !== (token === '}')) {
+        break;
+      }
 
-      if (tokens[index + 1] === ':') {
-        scope.key = value;
-      } else if (scope.path.length === 1 && scope.path[0] === 'record'
-        && scope.key === 'type'
-        && reviewProtocol.event.judgmentTypes.some((type) => type === value)) {
-        return true;
+      scopes.pop();
+
+      if (scopes.length === 0) {
+        break;
+      }
+    } else if (scope?.object && token.startsWith('"') && tokens[index + 1] === ':'
+      && tokens[index - 1] !== ':') {
+      scope.key = String(JSON.parse(token));
+      scope.valueIndex = index + 2;
+
+      if (scope.directRecord && fields
+        && ['type', 'reviewerNodeId', 'targetRepositoryId'].includes(scope.key)) {
+        const values = fields.get(scope.key) ?? [];
+
+        values.push(machineScalar(tokens[index + 2]));
+        fields.set(scope.key, values);
       }
     }
   }
 
-  return false;
+  return records;
+}
+
+function machineScalar(token: string | undefined): unknown {
+  // An observed but unreadable identity is null, never an absent wildcard.
+  try {
+    const value: unknown = JSON.parse(token ?? 'null');
+
+    return typeof value === 'string' || typeof value === 'number' ? value : null;
+  } catch {
+    return null;
+  }
 }
 
 function isObject(value: unknown): value is Record<string, unknown> {

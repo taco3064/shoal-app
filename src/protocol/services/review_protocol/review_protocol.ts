@@ -1,6 +1,6 @@
 import { reviewProtocol } from './contract';
 import {
-  decodeEvidenceDocument, hasIdentifiableResultEvidence,
+  decodeEvidenceDocument, getInvalidResultEvidence,
 } from './evidence_document';
 import { getRecognizableInitialReviewEvidence } from './initial_review_evidence';
 import { isRfc3339DateTime } from './rfc3339';
@@ -28,9 +28,8 @@ export function parseProtocolComment(body: string): ParsedProtocolComment {
   const envelope = decodeEvidenceDocument(body);
 
   if (envelope.kind !== 'present') {
-    return envelope.kind === 'invalid' && hasIdentifiableResultEvidence(body)
-      ? { kind: 'invalid-formal-result', initialReviewEvidence: null }
-      : { kind: 'none' };
+    return (envelope.kind === 'invalid' && getInvalidResultEvidence(body))
+      || { kind: 'none' };
   }
 
   const record = envelope.document.record;
