@@ -271,6 +271,30 @@ test('supports the current Personal Account Root owner', async () => {
   });
 });
 
+test('accepts exact immutable subject and rejects identity substitutions', async () => {
+  for (const sub of [
+    'repo:reviewer@9/station@12:ref:refs/heads/main',
+    'repo:reviewer@10/station@12:ref:refs/heads/main',
+    'repo:reviewer@9/station@13:ref:refs/heads/main',
+    'repo:attacker@9/station@12:ref:refs/heads/main',
+    'repo:reviewer@9/other@12:ref:refs/heads/main',
+    'repo:reviewer@9/station@12:ref:refs/heads/other',
+    'repo:reviewer@9/station@12:environment:production',
+    'repo:reviewer@9/station@12:pull_request',
+  ]) {
+    const input = await trustedOptions();
+
+    input.request = makeRequest(await assertion({ sub }));
+
+    if (sub === 'repo:reviewer@9/station@12:ref:refs/heads/main') {
+      assert.equal((await exchangeHostedAuthority(input)).status, 200);
+      assert.equal(input.issued(), 1);
+    } else {
+      await refused(input);
+    }
+  }
+});
+
 test('disabled mode and expired assertion refuse trusted bytes', async () => {
   for (const mode of [null, '', 'none', 'unknown']) {
     const input = await trustedOptions();

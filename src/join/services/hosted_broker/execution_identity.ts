@@ -49,6 +49,12 @@ function validateClaims(input: {
   const branchRef = `refs/heads/${repository.defaultBranch}`;
   const callerRef = `${repository.fullName}/${summaryWorkflowPath}@${branchRef}`;
   const auxiliaryRef = `${repository.fullName}/${hostedWorkflowPath}@${branchRef}`;
+  const [owner, name] = repository.fullName.split('/');
+
+  const subjects = [
+    `repo:${repository.fullName}:ref:${branchRef}`,
+    `repo:${owner}@${repository.ownerId}/${name}@${repository.id}:ref:${branchRef}`,
+  ];
 
   const bindings = {
     repository: repository.fullName,
@@ -64,10 +70,10 @@ function validateClaims(input: {
     ref: branchRef,
     ref_type: 'branch',
     sha: request.workflowSha,
-    sub: `repo:${repository.fullName}:ref:${branchRef}`,
   };
 
   if (request.workflowRef !== callerRef
+    || typeof claims.sub !== 'string' || !subjects.includes(claims.sub)
     || Object.entries(bindings).some(([name, value]) => claims[name] !== value)
     || !['schedule', 'workflow_dispatch'].includes(String(claims.event_name))) {
     throw new Error('EXECUTION_REFUSED');
