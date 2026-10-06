@@ -36,5 +36,17 @@ for (const key of ['b9162cae864bbd6e00745346f37f701fe5c003d3367cc3dc37c6fb394f9d
     reviewerSummary: { protocolVersion: 1, summarySchemaVersion: 2 },
   });
 }
-assert.equal(allowedSummaryWorkflows.size, 7);
-console.log('Canonical trust: exact Stage A blob/pin, byte-drift refusal, all six historical bindings unchanged PASS.');
+const repairedBytes = readFileSync('src/protocol/services/network_compatibility/fixtures/f01-summary.yml');
+const repairedDigest = '08c07806fa86966739e14c6ad62c75e7f91210ae565072fa327b5ab7dc830c59';
+const repairedAction = 'bd75984561987d390413a176cd8e7982aee2cb9a';
+assert.equal(digest(repairedBytes), repairedDigest);
+assert.equal(repairedBytes.toString(), bytes.toString().replace(action, repairedAction));
+assert.deepEqual(allowedSummaryWorkflows.get(repairedDigest), {
+  actionCommit: repairedAction, reviewerSummary: { protocolVersion: 1, summarySchemaVersion: 2 },
+});
+for (const drift of [Buffer.concat([repairedBytes, Buffer.from(' ')]),
+  Buffer.from(repairedBytes.toString().replace(repairedAction, 'a'.repeat(40)))]) {
+  assert.equal(allowedSummaryWorkflows.has(digest(drift)), false);
+}
+assert.equal(allowedSummaryWorkflows.size, 8);
+console.log('Canonical trust: exact Stage A generations, byte-drift refusal, all historical bindings unchanged PASS.');

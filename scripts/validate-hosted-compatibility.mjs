@@ -72,7 +72,8 @@ assert.equal(resolveHostedCapability('unsupported', expected.auxiliaryDigest), n
 for (const field of ['sourceCommit', 'sourceTree']) {
   assert.throws(() => verifyChain(auxiliary, { ...provenance, [field]: 'a'.repeat(40) }));
 }
-assert.equal(allowedSummaryWorkflows.size, 7);
+assert.equal(allowedSummaryWorkflows.size, 8);
+assert.equal(resolveHostedCapability('08c07806fa86966739e14c6ad62c75e7f91210ae565072fa327b5ab7dc830c59', expected.auxiliaryDigest), null);
 
 function verifyComments(comments) {
   assert.equal(comments.length, 4);
