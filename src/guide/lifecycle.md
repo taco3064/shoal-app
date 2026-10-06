@@ -88,3 +88,11 @@ A change to the actual Star state alone is called **endorsement drift**. It can 
 The Reviewer authors and owns their `README.md` Review Policy. In Automated Review, their authorized local AI makes the semantic judgment. The CLI validates the result structure and keeps GitHub effects consistent with the verdict; there is no second human approval step.
 
 A Reviewer can also review manually under the same identity, admission, version, event and Star-state rules. Manual Re-review likewise requires a changed Review Basis. The diagram shows the official Automated path; using the CLI is not what makes an endorsement legitimate.
+
+### Public evidence and Manual Review
+
+Each formal Review comment starts with the human result: PASS or FAIL, Target Repository, full Target and Policy commits, actual Star state, review time, and the Reviewer's explanation. A collapsed **Formal Shoal evidence** section carries the machine record. The record is authoritative; editing the visible prose or explanation does not change the formal result.
+
+For Manual Review, capture the same complete Protocol record after verifying the Target, Policy, and actual Star state. Generate the comment with the shared `renderEvidenceComment(record, { explanation })` primitive exported by `src/protocol/services/review_protocol/index.ts` in the Shoal app source. For Admission, supply `{ requestAuthor }` from the Request author's login as well. Publish the generated comment as the Reviewer Node owner on the Canonical Review Thread. The renderer accepts Admission, lifecycle, and judgment records and supplies the human fields from that same record.
+
+Do not replace the generated machine section with prose, shortened commits, or legacy marker-plus-JSON comments. The machine document has envelope `formatVersion: 1`, a complete `record`, and non-authoritative `presentation`; Review Protocol semantics remain version 1. Missing, duplicated, malformed, or unsupported envelopes are rejected. Manual evidence still follows the existing admission, lifecycle, authorship, and Star-state requirements.

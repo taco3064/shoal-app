@@ -1,5 +1,6 @@
 export type ReviewProtocolContract = {
   protocolVersion: string;
+  evidence: { formatVersion: number; startSentinel: string; endSentinel: string };
   request: {
     repositoryHeading: string;
     invitationHeading: string;
