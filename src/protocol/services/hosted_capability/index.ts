@@ -12,13 +12,13 @@ export type HostedCapabilityTrust = {
   brokerFormatVersion: 1;
 };
 
-// Exact published Action v0.2.1 and Station workflow bytes. This binding never
+// Exact verified Action commit and Station workflow bytes. This binding never
 // follows main or a release tag. Production broker and Reviewer authorization
 // remain separate evidence gates.
 export const hostedCapabilities: readonly HostedCapabilityTrust[] = [{
   callerDigest: 'b9162cae864bbd6e00745346f37f701fe5c003d3367cc3dc37c6fb394f9d8105',
-  auxiliaryDigest: '328e51948690f810d16441f40e4c2361778cb45317d37afd5ab58b2976e82117',
-  actionCommit: '85dde9b9760be9a640b29b1f4c2a6aa911b2cb37',
+  auxiliaryDigest: '890324280151a25a7309c3f8104529304fccaa936141197c73cfb66a824d6b81',
+  actionCommit: '94f9d7a36a783d093b9ceafff0789f6983337b73',
   actionPath: 'hosted-review/',
   runtimeSourceCommit: '230a97af21c45b8d8f0cdcd4a02d13dddd2c4730',
   runtimeSourceTree: 'db8cfb7ed4cb54c4bc60569b5e55ed36fa68452c',
