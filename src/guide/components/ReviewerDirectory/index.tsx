@@ -1,5 +1,4 @@
 import TestReviewer from '../TestReviewer';
-import ReviewerWorkload from '../ReviewerWorkload';
 import useReviewerDirectory, {
   type DirectoryEntry,
 } from '~app/guide/hooks/useReviewerDirectory';
@@ -154,7 +153,6 @@ function ReviewerCard({ reviewer }: { reviewer: DirectoryEntry }) {
             </div>
           </div>
         </div>
-        <ReviewerWorkload selected={reviewer.summary} />
       </a>
       <footer className="reviewer-card-actions">
         {reviewer.stationStatus === 'ready'
