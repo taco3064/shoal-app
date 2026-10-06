@@ -1,4 +1,5 @@
 import { reviewProtocol } from './contract';
+import { decodeEvidenceDocument } from './evidence_document';
 import { getRecognizableInitialReviewEvidence } from './initial_review_evidence';
 import { isRfc3339DateTime } from './rfc3339';
 import type {
@@ -22,99 +23,45 @@ export function getProtocolVersion(): number {
 }
 
 export function parseProtocolComment(body: string): ParsedProtocolComment {
-  const admissionEnvelope = parseMarkerJson(
-    body,
-    reviewProtocol.admission.marker,
-  );
+  const envelope = decodeEvidenceDocument(body);
 
-  if (admissionEnvelope.kind === 'present') {
-    const admission = admissionEnvelope.parsed
-      ? parseAdmissionRecord(admissionEnvelope.parsed)
-      : null;
-
-    if (admission) {
-      return { kind: 'admission', value: admission };
-    }
-
-    return isFormalResultCandidate(
-      admissionEnvelope.payloadText,
-      admissionEnvelope.parsed,
-    )
-      ? invalidFormalResult(
-          admissionEnvelope.payloadText,
-          admissionEnvelope.parsed,
-        )
-      : { kind: 'none' };
+  if (envelope.kind !== 'present') {
+    return { kind: 'none' };
   }
 
-  const eventEnvelope = parseMarkerJson(body, reviewProtocol.event.marker);
+  const record = envelope.document.record;
+  const admission = !('type' in record) && parseAdmissionRecord(record);
 
-  if (eventEnvelope.kind !== 'present') {
-    const candidateBody = getFormalResultCandidateBody(body);
-
-    return isFormalResultCandidate(candidateBody)
-      ? invalidFormalResult(candidateBody)
-      : { kind: 'none' };
+  if (admission) {
+    return { kind: 'admission', value: admission };
   }
 
-  if (!eventEnvelope.parsed) {
-    return isFormalResultCandidate(eventEnvelope.payloadText)
-      ? invalidFormalResult(eventEnvelope.payloadText)
-      : { kind: 'none' };
-  }
-
-  const lifecycle = parseLifecycleEvent(eventEnvelope.parsed);
+  const lifecycle = parseLifecycleEvent(record);
 
   if (lifecycle) {
     return { kind: 'lifecycle', value: lifecycle };
   }
 
-  const judgment = parseJudgmentEvent(eventEnvelope.parsed);
+  const judgment = parseJudgmentEvent(record);
 
   if (judgment) {
     return { kind: 'judgment', value: judgment };
   }
 
-  return isJudgmentCandidateValue(eventEnvelope.parsed)
-    ? invalidFormalResult(eventEnvelope.payloadText, eventEnvelope.parsed)
+  return isJudgmentCandidateValue(record)
+    ? invalidFormalResult(record)
     : { kind: 'none' };
 }
 
 function invalidFormalResult(
-  payloadText: string,
-  parsed?: unknown,
+  record: Record<string, unknown>,
 ): ParsedProtocolComment {
   return {
     initialReviewEvidence: getRecognizableInitialReviewEvidence(
-      payloadText,
-      parsed,
+      record,
     ),
     kind: 'invalid-formal-result',
   };
-}
-
-type MarkerJsonParse
-  = | { kind: 'absent' }
-    | { kind: 'present'; payloadText: string; parsed: unknown | null };
-
-function parseMarkerJson(body: string, marker: string): MarkerJsonParse {
-  const prefix = `${marker}\n`;
-
-  if (!body.startsWith(prefix)) {
-    return { kind: 'absent' };
-  }
-
-  const payloadText = body.slice(prefix.length).trim();
-
-  if (!payloadText) {
-    return { kind: 'present', payloadText, parsed: null };
-  }
-
-  try {
-    return { kind: 'present', payloadText, parsed: JSON.parse(payloadText) };
-  } catch {
-    return { kind: 'present', payloadText, parsed: null };
-  }
 }
 
 function parseAdmissionRecord(value: unknown): AdmissionRecord | null {
@@ -364,22 +311,6 @@ function isReReviewReason(value: unknown): value is ReReviewReason {
   );
 }
 
-function isFormalResultCandidate(body: string, parsed?: unknown): boolean {
-  if (isJudgmentCandidateValue(parsed ?? parseLooseJson(body))) {
-    return true;
-  }
-
-  return looksLikeStructuredFormalResultText(body);
-}
-
-function parseLooseJson(body: string): unknown | null {
-  try {
-    return JSON.parse(body);
-  } catch {
-    return null;
-  }
-}
-
 function isJudgmentCandidateValue(value: unknown): boolean {
   return Boolean(
     isRecord(value)
@@ -389,63 +320,6 @@ function isJudgmentCandidateValue(value: unknown): boolean {
       || 'actualStarState' in value
     ),
   );
-}
-
-function looksLikeStructuredFormalResultText(value: string): boolean {
-  const normalized = value.trim();
-
-  const firstLine = normalized
-    .split('\n')
-    .map((line) => line.trim())
-    .find(Boolean);
-
-  if (!firstLine) {
-    return false;
-  }
-
-  if (/^Review Result:\s*(PASS|FAIL)\b/u.test(firstLine)) {
-    return true;
-  }
-
-  if (
-    (reviewProtocol.event.judgmentTypes as readonly string[]).includes(
-      firstLine,
-    )
-  ) {
-    return true;
-  }
-
-  return (
-    normalized.startsWith('{')
-    && /(?:^|[\n{,])\s*"(type|verdict|actualStarState)"\s*:/u.test(
-      normalized,
-    )
-  );
-}
-
-function getFormalResultCandidateBody(body: string): string {
-  const trimmed = body.trim();
-
-  const markers = [
-    reviewProtocol.event.marker,
-    reviewProtocol.admission.marker,
-  ];
-
-  for (const marker of markers) {
-    if (trimmed.startsWith(marker)) {
-      return stripFirstLine(trimmed);
-    }
-  }
-
-  return trimmed;
-}
-
-function stripFirstLine(value: string): string {
-  const newlineIndex = value.indexOf('\n');
-
-  return newlineIndex === -1
-    ? ''
-    : value.slice(newlineIndex + 1).trim();
 }
 
 function isJudgmentStarStateConsistent(

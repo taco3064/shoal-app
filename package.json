@@ -15,7 +15,7 @@
     "build:action": "tsc -p tsconfig.action.json",
     "package:action": "node scripts/package-action.mjs",
     "scan:network": "tsx src/network/index.ts",
-    "validate:action-package": "node scripts/validate-action-package.mjs",
+    "validate:action-package": "node scripts/validate-action-package.mjs && node scripts/validate-evidence.mjs",
     "validate:seo": "node scripts/validate-seo.mjs",
     "validate:workload": "node scripts/validate-workload.mjs",
     "preview": "astro preview",

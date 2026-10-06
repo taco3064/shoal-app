@@ -5,6 +5,9 @@ import { register } from 'node:module';
 register('../dist/action-package/loader.mjs', import.meta.url);
 const { runReviewerSummaryAction } = await import('../dist/action-package/src/action/index.js');
 
+const { renderEvidenceComment } = await import('../dist/action-package/src/protocol/services/review_protocol/index.js');
+const evidence = (record) => renderEvidenceComment(record, { requestAuthor: 'requester', explanation: 'Policy checked.' });
+
 const author = { id: 10, login: 'requester', type: 'User' };
 const reviewer = { id: 20, login: 'reviewer', type: 'User' };
 const rootId = 100;
@@ -28,13 +31,13 @@ function repository(overrides = {}) {
 const comments = [
   {
     id: 1,
-    body: 'shoal-review-admission:v1\n' + JSON.stringify({
+    body: evidence({
       reviewerNodeId: reviewerId, targetRepositoryId: targetId, repositoryName: 'target',
     }),
   },
   {
     id: 2,
-    body: 'shoal-review-event:v1\n' + JSON.stringify({
+    body: evidence({
       type: 'REVIEWED',
       reviewerNodeId: reviewerId,
       targetRepositoryId: targetId,
@@ -131,7 +134,7 @@ assert.equal(pending.metrics.pendingReviewRequestCount, 1);
 assert.equal(pending.metrics.completedReviewRequestCount, 0);
 const lifecycle = {
   id: 3, user: reviewer, created_at: '2026-10-01T01:00:00Z',
-  body: 'shoal-review-event:v1\n' + JSON.stringify({
+  body: evidence({
     type: 'RE_REVIEW_REQUESTED', reviewerNodeId: reviewerId,
     targetRepositoryId: targetId, requestIssueNumber: 2,
     eligibilityTargetCommit: 'c'.repeat(40), reviewPolicyCommit: policyCommit,
@@ -148,6 +151,37 @@ assert.equal(openEpoch.metrics.completedReviewRequestCount, 1);
 const closedEpoch = await run(repository(), [...comments, lifecycle], 'closed', [trigger]);
 assert.equal(closedEpoch.metrics.pendingReviewRequestCount, 0);
 assert.equal(closedEpoch.metrics.completedReviewRequestCount, 2);
+
+// The same new envelope establishes Manual Review only under Reviewer authorship.
+assert.deepEqual((await run(repository(), [comments[1]])).metrics, root.metrics);
+const { decodeEvidenceDocument } = await import('../dist/action-package/src/protocol/services/review_protocol/index.js');
+const formal = decodeEvidenceDocument(comments[1].body).document.record;
+const judgmentComment = (record, overrides = {}) => ({ ...comments[1], body: evidence(record), ...overrides });
+const failed = await run(repository(), [comments[0], judgmentComment({ ...formal, verdict: 'FAIL', actualStarState: false })]);
+assert.equal(failed.metrics.completedReviewRequestCount, 1);
+assert.equal(failed.metrics.reviewBackedStarCount, 0);
+assert.equal(failed.metrics.invalidReviewCommentCount, 0);
+const wrongAuthor = await run(repository(), [comments[0], judgmentComment(formal, { user: author })]);
+assert.equal(wrongAuthor.metrics.completedReviewRequestCount, 0);
+assert.equal(wrongAuthor.metrics.invalidReviewCommentCount, 1);
+const stale = await run(repository(), [comments[0], judgmentComment({ ...formal, targetCommit: 'd'.repeat(40) })]);
+assert.equal(stale.metrics.reviewBackedStarCount, 0);
+for (const body of ['Review Result: PASS', 'REVIEWED', JSON.stringify(formal),
+  'shoal-review-event:v1\n' + JSON.stringify(formal), '<summary>Formal Shoal evidence</summary>']) {
+  const result = await run(repository(), [comments[0], { ...comments[1], body }], 'open');
+  assert.deepEqual(result.metrics, pending.metrics);
+}
+const malformedRecord = await run(repository(), [comments[0], judgmentComment({ ...formal, targetCommit: 'short' })]);
+assert.equal(malformedRecord.metrics.invalidReviewCommentCount, 1);
+assert.equal(malformedRecord.metrics.completedReviewRequestCount, 0);
+for (const type of ['RE_REVIEWED', 'STAR_REVOKED', 'REVOKED_EXTERNALLY']) {
+  const pass = type === 'RE_REVIEWED';
+  const result = await run(repository(), [...comments, lifecycle,
+    judgmentComment({ ...formal, type, verdict: pass ? 'PASS' : 'FAIL', actualStarState: pass },
+      { id: 4, created_at: '2026-10-01T02:00:00Z' })], 'closed', [trigger]);
+  assert.equal(result.metrics.completedReviewRequestCount, 2);
+  assert.equal(result.metrics.invalidReviewCommentCount, 0);
+}
 
 const manifest = JSON.parse(await readFile('dist/action-package/package-manifest.json', 'utf8'));
 
