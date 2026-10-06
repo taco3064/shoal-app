@@ -94,8 +94,24 @@ export async function exchangeHostedAuthority(options: BrokerOptions): Promise<R
         ? cause.message
         : cause === undefined ? code : 'UNEXPECTED';
 
+    const operations = ['user_identity', 'owner_repository_discovery',
+      'root_fork_discovery', 'repository_content_read', 'repository_actions',
+      'installation_token', 'app_installation_binding', 'git_data',
+      'repository_metadata', 'github_api'];
+
+    const details = cause instanceof GitHubError ? cause.details : undefined;
+
+    const operation = details && operations.includes(details.pathClass)
+      ? details.pathClass
+      : 'unknown';
+
+    const rateLimit = details?.rateLimitClass === 'primary'
+      || details?.rateLimitClass === 'secondary'
+      ? details.rateLimitClass
+      : 'none';
+
     try {
-      options.reportFailure?.({ stage, reason,
+      options.reportFailure?.({ stage, reason, operation, rateLimit,
         status: cause instanceof GitHubError && Number.isInteger(cause.status)
           && cause.status >= 0 && cause.status <= 599
           ? cause.status

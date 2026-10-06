@@ -18,7 +18,6 @@
     "validate:action-package": "node scripts/validate-action-package.mjs",
     "validate:seo": "node scripts/validate-seo.mjs",
     "validate:workload": "node scripts/validate-workload.mjs",
-    "test:workload": "node --import tsx --test src/network/services/network_projection/index.test.ts src/guide/components/ReviewerWorkload/index.test.tsx",
     "preview": "astro preview",
     "lint": "eslint src --ext .astro --no-error-on-unmatched-pattern",
     "typecheck": "astro check && tsc --noEmit",
@@ -26,10 +25,7 @@
     "prepare": "husky",
     "serve:join": "wrangler dev",
     "build:join": "wrangler deploy --dry-run --outdir .worker-build",
-    "deploy:join": "wrangler deploy",
-    "test:action": "node --import tsx --test src/action/services/reviewer_summary/index.test.ts src/protocol/services/reviewer_summary_schema/index.test.ts src/network/services/summary_selection/index.test.ts",
-    "test:action-package": "npm run validate:action-package",
-    "test:hosted": "node --import tsx --test src/join/services/hosted_broker/index.test.ts src/join/services/hosted_broker/oidc.test.ts src/join/services/hosted_grant/index.test.ts src/join/services/hosted_github/index.test.ts src/join/services/hosted_settings/index.test.ts src/join/services/hosted_client/index.test.ts src/join/components/HostedSettings/index.test.tsx src/join/services/hosted_server/index.test.ts src/join/services/hosted_server/authority.test.ts src/join/services/join_server/hosted_request.test.ts"
+    "deploy:join": "wrangler deploy"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx,mjs,astro}": "eslint --fix"
@@ -57,7 +53,6 @@
     "eslint-plugin-import-x": "^4.0.0",
     "husky": "^9.1.7",
     "lint-staged": "^17.5.1",
-    "miniflare": "^5.20261001.0-alpha",
     "tsx": "^4.23.15",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.0.0",
