@@ -49,6 +49,20 @@ const repairedProvenanceBytes = readFileSync(root + 'f01-source-package.json');
 const repairedProvenance = JSON.parse(repairedProvenanceBytes);
 const repairedCaller = readFileSync('src/protocol/services/network_compatibility/fixtures/f01-summary.yml');
 
+const damagedRepair = {
+  callerDigest: 'acf3b8edc35584309a73bfe67e2c6fd453acb07e9a1033de34f4f6ab039e042f',
+  auxiliaryDigest: '06dc0637a13e768869d33bb3765d79d0489a183220dde71cf816233d9f49bdc5',
+  actionCommit: '4afab896059c38406201d904681883891429db33',
+  actionPath: 'hosted-review/',
+  runtimeSourceCommit: 'd7e0e1fb7efdd8923ed46a493147299d8e629f0f',
+  runtimeSourceTree: '0af19296794f8c1d523120ea3d7e4bb9f069fba9',
+  brokerFormatVersion: 1,
+};
+const damagedAuxiliary = readFileSync(root + 'f02-hosted.yml');
+const damagedProvenanceBytes = readFileSync(root + 'f02-source-package.json');
+const damagedProvenance = JSON.parse(damagedProvenanceBytes);
+const damagedCaller = readFileSync('src/protocol/services/network_compatibility/fixtures/f02-summary.yml');
+
 // Admission-time chain verification; production trust remains the exact registry.
 function verifyChain(bytes, source, binding = expected) {
   assert.equal(digest(bytes), binding.auxiliaryDigest);
@@ -63,7 +77,7 @@ function verifyChain(bytes, source, binding = expected) {
 
 verifyChain(auxiliary, provenance);
 assert.equal(digest(caller), expected.callerDigest);
-assert.deepEqual(hostedCapabilities, [legacy, expected, repaired]);
+assert.deepEqual(hostedCapabilities, [legacy, expected, repaired, damagedRepair]);
 assert.deepEqual(resolveHostedCapability(expected.callerDigest, digest(auxiliary)), expected);
 assert.deepEqual(resolveHostedCapability(legacy.callerDigest, legacy.auxiliaryDigest), legacy);
 const canonical = allowedSummaryWorkflows.get(expected.callerDigest);
@@ -115,6 +129,32 @@ for (const field of ['sourceCommit', 'sourceTree']) {
   assert.throws(() => verifyChain(repairedAuxiliary, { ...repairedProvenance, [field]: 'a'.repeat(40) }, repaired));
 }
 
+verifyChain(damagedAuxiliary, damagedProvenance, damagedRepair);
+assert.equal(digest(damagedCaller), damagedRepair.callerDigest);
+assert.deepEqual(damagedAuxiliary, Buffer.from(repairedAuxiliary.toString().replaceAll(repaired.actionCommit, damagedRepair.actionCommit)));
+assert.deepEqual(resolveHostedCapability(damagedRepair.callerDigest, damagedRepair.auxiliaryDigest), damagedRepair);
+const damagedCanonical = {
+  actionCommit: '1916eb85cd251b073520956512cd9b5549fba2a7',
+  reviewerSummary: { protocolVersion: 1, summarySchemaVersion: 2 },
+};
+assert.deepEqual(allowedSummaryWorkflows.get(damagedRepair.callerDigest), damagedCanonical);
+for (const bytes of [Buffer.concat([damagedAuxiliary, Buffer.from(' ')]),
+  Buffer.from(damagedAuxiliary.toString().replaceAll(damagedRepair.actionCommit, expected.actionCommit))]) {
+  assert.throws(() => verifyChain(bytes, damagedProvenance, damagedRepair));
+  assert.equal(resolveHostedCapability(damagedRepair.callerDigest, digest(bytes)), null);
+  assert.deepEqual(allowedSummaryWorkflows.get(damagedRepair.callerDigest), damagedCanonical);
+}
+for (const unsupported of [null, 'unsupported', legacy.auxiliaryDigest, expected.auxiliaryDigest, repaired.auxiliaryDigest]) {
+  assert.equal(resolveHostedCapability(damagedRepair.callerDigest, unsupported), null);
+  assert.deepEqual(allowedSummaryWorkflows.get(damagedRepair.callerDigest), damagedCanonical);
+}
+for (const unsupportedCaller of ['unsupported', legacy.callerDigest, expected.callerDigest, repaired.callerDigest]) {
+  assert.equal(resolveHostedCapability(unsupportedCaller, damagedRepair.auxiliaryDigest), null);
+}
+for (const field of ['sourceCommit', 'sourceTree']) {
+  assert.throws(() => verifyChain(damagedAuxiliary, { ...damagedProvenance, [field]: 'a'.repeat(40) }, damagedRepair));
+}
+
 function verifyComments(comments, binding = expected) {
   assert.equal(comments.length, 4);
   const types = [];
@@ -138,6 +178,7 @@ function verifyComments(comments, binding = expected) {
 
 verifyComments(JSON.parse(readFileSync(root + 'human-first-evidence.json')));
 verifyComments(JSON.parse(readFileSync(root + 'f01-evidence.json')), repaired);
+verifyComments(JSON.parse(readFileSync(root + 'f02-evidence.json')), damagedRepair);
 
 // Optional independent repository audit uses immutable Git objects, never tags
 // or working-copy line endings. Also checks every packaged byte and upstream file.
@@ -146,27 +187,27 @@ if (stationRepo || actionRepo || runtimeRepo || evidenceOutput) {
   assert.ok(stationRepo && actionRepo && runtimeRepo && evidenceOutput, 'Supply station, Action, runtime and actual evidence output');
   const git = (repo, ...args) => execFileSync('git', ['-C', repo, ...args]);
   const blob = (repo, ref, path) => git(repo, 'show', `${ref}:${path}`);
-  const station = '49275d59a86a912a7d18b9ca6344011df76c921a';
-  assert.equal(git(stationRepo, 'rev-parse', `${station}^{tree}`).toString().trim(), '86856d36fb4d168dab85d5158acee5871e85eea3');
-  assert.equal(git(actionRepo, 'rev-parse', `${repaired.actionCommit}^{tree}`).toString().trim(), '73d37b76bbd79c441435837e0bbfd26fa8bb8eb6');
-  assert.equal(git(runtimeRepo, 'rev-parse', `${repaired.runtimeSourceCommit}^{tree}`).toString().trim(), repaired.runtimeSourceTree);
-  assert.deepEqual(blob(stationRepo, station, '.github/workflows/reviewer-summary.yml'), repairedCaller);
-  assert.deepEqual(blob(stationRepo, '5b654281c8539157ab65e40c9b297de764156294', '.github/workflows/reviewer-summary.yml'), repairedCaller);
-  assert.deepEqual(blob(stationRepo, station, '.github/workflows/hosted-review.yml'), repairedAuxiliary);
-  assert.deepEqual(blob(actionRepo, repaired.actionCommit, 'hosted-source-package.json'), repairedProvenanceBytes);
-  const files = git(actionRepo, 'ls-tree', '-r', '--name-only', repaired.actionCommit, '--', 'hosted-review').toString().trim().split('\n').map(path => path.slice('hosted-review/'.length));
-  assert.deepEqual(files.sort(), Object.keys(repairedProvenance.files).sort());
-  for (const [path, hash] of Object.entries(repairedProvenance.files)) {
-    const bytes = blob(actionRepo, repaired.actionCommit, 'hosted-review/' + path);
+  const station = '555fc40e9f0936a7ba09b07016fe58619247b5b2';
+  assert.equal(git(stationRepo, 'rev-parse', `${station}^{tree}`).toString().trim(), '37a42acb189f0b1b7e3890a53de2930f7fa111c9');
+  assert.equal(git(actionRepo, 'rev-parse', `${damagedRepair.actionCommit}^{tree}`).toString().trim(), '4492535b8b8fd246baee97d253fa8bdd77f590aa');
+  assert.equal(git(runtimeRepo, 'rev-parse', `${damagedRepair.runtimeSourceCommit}^{tree}`).toString().trim(), damagedRepair.runtimeSourceTree);
+  assert.deepEqual(blob(stationRepo, station, '.github/workflows/reviewer-summary.yml'), damagedCaller);
+  assert.deepEqual(blob(stationRepo, '7ce86e721e46fd3ec311e24d6064a49940d7aeaa', '.github/workflows/reviewer-summary.yml'), damagedCaller);
+  assert.deepEqual(blob(stationRepo, station, '.github/workflows/hosted-review.yml'), damagedAuxiliary);
+  assert.deepEqual(blob(actionRepo, damagedRepair.actionCommit, 'hosted-source-package.json'), damagedProvenanceBytes);
+  const files = git(actionRepo, 'ls-tree', '-r', '--name-only', damagedRepair.actionCommit, '--', 'hosted-review').toString().trim().split('\n').map(path => path.slice('hosted-review/'.length));
+  assert.deepEqual(files.sort(), Object.keys(damagedProvenance.files).sort());
+  for (const [path, hash] of Object.entries(damagedProvenance.files)) {
+    const bytes = blob(actionRepo, damagedRepair.actionCommit, 'hosted-review/' + path);
     assert.equal(digest(bytes), hash, path);
     const prefix = 'vendor/github.com/taco3064/gh-shoal/';
     if (path.startsWith(prefix)) {
-      assert.deepEqual(bytes, blob(runtimeRepo, repaired.runtimeSourceCommit, path.slice(prefix.length)));
+      assert.deepEqual(bytes, blob(runtimeRepo, damagedRepair.runtimeSourceCommit, path.slice(prefix.length)));
     }
   }
   const actualComments = JSON.parse(readFileSync(evidenceOutput));
-  assert.deepEqual(actualComments, JSON.parse(readFileSync(root + 'f01-evidence.json')));
-  verifyComments(actualComments, repaired);
+  assert.deepEqual(actualComments, JSON.parse(readFileSync(root + 'f02-evidence.json')));
+  verifyComments(actualComments, damagedRepair);
   console.log('Exact Station → Hosted Action → shared runtime Git-object chain verified.');
 }
 console.log('Hosted trust separation, historical binding, byte/source drift and actual lifecycle evidence passed.');
