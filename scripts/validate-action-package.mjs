@@ -174,6 +174,32 @@ for (const body of ['Review Result: PASS', 'REVIEWED', JSON.stringify(formal),
 const malformedRecord = await run(repository(), [comments[0], judgmentComment({ ...formal, targetCommit: 'short' })]);
 assert.equal(malformedRecord.metrics.invalidReviewCommentCount, 1);
 assert.equal(malformedRecord.metrics.completedReviewRequestCount, 0);
+for (const body of [comments[1].body + comments[1].body,
+  comments[1].body.replace('<!-- shoal-evidence:v1:end -->', ''),
+  comments[1].body.replace('"formatVersion":1', '"formatVersion":99'),
+  comments[1].body.replaceAll('shoal-evidence:v1:', 'shoal-evidence:v99:'),
+  comments[1].body.replace('"verdict":"PASS"', '"verdict":"FAIL","verdict":"PASS"'),
+  comments[1].body.replace('"formatVersion":1', '"formatVersion":1,"formatVersion":1'),
+]) {
+  const invalid = { ...comments[1], body };
+  const result = await run(repository(), [comments[0], invalid]);
+  assert.equal(result.metrics.invalidReviewCommentCount, 1);
+  assert.equal(result.metrics.completedReviewRequestCount, 0);
+  assert.equal(result.metrics.pendingReviewRequestCount, 1);
+  assert.equal(result.metrics.reviewBackedStarCount, 0);
+  assert.equal(result.metrics.validReviewRequestIssueCount, 1);
+  assert.equal(result.metrics.reReviewRequestIssueCount, 0);
+  assert.equal((await run(repository(), [comments[0], invalid], 'open')).metrics.invalidReviewCommentCount, 0);
+  assert.equal((await run(repository(), [invalid])).metrics.validReviewRequestIssueCount, 0);
+}
+for (const body of ['Review Result: PASS', JSON.stringify(formal),
+  'shoal-review-event:v1\n' + JSON.stringify(formal), comments[0].body + comments[0].body,
+  comments[0].body.replace('"formatVersion":1', '"formatVersion":99'),
+  '<!-- shoal-evidence:v1:start -->garbage<!-- shoal-evidence:v1:end -->']) {
+  const result = await run(repository(), [comments[0], { ...comments[1], body }]);
+  assert.equal(result.metrics.invalidReviewCommentCount, 0);
+  assert.equal(result.metrics.completedReviewRequestCount, 0);
+}
 for (const type of ['RE_REVIEWED', 'STAR_REVOKED', 'REVOKED_EXTERNALLY']) {
   const pass = type === 'RE_REVIEWED';
   const result = await run(repository(), [...comments, lifecycle,
