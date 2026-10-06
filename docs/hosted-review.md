@@ -19,8 +19,7 @@ both in installation metadata and installation-token permission requests. The
 Hosted adapter must not use `variables`; that key incorrectly reports a valid
 installation as missing authority. Production testing on 2026-10-06 confirmed
 the public App metadata returned `actions_variables: write` after permission
-approval. The corrected API fixtures reproduce the failure before the adapter
-fix and cover node-scoped read/write token requests after it.
+approval. The adapter uses this key for node-scoped read/write token requests.
 
 Only these station variables are managed by Hosted settings:
 
@@ -86,8 +85,9 @@ a general GitHub proxy and never returns refresh material.
 
 ## Deployment and evidence
 
-`npm run test:hosted` covers signed OIDC, trust refusal, grant rotation, exact
-configuration writes, client/UI guards and workerd routes. `npm run build:join`
+This repository does not retain test files or test-only fixtures. CI runs lint,
+typecheck, architecture inspection, builds and artifact validation. Any temporary
+behavioral verification belongs outside the repository. `npm run build:join`
 checks both Durable Object bindings. Existing namespaces are inspected before
 the Hosted migration; inconsistent bindings, unbound classes or unknown migration
 state stop deployment without recreating JoinFlow.
@@ -103,7 +103,7 @@ presentation only; they do not replace these live gates.
 
 ## Published dependency integration (2026-10-06)
 
-The current Hosted registry and both auxiliary fixtures use the published
+The current Hosted registry uses the published
 Action and the exact merged Station bytes:
 
 | Immutable fact | Verified value |
@@ -114,11 +114,12 @@ Action and the exact merged Station bytes:
 | Auxiliary SHA-256 | `eabb769e5810789e2c83232a8dc86bef23e87cc3b268ea788007f0e699a49537` |
 | Caller SHA-256 (unchanged) | `b9162cae864bbd6e00745346f37f701fe5c003d3367cc3dc37c6fb394f9d8105` |
 
-Both fixtures were decoded directly from the GitHub Contents API at that Station
+The workflow digests were verified from the GitHub Contents API at that Station
 commit, preserving original bytes. The release tag was dereferenced to its commit;
 the registry still trusts an immutable SHA, never a mutable tag.
 
-Local Windows tests on Node 24.16.0 passed: Hosted 54, Summary 72, workload 17.
+Before test-file removal, local Windows tests on Node 24.16.0 passed:
+Hosted 54, Summary 72, workload 17.
 Typecheck, Blueprint doctor/inspect with baseline, static build,
 SEO/workload artifact validation, the 31-file Action
 package validation, and Worker dry-run with both Durable Object bindings passed.

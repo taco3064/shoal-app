@@ -58,5 +58,8 @@ export type BrokerOptions = {
   issueAuthority: (identity: BrokerIdentity) => Promise<BrokerAuthority>;
   fetcher?: typeof fetch;
   now?: () => number;
-  reportFailure?: (failure: { stage: string; reason: string; status: number }) => void;
+  reportFailure?: (failure: {
+    stage: string; reason: string; status: number;
+    operation: string; rateLimit: string;
+  }) => void;
 };

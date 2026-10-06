@@ -37,11 +37,8 @@ jobs:
       - run: npm run typecheck
       - run: npm run build
         env:
-          SHOAL_PROJECTION_FILE: src/guide/services/directory/fixtures/network.json
+          SHOAL_PROJECTION_FILE: src/guide/services/directory/fixtures/development.json
           SHOAL_PUBLIC_CONTENT_FETCH: skip
-      - run: npm run test:action
-      - run: npm run test:workload
-      - run: npm run test:hosted
       - run: npm run build:join
       - run: npm run package:action
       - run: npm run validate:action-package

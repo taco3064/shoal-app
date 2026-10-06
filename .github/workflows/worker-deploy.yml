@@ -207,6 +207,11 @@ jobs:
             compatibility_date: '2026-10-01',
             compatibility_flags: ['nodejs_compat'],
             workers_dev: true,
+            observability: {
+              enabled: true,
+              redact_query_string: true,
+              logs: { enabled: true, invocation_logs: false },
+            },
             durable_objects: {
               bindings: [
                 { name: 'JOIN_FLOWS', class_name: 'JoinFlow' },
