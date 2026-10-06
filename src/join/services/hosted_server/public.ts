@@ -28,5 +28,8 @@ export async function handleHostedPublic(
     request, endpoint: config.brokerUrl, audience: config.brokerAudience,
     github: brokerGithub(env),
     issueAuthority: (identity) => issueHostedAuthority(env, identity),
+    reportFailure: (failure) => console.warn({
+      event: 'hosted_broker_refused', ...failure,
+    }),
   });
 }

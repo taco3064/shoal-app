@@ -15,6 +15,7 @@ import {
 } from './index';
 
 const now = 1800000000000;
+
 const endpoint = 'https://shoal.example/hosted/exchange';
 const sha = 'a'.repeat(40);
 
@@ -373,6 +374,29 @@ test('refuses invalid or expired roles without leaking values', async () => {
 
   input.issueAuthority = async () => {
     throw new Error('raw-secret refresh material');
+  };
+
+  await refused(input);
+});
+
+test('diagnostics project fixed stages without reflecting issuer secrets', async () => {
+  const input = await trustedOptions();
+  const failures: unknown[] = [];
+
+  input.issueAuthority = async () => {
+    throw new Error('raw-secret token');
+  };
+
+  input.reportFailure = (failure) => {
+    failures.push(failure);
+  };
+
+  await refused(input);
+  assert.deepEqual(failures, [{ stage: 'authority', reason: 'UNEXPECTED', status: 0 }]);
+  input.request = makeRequest(await assertion());
+
+  input.reportFailure = () => {
+    throw new Error('raw-secret logger');
   };
 
   await refused(input);

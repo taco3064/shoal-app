@@ -36,7 +36,7 @@ function validateRepository(
     || repository.ownerId !== request.reviewerId || repository.ownerType !== 'User'
     || repository.private || !/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repository.fullName)
     || (repository.id !== root.id && repository.parentId !== root.id)) {
-    throw new Error('EXECUTION_REFUSED');
+    throw new Error('EXECUTION_REPOSITORY_REFUSED');
   }
 }
 
@@ -76,7 +76,7 @@ function validateClaims(input: {
     || typeof claims.sub !== 'string' || !subjects.includes(claims.sub)
     || Object.entries(bindings).some(([name, value]) => claims[name] !== value)
     || !['schedule', 'workflow_dispatch'].includes(String(claims.event_name))) {
-    throw new Error('EXECUTION_REFUSED');
+    throw new Error('EXECUTION_CLAIMS_REFUSED');
   }
 }
 
@@ -103,7 +103,7 @@ export async function authenticateExecution(input: {
     || run.runAttempt !== request.runAttempt || run.status !== 'in_progress'
     || run.headSha !== request.workflowSha || run.headBranch !== repository.defaultBranch
     || run.path !== summaryWorkflowPath || run.event !== claims.event_name) {
-    throw new Error('EXECUTION_REFUSED');
+    throw new Error('EXECUTION_RUN_REFUSED');
   }
 
   const [caller, auxiliary, mode] = await Promise.all([
@@ -118,7 +118,7 @@ export async function authenticateExecution(input: {
 
   if (!resolveHostedCapability(callerDigest, auxiliaryDigest)
     || !['review', 're-review', 'all'].includes(mode ?? '')) {
-    throw new Error('EXECUTION_REFUSED');
+    throw new Error('EXECUTION_CAPABILITY_REFUSED');
   }
 
   return {
