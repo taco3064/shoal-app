@@ -70,8 +70,8 @@ function validateAuthority(authority: BrokerAuthority, now: number): boolean {
 
   return typeof authority.reviewerToken === 'string'
     && typeof authority.lifecycleToken === 'string'
-    && /^[A-Za-z0-9_]{20,512}$/.test(authority.reviewerToken)
-    && /^[A-Za-z0-9_]{20,512}$/.test(authority.lifecycleToken)
+    && /^[A-Za-z0-9_.-]{20,2048}$/.test(authority.reviewerToken)
+    && /^[A-Za-z0-9_.-]{20,2048}$/.test(authority.lifecycleToken)
     && authority.reviewerToken !== authority.lifecycleToken
     && Number.isFinite(expires) && expires > now + 60000
     && expires <= now + 8 * 60 * 60 * 1000;
