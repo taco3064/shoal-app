@@ -39,6 +39,14 @@ export const hostedCapabilities: readonly HostedCapabilityTrust[] = [{
   runtimeSourceCommit: '257d957d72e8457ed2adbd5d5e02d686885d19dd',
   runtimeSourceTree: 'c27b0dba2d282c6c55bef1f1894d85144241d0ae',
   brokerFormatVersion: 1,
+}, {
+  callerDigest: 'acf3b8edc35584309a73bfe67e2c6fd453acb07e9a1033de34f4f6ab039e042f',
+  auxiliaryDigest: '06dc0637a13e768869d33bb3765d79d0489a183220dde71cf816233d9f49bdc5',
+  actionCommit: '4afab896059c38406201d904681883891429db33',
+  actionPath: 'hosted-review/',
+  runtimeSourceCommit: 'd7e0e1fb7efdd8923ed46a493147299d8e629f0f',
+  runtimeSourceTree: '0af19296794f8c1d523120ea3d7e4bb9f069fba9',
+  brokerFormatVersion: 1,
 }];
 
 export function resolveHostedCapability(
