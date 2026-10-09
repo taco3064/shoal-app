@@ -21,7 +21,8 @@ export function previewInspection(): Inspection {
         id: 'node',
         label: 'Reviewer Node / direct fork',
         state: 'waiting',
-        detail: 'Shoal checks for your direct Personal Account fork after sign-in.',
+        detail: 'Use your Personal Account to directly fork the canonical Network Root. '
+          + 'After sign-in, Shoal checks whether that Reviewer Node already exists.',
       },
       {
         id: 'access',
@@ -33,19 +34,24 @@ export function previewInspection(): Inspection {
         id: 'station',
         label: 'Station setup',
         state: 'waiting',
-        detail: 'Shoal shows remaining setup only after inspecting GitHub state.',
+        detail: 'Shoal verifies Issues, Actions, managed files, the Summary Workflow, '
+          + 'and a supported station generation. You confirm only the remaining '
+          + 'non-Policy setup after authoritative inspection.',
       },
       {
         id: 'policy',
         label: 'Review Policy',
         state: 'waiting',
-        detail: 'Policy authorship remains yours and is confirmed separately.',
+        detail: 'Explicitly adopt the inherited README.md Policy or customize it. '
+          + 'Your Policy is confirmed separately from automatic station setup.',
       },
       {
         id: 'ready',
         label: 'Station ready / publication waiting',
         state: 'waiting',
-        detail: 'Readiness and Directory publication appear after verification.',
+        detail: 'Verified station readiness does not immediately publish your Directory '
+          + 'entry. Publication waits for a separate successful Network Scan and '
+          + 'publication; no fixed deadline is guaranteed.',
       },
     ],
     operations: [],

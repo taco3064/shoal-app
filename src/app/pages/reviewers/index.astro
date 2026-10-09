@@ -8,7 +8,7 @@ const isLocalSnapshot =
   import.meta.env.DEV && !process.env.SHOAL_PROJECTION_FILE;
 const title = "Reviewer Directory — Shoal";
 const description =
-  "Explore the current Shoal Reviewer Directory and public review context.";
+  "Browse Shoal’s published Network Projection, inspect Reviewer-owned Policies and station readiness, and find where to request evaluation. This is a snapshot, not a ranking.";
 ---
 
 <BaseLayout title={title} description={description}>
@@ -80,6 +80,15 @@ const description =
         </p>
       </aside>
     )}
+    <details class="directory-all-links">
+      <summary>All published Reviewers ({projection.reviewers.length})</summary>
+      <p>This complete list comes from the same published Network Projection. It remains available without browser JavaScript or pagination.</p>
+      <ul>
+        {projection.reviewers.map((reviewer) => (
+          <li><a class="text-link" href={`${import.meta.env.BASE_URL}reviewers/${encodeURIComponent(reviewer.username)}/`}>{reviewer.username}</a></li>
+        ))}
+      </ul>
+    </details>
     <ReviewerDirectory reviewers={projection.reviewers} client:load />
     <p class="directory-footnote">
       The Network Root and qualifying direct forks share this flat directory.

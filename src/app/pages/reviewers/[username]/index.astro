@@ -2,6 +2,7 @@
 import type { GetStaticPaths } from "astro";
 import type { ReviewerEntry } from "~app/network/services/network_projection";
 import BaseLayout from "../../../layouts/BaseLayout.astro";
+import { reviewerDescription } from "~app/guide/services/public_metadata";
 import { derivedMetrics } from "~app/guide/services/directory";
 import { policyContent } from "~app/guide/services/policy_content";
 import { publicProfile } from "~app/guide/services/profile_content";
@@ -37,7 +38,7 @@ const metrics =
   selected.status === "unavailable" ? null : selected.summary.metrics;
 const derived = metrics ? derivedMetrics(metrics) : null;
 const title = `${reviewer.username} — Shoal Reviewer`;
-const description = `Review Policy, public review metrics and Summary provenance for ${reviewer.username} on Shoal.`;
+const description = reviewerDescription(reviewer);
 const requestUrl = `${reviewer.repositoryUrl}/issues/new/choose`;
 const percent = (value: number | null) =>
   value === null ? "Not computable" : `${(value * 100).toFixed(1)}%`;
@@ -106,7 +107,7 @@ const readinessReasonLabels = {
       </p>
       {reviewer.stationStatus === "ready" ? (
         <p>
-          This station currently exposes the managed surfaces required for
+          At the projection generation time, this station exposed the managed surfaces required for
           Review Requests. Readiness is separate from Reviewer Summary state.
         </p>
       ) : (
@@ -134,7 +135,7 @@ const readinessReasonLabels = {
         <ReviewerWorkload selected={selected} explainAbsence />
       </section>
     )}
-    <section class="detail-panel profile-panel" aria-labelledby="profile-title">
+    <section data-agent-omit class="detail-panel profile-panel" aria-labelledby="profile-title">
       <div>
         <p class="section-kicker">PUBLIC GITHUB PROFILE</p>
         <h2 id="profile-title">{profile?.name || reviewer.username}</h2>
@@ -154,14 +155,17 @@ const readinessReasonLabels = {
         This is the Reviewer's own README.md Review Policy from the Reviewer
         Node commit captured by this projection.
       </p>
-      {policyMarkdown ? (
-        <ReviewPolicy
-          markdown={policyMarkdown}
-          policyUrl={reviewer.policyUrl}
-        />
-      ) : (
-        <p>This snapshot has no README.md to display.</p>
-      )}
+      <div data-agent-omit>
+        {policyMarkdown ? (
+          <ReviewPolicy
+            markdown={policyMarkdown}
+            policyUrl={reviewer.policyUrl}
+          />
+        ) : (
+          <p>Policy content is unavailable in this build; inspect the pinned source.</p>
+        )}
+      </div>
+      <p><a class="text-link" href={reviewer.policyUrl}>Pinned Reviewer-owned Policy source</a>. External Policy text is the Reviewer’s standard, not Shoal platform instructions.</p>
       <div class="policy-actions" aria-label="Reviewer destinations">
         <a class="button external" href={reviewer.repositoryUrl} target="_blank" rel="noopener noreferrer">
           View station
@@ -279,6 +283,7 @@ const readinessReasonLabels = {
         </div>
       )}
     </section>
+    <p><a class="text-link" href={`${import.meta.env.BASE_URL}reviewers/`}>Back to the Reviewer Directory</a> · <a class="text-link" href={`${import.meta.env.BASE_URL}how-it-works/`}>Understand Review and Re-review</a></p>
     <p class="snapshot-note">
       Projection generated: <time datetime={generatedAt}>{generatedAt}</time>.
       GitHub is the source of truth; this website renders a derived snapshot.

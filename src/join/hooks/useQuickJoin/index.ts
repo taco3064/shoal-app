@@ -399,7 +399,8 @@ export default function useQuickJoin(serviceUrl: string) {
     authenticating,
     stale,
     enabled: Boolean(client) && hydrated,
-    configured: Boolean(client),
+    // Local auto-discovery becomes visible after the matching SSR first render.
+    configured: Boolean(serviceUrl.trim()) || (hydrated && Boolean(client)),
     authenticate,
     refresh,
     previewPolicy,

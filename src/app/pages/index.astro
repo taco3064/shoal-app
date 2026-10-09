@@ -8,20 +8,9 @@ const projection = await publishedProjection();
 const title = "Shoal — Make a GitHub Star explainable";
 const description =
   "A public review network where GitHub Stars carry a policy, a repository version, and a reason you can verify.";
-const website = {
-  "@context": "https://schema.org",
-  "@type": "WebSite",
-  name: "Shoal",
-  url: new URL(import.meta.env.BASE_URL, Astro.site).href,
-  description,
-};
+
 ---
 
 <BaseLayout title={title} description={description}>
-  <script
-    slot="head"
-    type="application/ld+json"
-    set:html={JSON.stringify(website).replace(/</g, "\\u003c")}
-  />
   <Guide reviewerCount={projection.reviewers.length} />
 </BaseLayout>

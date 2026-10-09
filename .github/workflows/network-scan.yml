@@ -56,6 +56,7 @@ jobs:
           SHOAL_PROJECTION_FILE: ${{ runner.temp }}/network.json
           GITHUB_TOKEN: ${{ github.token }}
           PUBLIC_SHOAL_JOIN_SERVICE_URL: ${{ vars.PUBLIC_SHOAL_JOIN_SERVICE_URL }}
+      - run: npm run validate:seo
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
         with:

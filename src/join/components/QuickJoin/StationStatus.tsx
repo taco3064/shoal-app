@@ -34,9 +34,11 @@ const rootOwnerStage: Stage = {
 };
 
 export default function StationStatus({ join }: { join: JoinState }) {
+  const [hydrated, setHydrated] = useState(false);
   const [localStageId, setLocalStageId] = useState<string | null>(null);
 
   const preview = !join.session && !join.inspection;
+  const staticPreview = preview && !hydrated;
   const recoveringExecution = !join.inspection && Boolean(join.session && join.job);
 
   const inspection = join.inspection
@@ -76,6 +78,10 @@ export default function StationStatus({ join }: { join: JoinState }) {
   );
 
   const localMode = Boolean(localStage);
+
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
 
   useEffect(() => {
     if (localStageId && !stages.some((stage) => stage.id === localStageId)) {
@@ -135,7 +141,10 @@ export default function StationStatus({ join }: { join: JoinState }) {
           </a>
         )}
       </div>
-      <div className="quick-journey-layout">
+      <div
+        className="quick-journey-layout"
+        data-preview-static={staticPreview ? 'true' : 'false'}
+      >
         <ol className="quick-progress-map" aria-label="Join progress">
           {stages.map((stage, index) => {
             const actionable = getMapAction(join, stage);
@@ -176,94 +185,107 @@ export default function StationStatus({ join }: { join: JoinState }) {
                   : (
                       <div>{content}</div>
                     )}
-                <button
-                  className="quick-map-local"
-                  type="button"
-                  aria-pressed={stage.id === localStage?.id}
-                  aria-label={`Show Local / CLI instructions for ${stage.label}`}
-                  onClick={() => selectLocalStage(stage)}
-                >
-                  Local / CLI
-                </button>
+                {staticPreview
+                  ? <LocalStageGuidance stage={stage} webDetail={stage.detail} />
+                  : (
+                      <button
+                        className="quick-map-local"
+                        type="button"
+                        aria-pressed={stage.id === localStage?.id}
+                        aria-label={`Show Local / CLI instructions for ${stage.label}`}
+                        onClick={() => selectLocalStage(stage)}
+                      >
+                        Local / CLI
+                      </button>
+                    )}
               </li>
             );
           })}
         </ol>
-        <section
-          className="quick-current-step"
-          data-state={displayStage.state}
-          data-local={localMode ? 'true' : 'false'}
-          data-terminal={displayStage.id === 'ready' && displayStage.state === 'complete'
-            && !localMode
-            ? 'true'
-            : 'false'}
-          data-preview={preview ? 'true' : 'false'}
-          aria-labelledby="quick-current-step-title"
-        >
-          <div className="quick-current-index" aria-hidden="true">
-            <span>{String(displayIndex + 1).padStart(2, '0')}</span>
-            <StatusIcon state={displayStage.state} />
-          </div>
-          <div className="quick-current-body">
-            <div className="quick-stage-topline">
-              {localMode && (
-                <span className="quick-stage-mode">
-                  Local / CLI mode
-                </span>
-              )}
-              <span className="quick-stage-state">
-                {stateLabels[displayStage.state]}
-              </span>
-            </div>
-            <h4 id="quick-current-step-title">{displayStage.label}</h4>
-            {localMode && (
-              <p className="quick-local-mode-note">
-                Local / CLI instructions are available for this canonical
-                stage. This does not mark the stage complete; authoritative
-                status still comes from GitHub inspection.
-              </p>
-            )}
-            <p>{displayStage.detail}</p>
-            {!preview && !localMode && (
-              <StageAction join={join} stage={displayStage} />
-            )}
-            {displayStage.id === 'station'
-              && inspection.operations.length > 0
-              && !localMode && (
-              <div className="quick-stage-plan">
-                <p>Automatic completion will verify:</p>
-                <ol>
-                  {inspection.operations.map((operation) => (
-                    <li key={operation.id}>{operation.label}</li>
-                  ))}
-                </ol>
-              </div>
-            )}
-            {!preview
+        {!staticPreview && (
+          <section
+            className="quick-current-step"
+            data-state={displayStage.state}
+            data-local={localMode ? 'true' : 'false'}
+            data-terminal={displayStage.id === 'ready'
+              && displayStage.state === 'complete'
               && !localMode
-              && displayStage.id === 'policy'
-              && displayStage.action === 'policy' && <PolicyStep join={join} />}
-            {displayStage.id === 'ready'
-              && displayStage.state === 'complete' && !localMode && (
-              <div className="quick-completion" role="status">
-                <strong>Onboarding complete.</strong>
-                <p>
-                  Directory publication waits for a separate successful Network
-                  Scan and publication. Readiness does not guarantee a
-                  publication deadline.
-                </p>
+              ? 'true'
+              : 'false'}
+            data-preview={preview ? 'true' : 'false'}
+            aria-labelledby="quick-current-step-title"
+          >
+            <div className="quick-current-index" aria-hidden="true">
+              <span>{String(displayIndex + 1).padStart(2, '0')}</span>
+              <StatusIcon state={displayStage.state} />
+            </div>
+            <div className="quick-current-body">
+              <div className="quick-stage-topline">
+                {localMode && (
+                  <span className="quick-stage-mode">
+                    Local / CLI mode
+                  </span>
+                )}
+                <span className="quick-stage-state">
+                  {stateLabels[displayStage.state]}
+                </span>
               </div>
-            )}
-            {displayStage.facts && !localMode && (
-              <StageFacts facts={displayStage.facts} />
-            )}
-            {join.job && displayStage.id === activeStage.id && <Progress join={join} />}
-            <LocalStageGuidance stage={displayStage} open={localMode} />
-            {displayStage.id === activeStage.id && (
-              <StageProgression join={join} stage={displayStage} localMode={localMode} />
-            )}
-          </div>
-        </section>
+              <h4 id="quick-current-step-title">{displayStage.label}</h4>
+              {localMode && (
+                <p className="quick-local-mode-note">
+                  Local / CLI instructions are available for this canonical
+                  stage. This does not mark the stage complete; authoritative
+                  status still comes from GitHub inspection.
+                </p>
+              )}
+              <p>{displayStage.detail}</p>
+              {!preview && !localMode && (
+                <StageAction join={join} stage={displayStage} />
+              )}
+              {displayStage.id === 'station'
+                && inspection.operations.length > 0
+                && !localMode && (
+                <div className="quick-stage-plan">
+                  <p>Automatic completion will verify:</p>
+                  <ol>
+                    {inspection.operations.map((operation) => (
+                      <li key={operation.id}>{operation.label}</li>
+                    ))}
+                  </ol>
+                </div>
+              )}
+              {!preview
+                && !localMode
+                && displayStage.id === 'policy'
+                && displayStage.action === 'policy' && <PolicyStep join={join} />}
+              {displayStage.id === 'ready'
+                && displayStage.state === 'complete' && !localMode && (
+                <div className="quick-completion" role="status">
+                  <strong>Onboarding complete.</strong>
+                  <p>
+                    Directory publication waits for a separate successful Network
+                    Scan and publication. Readiness does not guarantee a
+                    publication deadline.
+                  </p>
+                </div>
+              )}
+              {displayStage.facts && !localMode && (
+                <StageFacts facts={displayStage.facts} />
+              )}
+              {join.job && displayStage.id === activeStage.id && (
+                <Progress join={join} />
+              )}
+              <LocalStageGuidance stage={displayStage} open={localMode} />
+              {displayStage.id === activeStage.id && (
+                <StageProgression
+                  join={join}
+                  stage={displayStage}
+                  localMode={localMode}
+                />
+              )}
+            </div>
+          </section>
+        )}
       </div>
       {join.job && displayStage.id !== activeStage.id && <Progress join={join} />}
       {!preview && inspection.ready && activeStage.id !== 'ready' && (
