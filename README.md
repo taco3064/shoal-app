@@ -120,3 +120,12 @@ npm run build:action
 npm run package:action
 npm run test:action-package
 ```
+
+## Public reading and SEO
+
+All public routes expose static explanations and ordinary anchor navigation.
+Agent-oriented reading files are generated from the same governed content or
+validated Network Projection; they grant no mutation authority and describe
+scan-time snapshots rather than live GitHub state. Artifact checks, search
+appearance limits and post-deployment verification are documented in
+[Public reading and publication verification](docs/public-reading.md).

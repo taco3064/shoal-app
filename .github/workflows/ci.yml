@@ -43,6 +43,7 @@ jobs:
       - run: npm run package:action
       - run: npm run validate:action-package
       - run: npm run validate:seo
+      - run: node scripts/validate-seo-contracts.mjs
       - run: npm run validate:workload
       - run: npm run blueprint:validate
       - name: Scan current public Network

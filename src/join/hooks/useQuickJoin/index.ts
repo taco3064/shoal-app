@@ -17,6 +17,11 @@ import { useAuthFlow } from './auth_flow';
 import { useExternalRefresh } from './external_refresh';
 import type { AuthState, ExecutionState, InspectionState } from './state';
 
+export {
+  canonicalJoinGuidance,
+  findJoinGuidance,
+} from '~app/join/services/join_guidance';
+
 export default function useQuickJoin(serviceUrl: string) {
   const [hydrated, setHydrated] = useState(false);
   const [session, setSession] = useState<Session>();

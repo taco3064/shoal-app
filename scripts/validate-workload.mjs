@@ -12,7 +12,12 @@ const cards = [
   ...directory.matchAll(/<article class="reviewer-card">([\s\S]*?)<\/article>/g),
 ].map(([, card]) => card);
 
-assert.equal(cards.length, projection.reviewers.length);
+const firstPage = [...projection.reviewers].sort((a, b) =>
+  a.username.toLowerCase().localeCompare(b.username.toLowerCase(), 'en')
+  || a.repositoryId - b.repositoryId).slice(0, 50);
+const visible = new Set(firstPage.map((reviewer) => reviewer.repositoryId));
+
+assert.equal(cards.length, firstPage.length);
 
 for (const reviewer of projection.reviewers) {
   const selected = reviewer.summary;
@@ -26,15 +31,22 @@ for (const reviewer of projection.reviewers) {
   const hasWorkload =
     selected.status !== 'unavailable' && selected.summary.summarySchemaVersion === 2;
 
-  assert.ok(card, 'Static Directory card: ' + reviewer.username);
-  assert.equal(card.includes('class="workload-grid"'), false);
-  assert.equal(card.includes('Selected accepted workload'), false);
-  assert.equal(card.includes('<dt>Pending</dt>'), false);
-  assert.equal(card.includes('<dt>Completed</dt>'), false);
+  assert.equal(Boolean(card), visible.has(reviewer.repositoryId),
+    'SSR cards represent the initial Directory page: ' + reviewer.username);
+  assert.ok(directory.includes('/reviewers/' + encodeURIComponent(reviewer.username) + '/'),
+    'Every participant has a static Directory link: ' + reviewer.username);
+
+  if (card) {
+    assert.equal(card.includes('class="workload-grid"'), false);
+    assert.equal(card.includes('Selected accepted workload'), false);
+    assert.equal(card.includes('<dt>Pending</dt>'), false);
+    assert.equal(card.includes('<dt>Completed</dt>'), false);
+    assert.equal(card.includes('state-fallback'), selected.status === 'fallback');
+    assert.equal(card.includes('state-current'), selected.status === 'current');
+    assert.equal(card.includes('state-unavailable'), false);
+  }
+
   assert.equal(detail.includes('class="workload-grid"'), hasWorkload);
-  assert.equal(card.includes('state-fallback'), selected.status === 'fallback');
-  assert.equal(card.includes('state-current'), selected.status === 'current');
-  assert.equal(card.includes('state-unavailable'), false);
 
   if (hasWorkload) {
     const {
@@ -65,5 +77,5 @@ for (const reviewer of projection.reviewers) {
 console.log(
   'Workload artifacts PASS: ' +
     projection.reviewers.length +
-    ' cards and details; exact values, absence, zero, freshness, provenance.',
+    ' participant links and details; first-page cards, exact values, absence, zero, freshness, provenance.',
 );

@@ -8,12 +8,13 @@ export default function JoinSteps() {
         <em>Your signature.</em>
       </h2>
       <p>
-        Directly fork the Shoal station template, complete the manual Actions
-        confirmation in your fork, then install the gh extension, run
+        Directly fork the Shoal station template and follow the shared Join
+        stages with Web-assisted setup or Local / CLI instructions. Publish
+        your own Review Policy in the README. Website authorization is optional;
+        local setup remains available through
         {' '}
         <code>gh shoal init</code>
-        {' '}
-        on your fork. Write your own Review Policy in the README.
+        .
       </p>
       <a
         className="text-link"

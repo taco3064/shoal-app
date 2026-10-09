@@ -1,4 +1,6 @@
 ---
+import { publicExplanation } from "~app/guide/services/public_content";
+import PublicExplanation from "~app/guide/components/PublicExplanation";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import ReviewerDirectory from "~app/guide/components/ReviewerDirectory";
 import { publishedProjection } from "~app/guide/services/projection_source";
@@ -8,7 +10,7 @@ const isLocalSnapshot =
   import.meta.env.DEV && !process.env.SHOAL_PROJECTION_FILE;
 const title = "Reviewer Directory — Shoal";
 const description =
-  "Explore the current Shoal Reviewer Directory and public review context.";
+  "Explore Shoal’s published Reviewer Directory, independent Policies and station readiness. A scan-time snapshot, not a ranking or live GitHub search.";
 ---
 
 <BaseLayout title={title} description={description}>
@@ -81,10 +83,21 @@ const description =
       </aside>
     )}
     <ReviewerDirectory reviewers={projection.reviewers} client:load />
+    <details class="snapshot-note">
+      <summary>All published Reviewer pages · {projection.reviewers.length}</summary>
+      <p>These links reflect this complete validated publication, including entries beyond the interactive list’s first page.</p>
+      <ul>
+        {projection.reviewers.map((reviewer) => (
+          <li><a href={`${import.meta.env.BASE_URL}reviewers/${reviewer.username}/`}>{reviewer.username}</a></li>
+        ))}
+      </ul>
+      <a href={`${import.meta.env.BASE_URL}data/network.json`}>Published Network Projection JSON</a>
+    </details>
     <p class="directory-footnote">
       The Network Root and qualifying direct forks share this flat directory.
       Joined dates are repository creation dates, not setup completion dates.
       Search does not query GitHub live.
     </p>
+    <PublicExplanation explanation={publicExplanation} />
   </main>
 </BaseLayout>

@@ -1,7 +1,10 @@
 ---
+import { publicExplanation } from "~app/guide/services/public_content";
 import type { GetStaticPaths } from "astro";
 import type { ReviewerEntry } from "~app/network/services/network_projection";
+import PublicExplanation from "~app/guide/components/PublicExplanation";
 import BaseLayout from "../../../layouts/BaseLayout.astro";
+import { reviewerDescription } from "~app/guide/services/public_content";
 import { derivedMetrics } from "~app/guide/services/directory";
 import { policyContent } from "~app/guide/services/policy_content";
 import { publicProfile } from "~app/guide/services/profile_content";
@@ -37,7 +40,7 @@ const metrics =
   selected.status === "unavailable" ? null : selected.summary.metrics;
 const derived = metrics ? derivedMetrics(metrics) : null;
 const title = `${reviewer.username} — Shoal Reviewer`;
-const description = `Review Policy, public review metrics and Summary provenance for ${reviewer.username} on Shoal.`;
+const description = reviewerDescription(reviewer);
 const requestUrl = `${reviewer.repositoryUrl}/issues/new/choose`;
 const percent = (value: number | null) =>
   value === null ? "Not computable" : `${(value * 100).toFixed(1)}%`;
@@ -139,6 +142,7 @@ const readinessReasonLabels = {
         <p class="section-kicker">PUBLIC GITHUB PROFILE</p>
         <h2 id="profile-title">{profile?.name || reviewer.username}</h2>
         {profile?.bio && <p>{profile.bio}</p>}
+        {!profile && <p>Public profile details are unavailable in this build. The GitHub profile source remains linked.</p>}
         {profile && (
           <p class="profile-meta">
             {profile.location && <span>⌖ {profile.location}</span>}
@@ -160,8 +164,9 @@ const readinessReasonLabels = {
           policyUrl={reviewer.policyUrl}
         />
       ) : (
-        <p>This snapshot has no README.md to display.</p>
+        <p>The pinned Review Policy is unavailable in this build. Follow the Policy source to inspect it; absence here does not mean this Reviewer has no Policy.</p>
       )}
+      <p><a class="text-link" href={reviewer.policyUrl}>Pinned Reviewer-owned Policy source</a></p>
       <div class="policy-actions" aria-label="Reviewer destinations">
         <a class="button external" href={reviewer.repositoryUrl} target="_blank" rel="noopener noreferrer">
           View station
@@ -283,5 +288,10 @@ const readinessReasonLabels = {
       Projection generated: <time datetime={generatedAt}>{generatedAt}</time>.
       GitHub is the source of truth; this website renders a derived snapshot.
     </p>
+    <p class="snapshot-note">
+      <a class="text-link" href={`${import.meta.env.BASE_URL}reviewers/${reviewer.username}/snapshot.txt`}>Read this published snapshot as text</a> ·
+      <a class="text-link" href={`${import.meta.env.BASE_URL}data/network.json`}>Published Network Projection JSON</a>
+    </p>
+    <PublicExplanation explanation={publicExplanation} />
   </main>
 </BaseLayout>

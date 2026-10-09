@@ -374,3 +374,10 @@ html:has(.navigation-drawer[open]){overflow:hidden}
 .quick-progress progress{width:100%;height:20px;accent-color:#d7f387}
 @media(max-width:900px){.quick-journey-layout{grid-template-columns:1fr}.quick-current-step{order:-1}.quick-progress-map{grid-template-columns:repeat(2,minmax(0,1fr))}.quick-progress-map:before{display:none}}
 @media(max-width:700px){.quick-join{padding:20px}.quick-join-heading,.quick-current-step,.quick-facts{grid-template-columns:1fr}.quick-join-heading{gap:18px}.quick-current-step{padding:22px}.quick-current-index{width:58px;height:58px;border-radius:16px;font-size:18px}.quick-journey-heading{display:block}.quick-node-link{display:inline-block;margin-top:12px}.quick-progress-map{grid-template-columns:1fr}.quick-stage-action,.quick-auth .button,.quick-join .actions .button{width:100%;justify-content:center;margin-top:24px;margin-bottom:10px}.quick-auth{gap:10px}.quick-root-owner{padding:20px}.quick-root-mark{position:static;margin-bottom:12px}}
+
+/* Native stage explanations remain available before hydration and without JS. */
+.quick-map-guidance { margin: 8px 10px 12px; font-size: 13px; color: #b7c9c4; }
+.quick-map-guidance > summary, .public-explanation > summary { cursor: pointer; line-height: 1.6; }
+.quick-map-guidance p { line-height: 1.6; margin-block: 10px; }
+.public-explanation { margin-block: 24px; line-height: 1.7; }
+.public-explanation p { margin-block: 14px; }

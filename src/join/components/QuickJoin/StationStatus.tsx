@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import type useQuickJoin from '~app/join/hooks/useQuickJoin';
+import { findJoinGuidance } from '~app/join/hooks/useQuickJoin';
 import LocalStageGuidance from './LocalStageGuidance';
 import PolicyStep from './PolicyStep';
 import StatusIcon from './StatusIcon';
@@ -139,6 +140,7 @@ export default function StationStatus({ join }: { join: JoinState }) {
         <ol className="quick-progress-map" aria-label="Join progress">
           {stages.map((stage, index) => {
             const actionable = getMapAction(join, stage);
+            const guidance = findJoinGuidance(stage.id);
 
             const content = (
               <>
@@ -176,6 +178,13 @@ export default function StationStatus({ join }: { join: JoinState }) {
                   : (
                       <div>{content}</div>
                     )}
+                {guidance && (
+                  <details className="quick-map-guidance">
+                    <summary>Stage explanation and Local / CLI guidance</summary>
+                    <p>{guidance.description}</p>
+                    <LocalStageGuidance stage={stage} open />
+                  </details>
+                )}
                 <button
                   className="quick-map-local"
                   type="button"

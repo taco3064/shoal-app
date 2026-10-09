@@ -1,4 +1,6 @@
 ---
+import { publicExplanation } from "~app/guide/services/public_content";
+import PublicExplanation from "~app/guide/components/PublicExplanation";
 import BaseLayout from "../layouts/BaseLayout.astro";
 import Join from "~app/join";
 
@@ -80,5 +82,6 @@ const joinServiceUrl = import.meta.env.PUBLIC_SHOAL_JOIN_SERVICE_URL
         </section>
       </div>
     </section>
+    <PublicExplanation explanation={publicExplanation} />
   </main>
 </BaseLayout>

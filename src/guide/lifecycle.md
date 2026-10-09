@@ -4,20 +4,20 @@
 
 You are the **Requester** when you ask someone to evaluate your repository. The **Reviewer** publishes the standards they use, called their Review Policy. Both share one public review history.
 
-**The handoff:** after you submit a Review Request, nothing starts automatically. You wait; the Reviewer decides when to begin. Shoal does not start background AI judgment. When the Reviewer begins, Shoal's rules determine which requests can be reviewed.
+**The handoff:** a Review Request does not promise immediate review or a Star. The Reviewer chooses when to review manually or through the CLI, or explicitly opts into a Hosted Review schedule running in their own station. A request alone never enables scheduled semantic judgment. Shoal's deterministic rules decide which requests are eligible in every execution mode.
 
 ```mermaid
 flowchart TD
   accTitle: The shared Requester and Reviewer lifecycle
-  accDescr: The Requester finds a Reviewer, reads their Policy, submits a request and waits. The Reviewer chooses when to begin. Shoal checks eligibility: invalid requests receive an explanation and are closed without review. Eligible work is reviewed against the current Policy using the authorized local AI. PASS means the Reviewer is starring the repository; FAIL means they are not. The outcome is recorded publicly. Repository or Policy changes may allow Re-review, which the Reviewer chooses when to start. Unchanged work receives no new judgment.
+  accDescr: The Requester finds a Reviewer, reads their Policy, submits a request and waits. The Reviewer chooses manual or CLI execution, or explicitly enables a Hosted schedule. Shoal checks eligibility: invalid requests receive an explanation and are closed without review. Eligible work is reviewed against the current Policy using the authorized local AI or semantic-only Hosted Copilot. PASS means the Reviewer is starring the repository; FAIL means they are not. The outcome is recorded publicly. Repository or Policy changes may allow Re-review, which the Reviewer chooses when to start. Unchanged work receives no new judgment.
   subgraph requester["Requester: ask for evaluation"]
     find["Find a Reviewer"] --> policy["Read their Review Policy"]
     policy --> request["Submit Review Request and wait"]
   end
-  request -->|Handoff| start["Reviewer chooses when to begin"]
+  request -->|Handoff| start["Reviewer chooses manual, CLI, or opt-in Hosted schedule"]
   start --> eligible{"Shoal: is this request eligible?"}
   eligible -->|No| invalid["Explain and close the request; no review"]
-  eligible -->|Yes| review["Reviewer: authorized local AI reviews the repository against the current Policy"]
+  eligible -->|Yes| review["Reviewer-authorized semantic judgment against the current Policy"]
   review --> verdict{"Review outcome?"}
   verdict -->|PASS| star["Reviewer is starring the repository"]
   verdict -->|FAIL| noStar["Reviewer is not starring the repository"]
@@ -26,18 +26,18 @@ flowchart TD
   record --> changed{"Later: repository or Policy version changed?"}
   changed -->|No| unchanged["No new judgment on unchanged work"]
   changed -->|Yes| again["Re-review may be eligible; the previous endorsement may be stale"]
-  again --> restart["Reviewer chooses when to start Re-review"]
+  again --> restart["Reviewer controls manual, CLI, or scheduled Re-review"]
   restart -->|Eligible changed work only| review
 ```
 
 ## What happens at each step
 
 1. **Choose whose judgment matters to you.** Find a Reviewer in the Directory and read their Policy before requesting evaluation. Each Reviewer owns their standards; Shoal does not provide a universal score.
-2. **Ask, then wait.** Submit your repository name at that station's Request Review destination, with an optional invitation message. The Reviewer decides when to start; a request does not promise immediate review or a Star.
+2. **Ask, then wait.** Submit your repository name at that station's Request Review destination, with an optional invitation message. The Reviewer controls review timing, including whether to enable a recurring Hosted schedule; a request does not promise immediate review or a Star.
 3. **Shoal checks whether the request can proceed.** If it cannot, the request receives an explanation and is closed without review. If it can, the work enters that Reviewer's public review history.
-4. **The Reviewer starts the review.** In Automated Review, the Reviewer authorizes their own local AI to evaluate the repository against their current Policy. Shoal's rules decide which work is eligible, while the local AI makes the judgment.
-5. **PASS and FAIL have different outcomes.** PASS means the Reviewer is starring the repository. FAIL means they are not, including removing an existing Star. Both outcomes are recorded publicly with the versions reviewed. An ordinary GitHub Star is not automatically a Shoal review-backed endorsement.
-6. **Changed work can be reviewed again.** If the repository version or Review Policy version changes, a previous endorsement may become stale and Re-review may become eligible. The Reviewer still chooses when to start. Unchanged work is not repeatedly sent to the AI for another judgment.
+4. **The Reviewer controls execution.** They can review manually, authorize a local AI through the CLI, or explicitly opt into scheduled Hosted Review in their own station. In Hosted Review, Copilot supplies semantic judgment only; the shared `gh-shoal` runtime owns admission, eligibility, lifecycle records, Star changes, and verified GitHub effects.
+5. **PASS and FAIL have different outcomes.** A valid PASS requires both formal Review evidence for the reviewed Target and Policy versions and the actual Reviewer Star. FAIL means they are not starring the repository, including removing an existing Star. Both outcomes are recorded publicly with the versions reviewed. Execution failure or incomplete evidence is not semantic FAIL; unfinished work remains recoverable / Pending. An ordinary GitHub Star is not automatically a Shoal review-backed endorsement.
+6. **Changed work can be reviewed again.** If the repository version or Review Policy version changes, a previous endorsement may become stale and Re-review may become eligible. Manual, CLI, and opt-in scheduled execution follow the same changed-basis eligibility. Unchanged work is not repeatedly sent to the AI for another judgment.
 
 ## The Reviewer's local commands
 
@@ -54,6 +54,14 @@ gh shoal re-review --agent <agent>
 ```
 
 Replace `<agent>` with the chosen agent's name. These commands run on the Reviewer's machine under their authority. They discover eligible work and validate it before asking the local AI for a judgment; they do not give the Reviewer permission to bypass Shoal's rules.
+
+## Optional scheduled Hosted Review
+
+Hosted Review runs in the Reviewer's own Reviewer Node GitHub Actions environment. The Reviewer explicitly selects one scheduled mode: `none` (the default), `review`, `re-review`, or `all`. Copilot availability alone does not enable semantic review. Reviewer Summary remains part of every canonical scheduled station run, including `none`.
+
+Hosted Copilot receives bounded Policy, Request, and read-only Target evidence and returns a structured judgment and explanation. It does not own admission, canonical-thread selection, version metadata, Star / Unstar, or Issue lifecycle changes. The shared `gh-shoal` runtime governs those deterministic operations. Target content is untrusted; evidence collection does not execute Target code.
+
+Scheduled runs are best-effort and bounded. Missing Copilot capability, quota limits, timeouts, or incomplete evidence stop semantic processing without manufacturing FAIL or erasing valid completed work. Unprocessed work remains Pending; independently valid maintenance and Reviewer Summary can continue. A later scheduled run or an interactive CLI invocation can resume remaining work. Hosted capability is optional and separate from Station Readiness; manual and Local / CLI execution remain supported.
 
 ## The exact Shoal rules behind the overview
 
@@ -85,11 +93,13 @@ A change to the actual Star state alone is called **endorsement drift**. It can 
 
 ### Who owns the standards and the judgment?
 
-The Reviewer authors and owns their `README.md` Review Policy. In Automated Review, their authorized local AI makes the semantic judgment. The CLI validates the result structure and keeps GitHub effects consistent with the verdict; there is no second human approval step.
+The Reviewer authors and owns their `README.md` Review Policy. In Automated Review, their authorized local AI or Hosted Copilot makes the semantic judgment. The CLI validates the result structure and keeps GitHub effects consistent with the verdict; there is no second human approval step.
 
-A Reviewer can also review manually under the same identity, admission, version, event and Star-state rules. Manual Re-review likewise requires a changed Review Basis. The diagram shows the official Automated path; using the CLI is not what makes an endorsement legitimate.
+A Reviewer can also review manually under the same identity, admission, version, event and Star-state rules. Manual Re-review likewise requires a changed Review Basis. All execution modes converge on the same Protocol and evidence requirements; using the CLI alone does not make an endorsement legitimate.
 
 ### Public evidence and Manual Review
+
+Public pages and Review records are readable without Website authentication. Public-read access grants no repository-write authority; authenticated setup and Reviewer-personal lifecycle effects require their own explicitly bounded authorization.
 
 Each formal Review comment starts with the human result: PASS or FAIL, Target Repository, full Target and Policy commits, actual Star state, review time, and the Reviewer's explanation. A collapsed **Formal Shoal evidence** section carries the machine record. The record is authoritative; editing the visible prose or explanation does not change the formal result.
 
