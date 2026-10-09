@@ -10,6 +10,7 @@ Authority: Shoal Knowledge Base v0.74, shaped #79, and the existing validated Ne
 - Directory exposes all projected detail links independently of its interactive 50-card pagination. Join retains one stage map: native Web/Local guidance without JavaScript, progressively enhanced into the existing interactive journey. Authenticated control-plane authority is unchanged.
 - `llms.txt` links canonical pages and the existing `data/network.json`; no new authoritative Reviewer API or eligibility algorithm is introduced.
 - `read/index.txt`, `read/how-it-works.txt`, `read/join.txt`, `read/reviewers.txt`, and `read/reviewers/<username>.txt` are generated from finished static HTML by the build integration. A byte-for-byte derivative gate catches drift. External Profile/Policy prose stays attributed in HTML and is excluded from agent text; pinned Policy/source links remain available. These are reading conveniences, not independent authority or mutation permission.
+- Independent extraction checks also preserve governed paragraphs, heading order, link labels with destinations, literal commands/placeholders, and the required trust/freshness context. Negative controls remove those elements to prove that the gate rejects meaningful loss even apart from the derivative byte comparison.
 - Reviewer metadata uses validated Node identity, scan readiness and accepted Summary status, never free-form profile or Policy text. Current is a snapshot, fallback is stale and unavailable has absent metrics. Profile/Policy fetch absence does not invent judgments.
 - Scan → validated complete projection → static build → deterministic SEO gate → Pages artifact → deployment. A failure before publication preserves the previously deployed site. The production workflow now runs the same SEO gate before uploading its artifact.
 
@@ -41,6 +42,10 @@ npm run blueprint:validate
 
 The real build matrix covers 0, 1, 55 and changed/deleted Reviewer sets, all three Summary states, more than one Directory page, and missing public Profile/Policy. Negative controls reject unsafe/duplicate usernames, duplicate metadata, wrong base, malformed JSON-LD, false brand type, missing main, reading/discovery drift, stale sitemap membership and external instruction export.
 
+Asset verification targets the strongest checks from alternative PR #81 while retaining this PR's HTML-derived reading pipeline. The same dependency walker serves the build gate and read-only HTTP verifier: Astro island component/renderer attributes, module scripts and preloads, literal static/re-export/dynamic JavaScript imports, and CSS imports/URLs recursively resolve under the published base. HTML attributes use the existing parser; JavaScript uses a directly pinned `es-module-lexer` dependency. Missing/empty dependencies or escaping local paths reject publication. Runtime-computed imports and external-origin resources are not claimed as statically verified; CSS scanning targets the emitted build syntax. Browser regression remains separate evidence.
+
+Artifact controls delete the actual Join island component, renderer and shared import. A reachable CSS graph tests stylesheet/import/font/image deletion and cycle termination. Anonymous HTTP controls reject those missing dependencies, a JavaScript resource returned as HTML, and Projection bytes changing during retrieval. HTTP verifies applicable asset content types and saves the complete fetched dependency graph for the normal SEO gate; it does not infer a deployed commit from HTTP alone.
+
 The fixture publication is historical test data, not a current Network Scan. Its generation time remains visible.
 
 ## Candidate verification record
@@ -56,6 +61,7 @@ The fixture publication is historical test data, not a current Network Scan. Its
 - Focused server-rendering regression probes pass: six native stage disclosures and one journey, no dead Local preview controls, authenticated selected panel plus six Local buttons, Root-owner short-circuit.
 - URL-only AI exercise: see `seo-url-comprehension.md`, including first clean context, observed extraction/copy failures and corrected same-context re-test. Last implementation changes after that re-test only clarify the already-correct current-status phrase in `llms.txt`, normalize Windows directory separators in validation, repair localhost initial-render consistency, and keep scenario output on the project volume; product answers and reading contracts are unchanged.
 - Initial PR CI passed all Linux gates, but the Windows scenario build failed with `EXDEV` because its system temporary directory was on C: while Astro's prerender assets were on D:. Scenario directories now use the project volume and are removed in `finally`. The delivered head must pass fresh Linux/Windows CI before handoff.
+- Comparative-review follow-up: public composition and reading generation are unchanged. After locked reinstall and fixture rebuild, all 18 HTML/text/Projection file hashes match the prior candidate. The strengthened gate checks 127 real local dependency assets; the added CSS-cycle fixture checks 131. The 20-case mobile/desktop, JS-on/off browser matrix was repeated and passed. New artifact/HTTP controls and extraction-loss controls run inside the existing `validate:seo-cases` CI step. The new delivered head still requires independent Acceptance and exact-head CI before handoff.
 
 ## Production closure — pending merge and accepted deployment
 
@@ -70,7 +76,7 @@ After merge:
    npm run validate:seo-http -- https://taco3064.github.io/shoal-app/
    ```
 
-   It retrieves every projected HTML and text route, projection JSON, robots, sitemap index and all sitemap pages, branding and linked local assets. It checks HTTP 200, applicable content types, fragment destinations, canonical/base consistency, exact route membership and synchronized text. Save the receipt with the deployed main SHA and deployment/run URLs. HTTP alone cannot establish source-commit correspondence; use the deployment evidence from step 1.
+   It retrieves every projected HTML and text route, projection JSON, robots, sitemap index and all sitemap pages, branding and the transitive local asset graph. It checks HTTP 200, applicable content types, fragment destinations, canonical/base consistency, exact route membership, synchronized text and unchanged Projection bytes throughout retrieval. Save the receipt with the deployed main SHA and deployment/run URLs. HTTP alone cannot establish source-commit correspondence; use the deployment evidence from step 1.
 3. Re-run the URL-only comprehension prompt in `docs/seo-url-comprehension.md` against production URLs and record answers and any repairs/re-test. Recheck no-JS and hydrated responsive interactions against the deployed artifact where a supported browser is available.
 4. Search Console appearance/indexing and external crawler behavior are observations, not promised hard gates. Close only after live publication evidence is recorded under #79.
 

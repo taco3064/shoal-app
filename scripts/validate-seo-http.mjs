@@ -6,6 +6,7 @@ import { dirname, join } from 'node:path';
 import { parse } from 'parse5';
 import { site, routeInventory, readingFile, nodes, attribute } from './public-reading.mjs';
 import { validateSeo } from './validate-seo.mjs';
+import { htmlAssetUrls, verifyAssetClosure, assetContentType } from './public-assets.mjs';
 
 const base = new URL(process.argv[2] ?? site);
 assert.ok(base.pathname.endsWith('/shoal-app/'), 'Exact published base required');
@@ -14,10 +15,10 @@ const receipts = [];
 const fetched = new Set();
 async function retrieve(path, type) {
   const url = new URL(path, base);
-  const response = await fetch(url, { signal: AbortSignal.timeout(30000) });
+  const response = await fetch(url, { cache: 'no-store', redirect: 'error', signal: AbortSignal.timeout(30000) });
   assert.equal(response.status, 200, `HTTP availability: ${url}`);
   const contentType = response.headers.get('content-type') ?? '';
-  if (type) assert.ok((Array.isArray(type) ? type : [type]).some((value) => contentType.toLowerCase().startsWith(value)), `Content type: ${url}: ${contentType}`);
+  if (type) assert.ok(type instanceof RegExp ? type.test(contentType) : (Array.isArray(type) ? type : [type]).some((value) => contentType.toLowerCase().startsWith(value)), `Content type: ${url}: ${contentType}`);
   const bytes = Buffer.from(await response.arrayBuffer());
   receipts.push({ url: url.href, status: response.status, contentType, bytes: bytes.length });
   fetched.add(url.href);
@@ -33,11 +34,13 @@ try {
   const projection = JSON.parse(projectionBytes.toString());
   await save('data/network.json', projectionBytes);
   const links = new Set();
+  const assets = new Set();
   for (const route of routeInventory(projection)) {
     const html = await retrieve(route, 'text/html');
     await save(`${route}index.html`, html);
     await save(readingFile(route), await retrieve(readingFile(route), 'text/plain'));
     const document = parse(html.toString());
+    for (const url of await htmlAssetUrls(html.toString(), `${site}${route}`, site)) assets.add(url);
     for (const node of nodes(document, (node) => ['a', 'link', 'img', 'script'].includes(node.tagName))) {
       const href = attribute(node, 'href') ?? attribute(node, 'src');
       if (!href) continue;
@@ -62,6 +65,15 @@ try {
     await save(path, await retrieve(path, ['application/xml', 'text/xml']));
   }
   for (const path of links) if (!fetched.has(new URL(path, base).href)) await retrieve(path);
+  const closure = await verifyAssetClosure(assets, site, async (url, path) => {
+    const bytes = await retrieve(path + new URL(url).search, assetContentType(url));
+    await save(path, bytes);
+    return bytes;
+  });
+  // Refuse a generation that changed while its HTML and dependency graph were read.
+  const latest = await fetch(new URL('data/network.json', base), { cache: 'no-store', redirect: 'error', signal: AbortSignal.timeout(30000) });
+  assert.equal(latest.status, 200, 'Final projection HTTP availability');
+  assert.deepEqual(Buffer.from(await latest.arrayBuffer()), projectionBytes, 'One projection generation throughout HTTP verification');
   console.log(JSON.stringify({ base: base.href, projectionGeneratedAt: projection.generatedAt,
-    checks: await validateSeo(temporary), receipts }, null, 2));
+    dependencyAssets: closure.size, checks: await validateSeo(temporary), receipts }, null, 2));
 } finally { await rm(temporary, { recursive: true, force: true }); }
