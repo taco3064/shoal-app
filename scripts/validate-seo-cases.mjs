@@ -2,12 +2,12 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { mkdtemp, readFile, writeFile, cp, rm } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { validateSeo, validatePage } from './validate-seo.mjs';
 import { readingText } from './public-reading.mjs';
 
-const temporary = await mkdtemp(join(tmpdir(), 'shoal-seo-'));
+// Astro moves prerendered assets with rename: output must share the project volume.
+const temporary = await mkdtemp(resolve('.shoal-seo-'));
 const fixture = JSON.parse(await readFile('src/guide/services/directory/fixtures/development.json', 'utf8'));
 const clone = (value) => structuredClone(value);
 const scenarios = [];
