@@ -5,6 +5,7 @@ import { resolve, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { parse } from 'parse5';
 import { site, attribute, nodes, routeInventory, readingFile, readingText, discoveryText } from './public-reading.mjs';
+import { htmlAssetUrls, verifyAssetClosure } from './public-assets.mjs';
 
 const socialImage = `${site}og-shoal.webp`;
 const text = (node) => node.nodeName === '#text' ? node.value : (node.childNodes ?? []).map(text).join('');
@@ -17,6 +18,55 @@ const meta = (head, name) => {
   assert.ok(value?.trim(), `Useful ${name}`);
   return value;
 };
+
+export function validateReadingSemantics(html, reading, route, projection) {
+  const main = unique(find(parse(html), 'main'), 'One reading source');
+  const normalize = (value) => value.replace(/\s+/g, ' ').trim();
+  const plain = normalize(reading);
+  const compact = (value) => value.replace(/\s+/g, '');
+  const compactReading = compact(reading);
+  const included = (node) => {
+    for (let parent = node; parent && parent !== main; parent = parent.parentNode) {
+      if (attribute(parent, 'data-agent-omit') !== undefined || attribute(parent, 'aria-hidden') === 'true'
+        || ['script', 'style', 'svg', 'input', 'select', 'textarea'].includes(parent.tagName)
+        || (parent.tagName === 'pre' && attribute(parent, 'data-language') === 'mermaid')) return false;
+    }
+    return true;
+  };
+  const retained = nodes(main, included);
+  const prose = compact(reading.replace(/<https:\/\/[^>]+>/g, ''));
+  const retainedText = (node) => !included(node) ? '' : node.nodeName === '#text' ? node.value : (node.childNodes ?? []).map(retainedText).join('');
+  for (const paragraph of retained.filter((node) => node.tagName === 'p')) {
+    const expected = compact(retainedText(paragraph));
+    assert.ok(!expected || prose.includes(expected), 'Reading retains every governed paragraph, including trust and freshness context');
+  }
+  let cursor = 0;
+  for (const heading of retained.filter((node) => /^h[1-6]$/.test(node.tagName ?? ''))) {
+    const label = compact(text(heading)); const index = compactReading.indexOf(label, cursor);
+    assert.ok(label && index >= cursor, `Reading preserves heading order: ${label}`); cursor = index + label.length;
+  }
+  for (const anchor of retained.filter((node) => node.tagName === 'a' && attribute(node, 'href'))) {
+    const url = new URL(attribute(anchor, 'href'), `${site}${route}`);
+    if (url.protocol === 'https:') assert.ok(compactReading.includes(compact(`${text(anchor)} <${url.href}>`)), `Reading retains link label and destination: ${url}`);
+  }
+  for (const code of retained.filter((node) => node.tagName === 'code')) {
+    assert.ok(plain.includes(normalize(text(code))), 'Reading retains literal commands and placeholders');
+  }
+  for (const pattern of [/snapshot, not live GitHub state/, /no mutation authorization/]) assert.match(plain, pattern);
+  if (route === 'how-it-works/') {
+    for (const pattern of [/Review Policy/, /Reviewer authors and owns/, /PASS/, /actual GitHub Star/, /latest completed qualifying/, /fallback.*stale|stale.*fallback/i, /unavailable/i, /opt-in/, /best-effort/]) assert.match(plain, pattern);
+  }
+  if (route.startsWith('reviewers/') && route !== 'reviewers/') {
+    const reviewer = projection.reviewers.find(({ username }) => route === `reviewers/${username}/`);
+    assert.ok(plain.includes(String(reviewer.repositoryId))); assert.ok(plain.includes(projection.generatedAt));
+    assert.ok(plain.includes(reviewer.policyUrl));
+    if (reviewer.summary.status === 'unavailable') assert.match(plain, /No accepted Summary snapshot/);
+    else {
+      for (const key of ['transportUrl', 'runUrl', 'summaryDigest']) assert.ok(plain.includes(reviewer.summary.source[key]), `Reading retains Summary provenance: ${key}`);
+      if (reviewer.summary.status === 'fallback') assert.match(plain, /stale.*fallback|fallback.*stale/);
+    }
+  }
+}
 
 export function validatePage(html, route, projection) {
   const document = parse(html);
@@ -124,13 +174,21 @@ export async function validateSeo(output) {
   const projection = JSON.parse(await readFile(join(output, 'data/network.json'), 'utf8'));
   const routes = routeInventory(projection);
   const titles = new Set(); const descriptions = new Set();
+  const assetRoots = new Set();
   for (const route of routes) {
     const html = await readFile(join(output, route, 'index.html'), 'utf8');
     const result = validatePage(html, route, projection);
+    for (const url of await htmlAssetUrls(html, `${site}${route}`, site)) assetRoots.add(url);
     assert.ok(!titles.has(result.title), `Unique title: ${route}`); titles.add(result.title);
     assert.ok(!descriptions.has(result.description), `Unique factual description: ${route}`); descriptions.add(result.description);
-    assert.equal(await readFile(join(output, readingFile(route)), 'utf8'), readingText(html, `${site}${route}`), `No reading drift: ${route}`);
+    const reading = await readFile(join(output, readingFile(route)), 'utf8');
+    assert.equal(reading, readingText(html, `${site}${route}`), `No reading drift: ${route}`);
+    validateReadingSemantics(html, reading, route, projection);
   }
+  const assets = await verifyAssetClosure(assetRoots, site, async (url, path) => {
+    try { return await readFile(join(output, path)); }
+    catch (error) { throw new Error(`Missing public asset dependency: ${url}`, { cause: error }); }
+  });
   const folders = await readdir(join(output, 'reviewers'), { withFileTypes: true });
   assert.deepEqual(folders.filter((entry) => entry.isDirectory()).map(({ name }) => name).sort(), projection.reviewers.map(({ username }) => username).sort(), 'No deleted / stale Reviewer routes');
   const readingFiles = (await readdir(join(output, 'read'), { recursive: true }))
@@ -152,7 +210,7 @@ export async function validateSeo(output) {
     assert.match(xml, /<urlset\b/); pages.push(...locations(xml));
   }
   assert.deepEqual(pages.sort(), routes.map((route) => `${site}${route}`).sort(), 'Exact HTML sitemap membership, no data / text / error routes');
-  return { pages: routes.length, reviewers: projection.reviewers.length };
+  return { pages: routes.length, reviewers: projection.reviewers.length, assets: assets.size };
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
