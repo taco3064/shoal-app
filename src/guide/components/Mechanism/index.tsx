@@ -52,8 +52,9 @@ export default function Mechanism() {
             </h2>
           </div>
           <p>
-            No universal score. No automatic background judgment. Each reviewer
-            owns their policy and starts their own review.
+            No universal score. Each Reviewer owns their Policy and starts locally
+            or explicitly enables scheduled Hosted Review. Requests do not
+            enable background judgment by themselves.
           </p>
         </div>
         <div className="steps">

@@ -5,9 +5,11 @@ type StageWithId = {
 export default function LocalStageGuidance({
   open = false,
   stage,
+  webDetail,
 }: {
   open?: boolean;
   stage: StageWithId;
+  webDetail?: string;
 }) {
   const guidance = localGuidance(stage.id);
 
@@ -17,7 +19,18 @@ export default function LocalStageGuidance({
 
   return (
     <details className="quick-local-note" open={open}>
-      <summary>Local / CLI mode for this stage</summary>
+      <summary>
+        {webDetail
+          ? 'Web / Local guidance for this stage'
+          : 'Local / CLI mode for this stage'}
+      </summary>
+      {webDetail && (
+        <>
+          <h5>Web-assisted setup</h5>
+          <p>{webDetail}</p>
+          <h5>Local / CLI setup</h5>
+        </>
+      )}
       {guidance}
     </details>
   );
@@ -97,7 +110,9 @@ function localGuidance(stageId: string) {
         the work was completed through the Website or through
         {' '}
         <code>gh shoal</code>
-        .
+        . Directory visibility waits for a separate successful Network Scan and
+        publication. Completing local setup does not guarantee a publication
+        deadline.
       </p>
     );
   }

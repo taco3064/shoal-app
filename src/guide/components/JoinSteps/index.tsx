@@ -8,12 +8,10 @@ export default function JoinSteps() {
         <em>Your signature.</em>
       </h2>
       <p>
-        Directly fork the Shoal station template, complete the manual Actions
-        confirmation in your fork, then install the gh extension, run
-        {' '}
-        <code>gh shoal init</code>
-        {' '}
-        on your fork. Write your own Review Policy in the README.
+        Follow one staged Join journey with Web-assisted or Local / CLI setup.
+        Your Personal Account directly forks the station template, confirms
+        station setup, and owns its README Review Policy. The same stages
+        explain both execution modes and publication waiting.
       </p>
       <a
         className="text-link"
