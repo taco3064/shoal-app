@@ -21,3 +21,5 @@ test-results/
 .env.*.local
 .dev.vars
 .dev.vars.*
+
+!src/guide/components/ReviewPolicy/index.test.mjs
