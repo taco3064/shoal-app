@@ -17,6 +17,7 @@
     "scan:network": "tsx src/network/index.ts",
     "validate:action-package": "node scripts/validate-action-package.mjs && node scripts/validate-evidence.mjs && node scripts/validate-canonical-compatibility.mjs && node scripts/validate-hosted-compatibility.mjs",
     "validate:seo": "node scripts/validate-seo.mjs",
+    "validate:policy-headings": "node scripts/validate-policy-headings.mjs",
     "validate:workload": "node scripts/validate-workload.mjs",
     "preview": "astro preview",
     "lint": "eslint src --ext .astro --no-error-on-unmatched-pattern",

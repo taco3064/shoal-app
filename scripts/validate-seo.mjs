@@ -86,7 +86,7 @@ export function validatePage(html, route, projection) {
   })) assert.equal(meta(head, name), expected);
   assert.equal(meta(head, 'og:image:alt'), meta(head, 'twitter:image:alt'));
   const main = unique(find(document, 'main'), 'One static main');
-  unique(find(main, 'h1'), 'One H1');
+  unique(find(main, 'h1'), `One H1: ${route || '/'}`);
   assert.ok(text(main).trim().length > 400, 'Meaningful static explanation');
   const links = find(document, 'a').map((node) => attribute(node, 'href'));
   for (const destination of [site, `${site}how-it-works/`, `${site}join/`, `${site}reviewers/`]) {
