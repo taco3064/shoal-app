@@ -7,6 +7,10 @@ import {
 import { validateReviewerSummary } from '~app/protocol/services/reviewer_summary_schema';
 import { stationReadiness } from '~app/protocol/services/station_readiness';
 import type { StationReadinessReason } from '~app/protocol/services/station_readiness';
+import {
+  observeAwaitingAdmission, validateAwaitingAdmission,
+} from '../awaiting_admission';
+import type { AwaitingAdmission } from '../awaiting_admission';
 import type { GitHubRepository, WorkflowRun } from '../github_api';
 import {
   hash,
@@ -32,6 +36,7 @@ export type ReviewerEntry = {
   stationReadinessReasons: StationReadinessReason[];
   summaryStatus: SelectedSummary['status'];
   summary: SelectedSummary;
+  awaitingAdmission: AwaitingAdmission;
 };
 
 export type NetworkProjection = {
@@ -128,6 +133,8 @@ export async function buildNetworkProjection(
     const runs = await source.summaryRuns(node.full_name);
     const summary = await selectSummary(node, runs, source, verifier);
 
+    const awaitingAdmission = await observeAwaitingAdmission(source, node);
+
     reviewers.push({
       repositoryId: node.id,
       username: node.owner.login,
@@ -141,6 +148,7 @@ export async function buildNetworkProjection(
       stationReadinessReasons: reasons,
       summaryStatus: summary.status,
       summary,
+      awaitingAdmission,
     });
 
     logStationReadiness(node, stationStatus, reasons);
@@ -229,6 +237,7 @@ export function validateProjection(projection: NetworkProjection): void {
     }
 
     identities.add(reviewer.repositoryId);
+    validateAwaitingAdmission(reviewer.awaitingAdmission);
 
     if (
       reviewer.stationStatus !== 'ready'

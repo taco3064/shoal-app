@@ -199,6 +199,10 @@ html:has(.navigation-drawer[open]){overflow:hidden}
 .reviewer-workload[data-freshness=fallback] .workload-grid>div{border-color:#8e6e36}
 .workload-panel .reviewer-workload{margin-top:18px}
 .workload-panel .workload-grid{max-width:620px}
+.admission-count{margin:20px 0}
+.admission-count dt{font-size:14px;color:#c2d2cc}
+.admission-count dd{margin:8px 0;font:600 40px/1.15 'Space Grotesk',sans-serif;font-variant-numeric:tabular-nums;color:#efffae}
+.admission-issues{display:flex;flex-wrap:wrap;gap:12px 24px;list-style:none;padding:0}
 .workload-explanation,.workload-absence{margin:16px 0 0;color:#b5c7c4;font-size:14px;line-height:1.7}
 .directory-page .reviewer-card{position:relative;padding:0;gap:0;overflow:visible;transition:background .2s}
 .reviewer-card-body{display:grid;gap:24px;padding:27px;border-radius:8px 8px 0 0;transition:background .2s}

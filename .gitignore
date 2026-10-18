@@ -23,3 +23,6 @@ test-results/
 .dev.vars.*
 
 !src/guide/components/ReviewPolicy/index.test.mjs
+
+!src/network/services/awaiting_admission/index.test.mjs
+!src/network/services/network_projection/index.test.mjs
