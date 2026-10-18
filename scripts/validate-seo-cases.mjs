@@ -17,6 +17,16 @@ const one = clone(fixture); one.reviewers = one.reviewers.slice(0, 1); scenarios
 const many = clone(fixture);
 const accepted = many.reviewers.find((entry) => entry.summary.status === 'current');
 accepted.summary.status = 'fallback'; accepted.summaryStatus = 'fallback'; accepted.summary.stale = true;
+accepted.summary.summary.summarySchemaVersion = 2;
+accepted.summary.summary.reviewerNode.repository = accepted.repository;
+accepted.summary.summary.metrics = {
+  ...accepted.summary.summary.metrics,
+  validReviewRequestIssueCount: 5,
+  pendingReviewRequestCount: 2,
+  completedReviewRequestCount: 3,
+};
+accepted.summary.source.workflowDigest = 'acf3b8edc35584309a73bfe67e2c6fd453acb07e9a1033de34f4f6ab039e042f';
+accepted.summary.source.actionCommit = '1916eb85cd251b073520956512cd9b5549fba2a7';
 // An explicit current + fallback + unavailable fixture, plus more than one page.
 const current = clone(fixture.reviewers.find((entry) => entry.summary.status === 'current'));
 current.repositoryId = 987654321; current.username = 'current-fixture'; current.repository = 'current-fixture/shoal-station';
@@ -24,6 +34,16 @@ current.repositoryUrl = `https://github.com/${current.repository}`; current.prof
 current.policyUrl = `${current.repositoryUrl}/blob/${'a'.repeat(40)}/README.md`;
 current.summary.summary.reviewerNode.repositoryId = current.repositoryId;
 current.summary.summary.reviewerNode.repository = current.repository;
+current.summary.summary.summarySchemaVersion = 2;
+current.summary.summary.metrics = {
+  ...current.summary.summary.metrics,
+  validReviewRequestIssueCount: 0,
+  pendingReviewRequestCount: 0,
+  completedReviewRequestCount: 0,
+};
+current.summary.source.workflowDigest = accepted.summary.source.workflowDigest;
+current.summary.source.actionCommit = accepted.summary.source.actionCommit;
+current.awaitingAdmission.issueNumbers = [3, 9];
 current.summary.source.transportUrl = `https://raw.githubusercontent.com/${current.repository}/shoal-summary-${current.repositoryId}-${current.summary.source.runId}-${current.summary.source.runAttempt}/reviewer-summary.json`;
 current.summary.source.runUrl = `${current.repositoryUrl}/actions/runs/${current.summary.source.runId}`;
 many.reviewers.push(current);
@@ -52,6 +72,9 @@ try {
     const output = join(temporary, name);
     await build(projection, output);
     console.log(name, await validateSeo(output));
+    execFileSync(process.execPath, ['scripts/validate-workload.mjs', output], {
+      stdio: 'inherit', timeout: 30000,
+    });
   }
   const badUsername = clone(one); badUsername.reviewers[0].username = 'unsafe<"&';
   await assert.rejects(build(badUsername, join(temporary, 'invalid')), /Command failed/);
@@ -70,6 +93,22 @@ try {
     assert.throws(() => validatePage(mutate(html), '', fixture), undefined, name);
   }
   const copy = join(temporary, 'negative'); await cp(output, copy, { recursive: true });
+  const candidate = fixture.reviewers.find((entry) => entry.awaitingAdmission.issueNumbers.length > 0);
+  const candidatePage = join(copy, `reviewers/${candidate.username}/index.html`);
+  const candidateHtml = await readFile(candidatePage, 'utf8');
+  for (const [label, original, replacement] of [
+    ['candidate count', `<dd>${candidate.awaitingAdmission.issueNumbers.length}</dd>`, '<dd>999</dd>'],
+    ['candidate link', `${candidate.repositoryUrl}/issues/${candidate.awaitingAdmission.issueNumbers[0]}`, `${candidate.repositoryUrl}/issues/999`],
+    ['scan freshness', `<time dateTime="${fixture.generatedAt}">`, '<time dateTime="2000-01-01T00:00:00Z">'],
+  ]) {
+    assert.ok(candidateHtml.includes(original), `Non-vacuous ${label} control`);
+    await writeFile(candidatePage, candidateHtml.replace(original, replacement));
+    assert.throws(() => execFileSync(process.execPath, ['scripts/validate-workload.mjs', copy], {
+      stdio: 'pipe', timeout: 30000,
+    }), undefined, label);
+    await writeFile(candidatePage, candidateHtml);
+  }
+  console.log('Candidate observation negative controls PASS: changed count, station Issue link, and Network Scan timestamp are rejected.');
   const reading = join(copy, 'read/index.txt'); const original = await readFile(reading);
   await writeFile(reading, 'Independent SEO-only product claim'); await assert.rejects(validateSeo(copy)); await writeFile(reading, original);
   const llms = join(copy, 'llms.txt'); const discovery = await readFile(llms);

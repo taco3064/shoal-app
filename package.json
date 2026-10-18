@@ -28,7 +28,8 @@
     "build:join": "wrangler deploy --dry-run --outdir .worker-build",
     "deploy:join": "wrangler deploy",
     "validate:seo-cases": "node scripts/validate-seo-cases.mjs",
-    "validate:seo-http": "node scripts/validate-seo-http.mjs"
+    "validate:seo-http": "node scripts/validate-seo-http.mjs",
+    "validate:intake": "node src/network/services/awaiting_admission/index.test.mjs && node src/network/services/network_projection/index.test.mjs"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx,mjs,astro}": "eslint --fix"

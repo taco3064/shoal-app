@@ -45,6 +45,7 @@ jobs:
       - run: npm run validate:seo
       - run: npm run validate:policy-headings
       - run: npm run validate:seo-cases
+      - run: npm run validate:intake
       - run: npm run validate:workload
       - run: npm run blueprint:validate
       - name: Scan current public Network
@@ -53,10 +54,21 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
           SHOAL_SCAN_DIAGNOSTICS: '1'
+      - name: Build and verify scanned Reviewer pages
+        if: matrix.os == 'ubuntu-latest' && github.event_name == 'pull_request'
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          SHOAL_PROJECTION_FILE: ${{ runner.temp }}/network.json
+        run: |
+          cp dist/network-projection/network.json "$SHOAL_PROJECTION_FILE"
+          npm run build
+          npm run validate:workload
+          npm run validate:seo
       - name: Preserve scanned projection for review
         if: matrix.os == 'ubuntu-latest' && github.event_name == 'pull_request'
         uses: actions/upload-artifact@v4
         with:
           name: network-projection-${{ github.event.pull_request.head.sha }}
-          path: dist/network-projection/network.json
+          path: dist/data/network.json
           if-no-files-found: error

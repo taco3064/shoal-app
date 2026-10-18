@@ -8,7 +8,13 @@ export type GitHubRepository = {
   default_branch: string;
   fork: boolean;
   has_issues: boolean;
-  owner: { login: string; type: string; avatar_url: string; html_url: string };
+  owner: {
+    id: number;
+    login: string;
+    type: string;
+    avatar_url: string;
+    html_url: string;
+  };
   parent?: { id: number };
   source?: { id: number };
 };

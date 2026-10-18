@@ -24,6 +24,9 @@
       "summary": {
         "status": "unavailable",
         "stale": false
+      },
+      "awaitingAdmission": {
+        "issueNumbers": []
       }
     },
     {
@@ -41,6 +44,11 @@
       "summary": {
         "status": "unavailable",
         "stale": false
+      },
+      "awaitingAdmission": {
+        "issueNumbers": [
+          7
+        ]
       }
     },
     {
@@ -82,6 +90,12 @@
           "summaryDigest": "8189a612b94eb67d0839305545844f89c51060077bb27a34b65666eb1abeebad",
           "runUrl": "https://github.com/taco3064/shoal-station/actions/runs/36553125560"
         }
+      },
+      "awaitingAdmission": {
+        "issueNumbers": [
+          1,
+          2
+        ]
       }
     }
   ]
